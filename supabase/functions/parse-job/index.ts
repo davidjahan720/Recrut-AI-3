@@ -26,14 +26,20 @@ Deno.serve(async (req) => {
           },
           {
             type: 'text',
-            text: `Analyse cette fiche de poste et extrais les informations suivantes. Reponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte avant ou apres :
+            text: `Analyse cette fiche de poste.
+
+RÈGLE ABSOLUE : réponds EXCLUSIVEMENT avec un objet JSON valide.
+Pas de markdown, pas de \`\`\`json, pas de texte avant, pas de texte après.
+Commence directement par { et termine par }.
+
+Format imposé :
 {
-  "company_name": "Nom exact de l'entreprise ou du client",
-  "title": "Intitule exact du poste",
-  "location": "Ville ou region (ex: Paris, Lyon, Remote)",
-  "contract_type": "Un parmi exactement : CDI, CDD, Alternance, Stage, Freelance",
-  "description": "Description complete du poste et profil recherche en 300 mots max",
-  "score_threshold": 70
+  "company_name": "<nom exact de l'entreprise>",
+  "title": "<intitulé exact du poste>",
+  "location": "<ville ou région, ex: Paris, Remote>",
+  "contract_type": "<un parmi exactement : CDI, CDD, Alternance, Stage, Freelance>",
+  "description": "<missions et profil recherché en 300 mots max>",
+  "score_threshold": <entier entre 60 et 85>
 }`,
           },
         ],
@@ -51,7 +57,7 @@ Deno.serve(async (req) => {
     })
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

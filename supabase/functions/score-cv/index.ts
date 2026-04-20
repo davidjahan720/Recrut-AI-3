@@ -68,7 +68,21 @@ Deno.serve(async (req) => {
 
     const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY')! })
 
-    const systemPrompt = Deno.env.get('SYSTEM_PROMPT') ?? `Tu es un expert en recrutement. Retourne UNIQUEMENT un JSON valide avec ces 6 champs : {"score":<0-100>,"justification":"<synthèse>","positive_points":["..."],"negative_points":["..."],"candidate_name":"<nom ou null>","candidate_email":"<email ou null>"}`
+    const systemPrompt = `Tu es un expert en recrutement. Tu analyses des CV par rapport à des fiches de poste.
+
+RÈGLE ABSOLUE : ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre.
+- Pas de markdown, pas de \`\`\`json, pas de texte avant, pas de texte après.
+- Commence directement par { et termine par }.
+
+Format imposé :
+{
+  "score": <entier entre 0 et 100>,
+  "justification": "<synthèse en 2-3 phrases>",
+  "positive_points": ["<point 1>", "<point 2>", "<point 3>"],
+  "negative_points": ["<point 1>", "<point 2>"],
+  "candidate_name": "<prénom nom ou null si absent>",
+  "candidate_email": "<email ou null si absent>"
+}`
 
     let messageContent: Anthropic.MessageParam['content']
 
