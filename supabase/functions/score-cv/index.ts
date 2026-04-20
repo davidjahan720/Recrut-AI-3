@@ -280,7 +280,7 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
     if (typeof score !== 'number' || score < 0 || score > 100) throw new Error('Score invalide : ' + score)
 
     const qualified = is_relevant !== false && score >= job.score_threshold
-    const status = qualified ? 'qualified' : 'rejected'
+    const status = qualified ? 'pending_approval' : 'rejected'
 
     // 5. Mise à jour de la candidature
     await supabase.from('applications').update({
@@ -293,38 +293,8 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
       status,
     }).eq('id', applicationId)
 
-    // 6. Email si qualifié
-    let emailSentAt: string | null = null
-    if (qualified) {
-      const resend = new Resend(Deno.env.get('RESEND_API_KEY')!)
-      const clientData = job.clients as { name: string; notification_email: string }
-      const ppList = positive_points?.map(p => `<li>✅ ${p}</li>`).join('') ?? ''
-      const npList = negative_points?.map(p => `<li>⚠️ ${p}</li>`).join('') ?? ''
-
-      const { error: emailError } = await resend.emails.send({
-        from: 'RecrutAI <onboarding@resend.dev>',
-        to: clientData.notification_email,
-        subject: `CV qualifié — ${candidate_name ?? 'Candidat'} — ${job.title}`,
-        html: `
-          <h2>Nouveau CV qualifié — ${job.title}</h2>
-          <p><strong>Candidat :</strong> ${candidate_name ?? 'Non renseigné'}</p>
-          <p><strong>Email :</strong> ${candidate_email ?? 'Non renseigné'}</p>
-          <p><strong>Score :</strong> ${score}/100 (seuil : ${job.score_threshold})</p>
-          <hr/>
-          <p><strong>Synthèse :</strong> ${justification}</p>
-          ${ppList ? `<p><strong>Points positifs :</strong></p><ul>${ppList}</ul>` : ''}
-          ${npList ? `<p><strong>Points négatifs :</strong></p><ul>${npList}</ul>` : ''}
-        `,
-      })
-
-      if (!emailError) {
-        emailSentAt = new Date().toISOString()
-        await supabase.from('applications').update({ email_sent_at: emailSentAt }).eq('id', applicationId)
-      }
-    }
-
     return new Response(
-      JSON.stringify({ id: applicationId, score, status, justification, positive_points, negative_points, candidate_name, candidate_email, email_sent_at: emailSentAt }),
+      JSON.stringify({ id: applicationId, score, status, justification, positive_points, negative_points, candidate_name, candidate_email }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

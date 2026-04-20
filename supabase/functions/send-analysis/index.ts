@@ -1,9 +1,53 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Resend } from 'https://esm.sh/resend@3.2.0'
+import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function mdToPdf(mdText: string): Promise<Uint8Array> {
+  const doc = await PDFDocument.create()
+  const regular = await doc.embedFont(StandardFonts.Helvetica)
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
+  const W = 595.28, H = 841.89, M = 50
+  const usable = W - 2 * M
+  const lh = 15
+
+  let page = doc.addPage([W, H])
+  let y = H - M
+
+  function wrap(text: string, size: number, font: typeof regular, indent = 0) {
+    const words = text.split(' ')
+    let cur = ''
+    const ls: string[] = []
+    for (const w of words) {
+      const t = cur ? `${cur} ${w}` : w
+      if (font.widthOfTextAtSize(t, size) > usable - indent && cur) { ls.push(cur); cur = w }
+      else cur = t
+    }
+    if (cur) ls.push(cur)
+    for (const l of ls) {
+      if (y < M + lh) { page = doc.addPage([W, H]); y = H - M }
+      page.drawText(l, { x: M + indent, y, size, font, color: rgb(0, 0, 0) })
+      y -= lh
+    }
+  }
+
+  for (const raw of mdText.split('\n')) {
+    const line = raw.trimEnd()
+    if (!line.trim()) { y -= lh * 0.5; continue }
+    if (line.startsWith('# ')) { wrap(line.slice(2), 14, bold); y -= 3 }
+    else if (line.startsWith('## ')) { y -= 3; wrap(line.slice(3), 12, bold); y -= 2 }
+    else if (line.startsWith('### ')) { wrap(line.slice(4), 11, bold) }
+    else if (/^[-*•]\s/.test(line)) {
+      wrap('• ' + line.replace(/^[-*•]\s+/, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1'), 10, regular, 10)
+    } else {
+      wrap(line.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1'), 10, regular)
+    }
+  }
+  return doc.save()
 }
 
 Deno.serve(async (req) => {
@@ -40,11 +84,29 @@ Deno.serve(async (req) => {
     const statusLabel = app.status === 'qualified' ? 'Qualifié' : app.status === 'rejected' ? 'Rejeté' : 'En attente'
     const statusColor = app.status === 'qualified' ? '#16a34a' : app.status === 'rejected' ? '#64748b' : '#d97706'
 
+    // Générer le PDF à partir du .md si disponible
+    let pdfAttachment: { filename: string; content: string; contentType: string } | null = null
+    if (app.md_file_path) {
+      const { data: mdBlob } = await supabase.storage.from('cvs').download(app.md_file_path)
+      if (mdBlob) {
+        const mdText = await mdBlob.text()
+        const pdfBytes = await mdToPdf(mdText)
+        let binary = ''
+        for (let i = 0; i < pdfBytes.byteLength; i++) binary += String.fromCharCode(pdfBytes[i])
+        pdfAttachment = {
+          filename: `CV_${(app.candidate_name ?? 'Candidat').replace(/\s+/g, '_')}.pdf`,
+          content: btoa(binary),
+          contentType: 'application/pdf',
+        }
+      }
+    }
+
     const resend = new Resend(Deno.env.get('RESEND_API_KEY')!)
 
     const { error: emailError } = await resend.emails.send({
       from: 'RecrutAI <onboarding@resend.dev>',
       to: client.notification_email,
+      ...(pdfAttachment ? { attachments: [pdfAttachment] } : {}),
       subject: `Analyse IA — ${app.candidate_name ?? 'Candidat'} — ${job.title}`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
@@ -84,8 +146,13 @@ Deno.serve(async (req) => {
 
     if (emailError) throw new Error('Erreur envoi email : ' + emailError.message)
 
+    const emailSentAt = new Date().toISOString()
+    await supabase.from('applications')
+      .update({ status: 'qualified', email_sent_at: emailSentAt })
+      .eq('id', application_id)
+
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, email_sent_at: emailSentAt }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {

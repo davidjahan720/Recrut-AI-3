@@ -10,6 +10,7 @@ interface Result {
   name: string
   score: number | null
   status: string
+  errorMessage?: string | null
 }
 
 export function CvUploader({ jobId, onUploaded }: Props) {
@@ -32,7 +33,6 @@ export function CvUploader({ jobId, onUploaded }: Props) {
     setProcessing(true)
     setResults([])
 
-    const { data: { session } } = await supabase.auth.getSession()
     const newResults: Result[] = []
 
     for (const file of accepted) {
@@ -41,25 +41,28 @@ export function CvUploader({ jobId, onUploaded }: Props) {
 
       const { error: uploadError } = await supabase.storage.from('cvs').upload(fileName, file)
       if (uploadError) {
-        newResults.push({ name: file.name, score: null, status: 'error' })
+        newResults.push({ name: file.name, score: null, status: 'error', errorMessage: uploadError.message })
         continue
       }
 
-      const { data: fnData } = await supabase.functions.invoke('score-cv', {
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('score-cv', {
         body: { job_id: jobId, cv_file_path: fileName },
-        headers: { Authorization: `Bearer ${session?.access_token}` },
       })
 
+      const errMsg = fnError?.message ?? fnData?.error ?? null
+      if (errMsg) console.error('[CvUploader] score-cv error:', errMsg)
       newResults.push({
         name: file.name,
         score: null,
-        status: fnData?.error ? 'error' : 'done',
+        status: errMsg ? 'error' : 'done',
+        errorMessage: errMsg,
       })
     }
 
     setResults(newResults)
     setProcessing(false)
-    onUploaded()
+    const hasError = newResults.some(r => r.status === 'error')
+    if (!hasError) onUploaded()
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -108,7 +111,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
               <span className="text-sm text-slate-700 truncate max-w-xs">{r.name}</span>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`text-xs px-2 py-0.5 rounded-full ${r.status === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
-                  {r.status === 'error' ? '⚠️ Erreur' : '✅ Reçu'}
+                  {r.status === 'error' ? `⚠️ ${r.errorMessage ?? 'Erreur'}` : '✅ Reçu'}
                 </span>
               </div>
             </div>

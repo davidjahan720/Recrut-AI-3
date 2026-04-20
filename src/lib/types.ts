@@ -30,9 +30,10 @@ export interface Application {
   cv_text: string | null
   score: number | null
   justification: string | null
-  status: 'pending' | 'qualified' | 'rejected' | 'error'
+  status: 'pending' | 'pending_approval' | 'qualified' | 'rejected' | 'error'
   positive_points: string | null
   negative_points: string | null
   email_sent_at: string | null
+  md_file_path: string | null
   created_at: string
 }

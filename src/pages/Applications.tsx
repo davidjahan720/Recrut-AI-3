@@ -13,8 +13,8 @@ type AppWithJob = Application & {
   jobs: { title: string; score_threshold: number; client_id: string; clients: { name: string } }
 }
 
-type StatusFilter = 'all' | 'qualified' | 'rejected' | 'pending' | 'error'
-type SortKey = 'score' | 'created_at'
+type StatusFilter = 'all' | 'pending_approval' | 'qualified' | 'rejected' | 'pending' | 'error'
+type SortKey = 'score' | 'created_at' | 'job'
 
 function ScoreBadge({ score, threshold }: { score: number | null; threshold: number }) {
   if (score === null) return <span className="text-muted-foreground">—</span>
@@ -28,15 +28,18 @@ function ScoreBadge({ score, threshold }: { score: number | null; threshold: num
 
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
-    pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-700' },
-    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-800' },
-    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
-    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
+    pending:          { label: 'En analyse',      cls: 'bg-amber-100 text-amber-700' },
+    pending_approval: { label: 'À approuver',     cls: 'bg-violet-600 text-white' },
+    qualified:        { label: 'Qualifié',         cls: 'bg-green-100 text-green-800' },
+    rejected:         { label: 'Rejeté',           cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+    error:            { label: 'Erreur',           cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {status === 'pending' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
+      {(status === 'pending' || status === 'pending_approval') && (
+        <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${status === 'pending_approval' ? 'bg-red-400' : 'bg-amber-500'}`} />
+      )}
       {label}
     </span>
   )
@@ -53,7 +56,6 @@ export default function Applications() {
   const [viewUrl, setViewUrl] = useState<string | null>(null)
   const [viewName, setViewName] = useState<string>('')
   const [sending, setSending] = useState<Set<string>>(new Set())
-  const [sentOk, setSentOk] = useState<Set<string>>(new Set())
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
@@ -180,16 +182,21 @@ export default function Applications() {
     }
   }
 
-  async function sendAnalysis(id: string) {
+  async function handleApprove(id: string) {
     setSending(prev => new Set(prev).add(id))
-    const { data: { session } } = await supabase.auth.getSession()
-    const { data } = await supabase.functions.invoke('send-analysis', {
+    const { data, error } = await supabase.functions.invoke('send-analysis', {
       body: { application_id: id },
-      headers: { Authorization: `Bearer ${session?.access_token}` },
     })
     setSending(prev => { const s = new Set(prev); s.delete(id); return s })
-    if (data?.error) alert('Erreur : ' + data.error)
-    else setSentOk(prev => new Set(prev).add(id))
+    if (error || data?.error) {
+      alert('Erreur lors de l\'envoi : ' + (error?.message ?? data?.error))
+    } else {
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'qualified' as const, email_sent_at: new Date().toISOString() } : a))
+    }
+  }
+
+  async function handleReject(id: string) {
+    await supabase.from('applications').update({ status: 'rejected' }).eq('id', id)
   }
 
   async function deleteCv(id: string, path: string) {
@@ -205,11 +212,13 @@ export default function Applications() {
     .filter(a => statusFilter === 'all' || a.status === statusFilter)
     .sort((a, b) => {
       if (sort === 'score') return (b.score ?? -1) - (a.score ?? -1)
+      if (sort === 'job') return (a.jobs?.title ?? '').localeCompare(b.jobs?.title ?? '', 'fr')
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
   const counts = {
     all: applications.length,
+    pending_approval: applications.filter(a => a.status === 'pending_approval').length,
     qualified: applications.filter(a => a.status === 'qualified').length,
     rejected: applications.filter(a => a.status === 'rejected').length,
     pending: applications.filter(a => a.status === 'pending').length,
@@ -252,12 +261,13 @@ export default function Applications() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {(['all', 'qualified', 'rejected', 'pending', 'error'] as StatusFilter[]).map(f => (
+        {(['all', 'pending_approval', 'qualified', 'rejected', 'pending', 'error'] as StatusFilter[]).map(f => (
           <button key={f} onClick={() => setStatusFilter(f)} className={`${pillBase} ${statusFilter === f ? pillActive : pillInactive}`}>
-            {f === 'all' ? `Toutes (${counts.all})` :
-             f === 'qualified' ? `Qualifiés (${counts.qualified})` :
-             f === 'rejected' ? `Rejetés (${counts.rejected})` :
-             f === 'pending' ? `En attente (${counts.pending})` :
+            {f === 'all'              ? `Toutes (${counts.all})` :
+             f === 'pending_approval' ? `À approuver (${counts.pending_approval})` :
+             f === 'qualified'        ? `Qualifiés (${counts.qualified})` :
+             f === 'rejected'         ? `Rejetés (${counts.rejected})` :
+             f === 'pending'          ? `En analyse (${counts.pending})` :
              `Erreurs (${counts.error})`}
           </button>
         ))}
@@ -268,6 +278,7 @@ export default function Applications() {
         >
           <option value="created_at">Trier par date</option>
           <option value="score">Trier par score</option>
+          <option value="job">Trier par offre</option>
         </select>
       </div>
 
@@ -366,6 +377,28 @@ export default function Applications() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
+                    {a.status === 'pending_approval' && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="text-xs px-2 h-7 bg-green-600 hover:bg-green-700 text-white"
+                          disabled={sending.has(a.id)}
+                          onClick={() => handleApprove(a.id)}
+                          aria-label={`Approuver et envoyer le CV de ${a.candidate_name ?? 'ce candidat'}`}
+                        >
+                          {sending.has(a.id) ? '...' : '✓ Approuver'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs px-2 h-7 text-slate-500 hover:text-slate-700"
+                          onClick={() => handleReject(a.id)}
+                          aria-label={`Rejeter la candidature de ${a.candidate_name ?? 'ce candidat'}`}
+                        >
+                          Rejeter
+                        </Button>
+                      </>
+                    )}
                     <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)} aria-label={`Télécharger le CV de ${a.candidate_name ?? 'ce candidat'}`}>PDF</Button>
                     <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer la candidature de ${a.candidate_name ?? 'ce candidat'}`}>✕</Button>
                   </div>
