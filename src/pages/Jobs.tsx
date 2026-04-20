@@ -162,11 +162,11 @@ export default function Jobs() {
           <TableHeader>
             <TableRow>
               <TableHead>Titre</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Localisation</TableHead>
-              <TableHead>Seuil</TableHead>
-              <TableHead>Candidatures</TableHead>
-              <TableHead>Statut</TableHead>
+              <TableHead className="w-36">Client</TableHead>
+              <TableHead className="w-28">Localisation</TableHead>
+              <TableHead className="w-16">Seuil</TableHead>
+              <TableHead className="w-48">Candidatures</TableHead>
+              <TableHead className="w-24">Statut</TableHead>
               <TableHead className="w-36"></TableHead>
             </TableRow>
           </TableHeader>
@@ -183,19 +183,19 @@ export default function Jobs() {
               const avgScore = scores.length ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : null
               return (
                 <TableRow key={j.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/jobs/${j.id}`)}>
-                  <TableCell className="font-semibold text-foreground">{j.title}</TableCell>
-                  <TableCell className="text-slate-700 font-medium">{(j.clients as { name: string } | undefined)?.name}</TableCell>
-                  <TableCell className="text-slate-700">{j.location}</TableCell>
+                  <TableCell className="font-semibold text-foreground truncate max-w-0">{j.title}</TableCell>
+                  <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{(j.clients as { name: string } | undefined)?.name}</TableCell>
+                  <TableCell className="text-muted-foreground truncate max-w-[112px]">{j.location}</TableCell>
                   <TableCell className="font-medium">{j.score_threshold}</TableCell>
                   <TableCell>
                     {total === 0 ? (
                       <span className="text-muted-foreground text-sm">Aucun CV</span>
                     ) : (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-slate-700">{total} CV</span>
-                        {qualified > 0 && <span className="text-sm font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">{qualified} qualifié{qualified > 1 ? 's' : ''}</span>}
-                        {pending > 0 && <span className="text-sm font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{pending} en attente</span>}
-                        {avgScore !== null && <span className="text-sm font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">moy. {avgScore}</span>}
+                        <span className="text-sm font-medium text-muted-foreground">{total} CV</span>
+                        {qualified > 0 && <span className="text-xs font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">{qualified} ✓</span>}
+                        {pending > 0 && <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">{pending} ⏳</span>}
+                        {avgScore !== null && <span className="text-xs font-semibold bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">~{avgScore}</span>}
                       </div>
                     )}
                   </TableCell>
