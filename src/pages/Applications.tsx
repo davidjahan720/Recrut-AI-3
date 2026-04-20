@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Application, Job } from '@/lib/types'
@@ -54,6 +55,17 @@ export default function Applications() {
   const [sending, setSending] = useState<Set<string>>(new Set())
   const [sentOk, setSentOk] = useState<Set<string>>(new Set())
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
+  const flashTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+  function flashRow(id: string) {
+    const existing = flashTimers.current.get(id)
+    if (existing) clearTimeout(existing)
+    setFlashIds(prev => new Set(prev).add(id))
+    const t = setTimeout(() => setFlashIds(prev => { const s = new Set(prev); s.delete(id); return s }), 1500)
+    flashTimers.current.set(id, t)
+  }
 
   function exportQualifiedCsv() {
     const qualified = applications.filter(a => a.status === 'qualified')
@@ -98,6 +110,7 @@ export default function Applications() {
       .select('*, jobs(title, score_threshold, client_id, clients(name))')
       .order('created_at', { ascending: false })
     setApplications((data ?? []) as AppWithJob[])
+    setLoading(false)
   }
 
   async function loadActiveJobs() {
@@ -130,7 +143,7 @@ export default function Applications() {
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'applications' }, async ({ new: row }) => {
         const full = await fetchOne(row.id)
-        if (full) setApplications(prev => prev.map(a => a.id === row.id ? full : a))
+        if (full) { setApplications(prev => prev.map(a => a.id === row.id ? full : a)); flashRow(row.id) }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'applications' }, ({ old: row }) => {
         setApplications(prev => prev.filter(a => a.id !== row.id))
@@ -203,7 +216,7 @@ export default function Applications() {
     error: applications.filter(a => a.status === 'error').length,
   }
 
-  const pillBase = 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors'
+  const pillBase = 'px-4 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none'
   const pillActive = 'bg-primary text-white'
   const pillInactive = 'bg-card border border-border text-foreground hover:bg-muted'
 
@@ -262,25 +275,43 @@ export default function Applications() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8"></TableHead>
+              <TableHead className="w-8"><span className="sr-only">Sélectionner</span></TableHead>
               <TableHead className="w-28">Candidat</TableHead>
               <TableHead className="w-36">Offre / Client</TableHead>
               <TableHead className="w-24">Score / Statut</TableHead>
               <TableHead>Analyse</TableHead>
               <TableHead className="w-20">Date</TableHead>
-              <TableHead className="w-32"></TableHead>
+              <TableHead className="w-32"><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 && (
+            {loading && Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={`sk-${i}`}>
+                <TableCell><Skeleton className="w-4 h-4" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-28 mb-1" /><Skeleton className="h-3 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-3 w-24 mb-1" /><Skeleton className="h-3 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-8 mb-1" /><Skeleton className="h-5 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-3 w-40 mb-1" /><Skeleton className="h-3 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-3 w-14" /></TableCell>
+                <TableCell><Skeleton className="h-7 w-28" /></TableCell>
+              </TableRow>
+            ))}
+            {!loading && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
                   Aucune candidature{statusFilter !== 'all' && ' pour ce filtre'}
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map(a => (
-              <TableRow key={a.id} className={`hover:bg-muted/40 align-top ${compareIds.has(a.id) ? 'bg-violet-50 dark:bg-violet-950/20' : ''}`}>
+            {!loading && filtered.map(a => (
+              <TableRow
+                key={a.id}
+                className={[
+                  'align-top transition-colors duration-200',
+                  compareIds.has(a.id) ? 'bg-violet-50 dark:bg-violet-950/20' : 'hover:bg-muted/40',
+                  flashIds.has(a.id) ? 'animate-highlight' : '',
+                ].join(' ')}
+              >
                 <TableCell className="pr-0">
                   <input
                     type="checkbox"
@@ -288,20 +319,24 @@ export default function Applications() {
                     onChange={() => toggleCompare(a.id)}
                     disabled={!compareIds.has(a.id) && compareIds.size >= 3}
                     className="w-4 h-4 accent-violet-600 cursor-pointer disabled:cursor-not-allowed"
-                    title={compareIds.size >= 3 && !compareIds.has(a.id) ? 'Maximum 3 candidats' : 'Sélectionner pour comparer'}
+                    aria-label={`Sélectionner ${a.candidate_name ?? 'ce candidat'} pour la comparaison`}
                   />
                 </TableCell>
                 <TableCell>
                   <p className="text-sm font-semibold text-foreground line-clamp-1">
                     {a.candidate_name ?? <span className="text-muted-foreground italic">Inconnu</span>}
                   </p>
-                  <p className="text-xs text-foreground line-clamp-1">{a.candidate_email ?? ''}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{a.candidate_email ?? ''}</p>
                 </TableCell>
                 <TableCell>
-                  <button onClick={() => navigate(`/jobs/${a.job_id}`)} className="text-xs font-medium text-blue-700 hover:underline text-left line-clamp-1 block">
+                  <button
+                    onClick={() => navigate(`/jobs/${a.job_id}`)}
+                    className="text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline text-left line-clamp-1 block rounded"
+                    aria-label={`Voir l'offre ${a.jobs?.title}`}
+                  >
                     {a.jobs?.title ?? '—'}
                   </button>
-                  <p className="text-xs text-foreground line-clamp-1">{(a.jobs?.clients as { name: string } | undefined)?.name ?? '—'}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{(a.jobs?.clients as { name: string } | undefined)?.name ?? '—'}</p>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
@@ -310,38 +345,39 @@ export default function Applications() {
                   </div>
                 </TableCell>
                 <TableCell className="max-w-[180px]">
-                  <p className="text-xs text-slate-700 line-clamp-1 leading-snug">{a.justification ?? '—'}</p>
+                  <p className="text-xs text-foreground line-clamp-1 leading-snug">{a.justification ?? '—'}</p>
                   {a.positive_points && (
                     <div className="space-y-0.5 mt-0.5">
                       {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
-                        <p key={i} className="text-xs font-medium text-green-800 line-clamp-1">✅ {p}</p>
+                        <p key={i} className="text-xs font-medium text-green-700 dark:text-green-400 line-clamp-1">✅ {p}</p>
                       ))}
                     </div>
                   )}
                   {a.negative_points && (
                     <div className="space-y-0.5 mt-0.5">
                       {(JSON.parse(a.negative_points) as string[]).slice(0, 2).map((p, i) => (
-                        <p key={i} className="text-xs font-medium text-red-700 line-clamp-1">⚠️ {p}</p>
+                        <p key={i} className="text-xs font-medium text-red-600 dark:text-red-400 line-clamp-1">⚠️ {p}</p>
                       ))}
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="text-xs text-slate-600 whitespace-nowrap">
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                   {new Date(a.created_at).toLocaleDateString('fr-FR')}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>Voir</Button>
-                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)}>PDF</Button>
+                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => viewCv(a.cv_file_path, a.candidate_name)} aria-label={`Voir le CV de ${a.candidate_name ?? 'ce candidat'}`}>Voir</Button>
+                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)} aria-label={`Télécharger le CV de ${a.candidate_name ?? 'ce candidat'}`}>PDF</Button>
                     <Button
                       size="sm" variant="outline"
-                      className="text-violet-600 border-violet-300 hover:bg-violet-50 text-xs px-2 h-7"
+                      className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-xs px-2 h-7"
                       disabled={sending.has(a.id) || sentOk.has(a.id)}
                       onClick={() => sendAnalysis(a.id)}
+                      aria-label={`Envoyer l'analyse de ${a.candidate_name ?? 'ce candidat'} par email`}
                     >
-                      {sentOk.has(a.id) ? '✅' : sending.has(a.id) ? '...' : '✉️'}
+                      {sentOk.has(a.id) ? '✅' : sending.has(a.id) ? '…' : '✉️'}
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)}>✕</Button>
+                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer la candidature de ${a.candidate_name ?? 'ce candidat'}`}>✕</Button>
                   </div>
                 </TableCell>
               </TableRow>

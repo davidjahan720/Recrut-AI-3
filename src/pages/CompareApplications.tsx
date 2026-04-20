@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Application } from '@/lib/types'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type AppWithJob = Application & {
   jobs: { title: string; score_threshold: number; clients: { name: string } }
@@ -50,13 +51,30 @@ export default function CompareApplications() {
       })
   }, [params, navigate])
 
-  if (loading) return <div className="p-8 text-muted-foreground">Chargement...</div>
+  if (loading) return (
+    <div className="p-8 max-w-6xl mx-auto">
+      <div className="flex items-center gap-4 mb-8">
+        <Skeleton className="h-9 w-24" />
+        <div><Skeleton className="h-7 w-56 mb-1" /><Skeleton className="h-4 w-32" /></div>
+      </div>
+      <div className="flex gap-4">
+        {[0,1,2].map(i => (
+          <div key={i} className="flex-1 rounded-xl border border-border p-5 space-y-4">
+            <Skeleton className="h-5 w-36 mb-1" /><Skeleton className="h-3 w-28" />
+            <div className="flex flex-col items-center gap-2"><Skeleton className="w-20 h-20 rounded-full" /><Skeleton className="h-5 w-16" /></div>
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-5/6" /><Skeleton className="h-3 w-4/6" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   const best = apps.reduce((top, a) => (a.score ?? -1) > (top.score ?? -1) ? a : top, apps[0])
   const colWidth = apps.length === 2 ? 'w-1/2' : 'w-1/3'
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <Button variant="ghost" onClick={() => navigate('/applications')}>← Retour</Button>
         <div>

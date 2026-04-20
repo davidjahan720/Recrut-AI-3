@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useChartColors } from '@/lib/useChartColors'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -38,6 +40,8 @@ function fmt(d: Date) {
 }
 
 export default function Dashboard() {
+  const { tick, tooltip } = useChartColors()
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Stats>({
     activeJobs: 0, cvToday: 0, qualifiedThisWeek: 0, qualificationRate: 0,
     statusData: [], dailyData: [], jobData: [],
@@ -110,6 +114,7 @@ export default function Dashboard() {
         dailyData: days,
         jobData,
       })
+      setLoading(false)
     }
     loadStats()
   }, [])
@@ -129,18 +134,24 @@ export default function Dashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-4 gap-4">
-        {kpis.map((kpi, i) => (
-          <div key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-6 text-white shadow-sm`}>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold text-white leading-tight">{kpi.label}</p>
-              <span className="text-3xl">{KPI_STYLES[i].icon}</span>
+      {loading ? (
+        <div className="grid grid-cols-4 gap-4">
+          {[0,1,2,3].map(i => <Skeleton key={i} className="h-[116px] rounded-xl" />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-4 animate-fade-in">
+          {kpis.map((kpi, i) => (
+            <div key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-6 text-white shadow-sm`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-base font-semibold text-white leading-tight">{kpi.label}</p>
+                <span className="text-3xl" aria-hidden="true">{KPI_STYLES[i].icon}</span>
+              </div>
+              <p className="text-5xl font-bold leading-tight">{kpi.value}</p>
+              <p className="text-sm font-medium text-white mt-1">{kpi.note}</p>
             </div>
-            <p className="text-5xl font-bold leading-tight">{kpi.value}</p>
-            <p className="text-sm font-medium text-white mt-1">{kpi.note}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Charts — colonnes asymétriques */}
       <div className="grid gap-4 flex-1 min-h-0" style={{ gridTemplateColumns: '1fr 1fr 2fr' }}>
@@ -154,9 +165,9 @@ export default function Dashboard() {
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.dailyData} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
-                  <XAxis dataKey="day" tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <XAxis dataKey="day" tick={{ fontSize: 13, fill: tick, fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 13, fill: tick, fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: tooltip.bg, border: `1px solid ${tooltip.border}`, borderRadius: 8, fontSize: 11, color: tick }} cursor={{ fill: 'hsl(var(--muted))' }} />
                   <Bar dataKey="count" name="CV" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -178,8 +189,8 @@ export default function Dashboard() {
                       <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} />
-                  <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 13, color: '#0f172a', fontWeight: 500 }} />
+                  <Tooltip contentStyle={{ background: tooltip.bg, border: `1px solid ${tooltip.border}`, borderRadius: 8, fontSize: 11, color: tick }} />
+                  <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 13, color: tick, fontWeight: 500 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -195,9 +206,9 @@ export default function Dashboard() {
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.jobData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="title" width={120} tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 13, fill: tick, fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="title" width={120} tick={{ fontSize: 13, fill: tick, fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: tooltip.bg, border: `1px solid ${tooltip.border}`, borderRadius: 8, fontSize: 11, color: tick }} cursor={{ fill: 'hsl(var(--muted))' }} />
                   <Bar dataKey="count" name="CV" fill="#4f46e5" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
