@@ -58,8 +58,11 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
+  let application_id: string | null = null
+
   try {
-    const { application_id } = await req.json()
+    const body = await req.json()
+    application_id = body.application_id ?? null
     if (!application_id) throw new Error('application_id requis')
 
     const { data: app, error } = await supabase
@@ -81,8 +84,8 @@ Deno.serve(async (req) => {
     const ppList = positive.map(p => `<li style="margin:4px 0">✅ ${p}</li>`).join('')
     const npList = negative.map(p => `<li style="margin:4px 0">⚠️ ${p}</li>`).join('')
 
-    const statusLabel = app.status === 'qualified' ? 'Qualifié' : app.status === 'rejected' ? 'Rejeté' : 'En attente'
-    const statusColor = app.status === 'qualified' ? '#16a34a' : app.status === 'rejected' ? '#64748b' : '#d97706'
+    const statusLabel = 'Qualifié'
+    const statusColor = '#16a34a'
 
     // Générer le PDF à partir du .md si disponible
     let pdfAttachment: { filename: string; content: string; contentType: string } | null = null
@@ -156,8 +159,15 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (application_id) {
+      await supabase.from('applications')
+        .update({ status: 'error', justification: message })
+        .eq('id', application_id)
+        .catch(() => {})
+    }
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
+      JSON.stringify({ error: message }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
