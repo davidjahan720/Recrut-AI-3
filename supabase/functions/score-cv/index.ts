@@ -31,6 +31,21 @@ function isImage(path: string): 'image/png' | 'image/jpeg' | 'image/webp' | null
   return null
 }
 
+function isHtml(path: string) {
+  return path.toLowerCase().endsWith('.html') || path.toLowerCase().endsWith('.htm')
+}
+
+function extractTextFromHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -202,6 +217,15 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
         type: 'text' as const,
         text: `DESCRIPTION DU POSTE :\n${job.description}\n\nCV DU CANDIDAT :\n${text}`,
       }]
+    } else if (isHtml(cv_file_path)) {
+      // Extraction texte depuis HTML
+      const html = new TextDecoder().decode(buffer)
+      const text = extractTextFromHtml(html)
+      if (!text || text.length < 50) throw new Error('Fichier HTML illisible ou vide')
+      messageContent = [{
+        type: 'text' as const,
+        text: `DESCRIPTION DU POSTE :\n${job.description}\n\nCV DU CANDIDAT :\n${text}`,
+      }]
     } else if (isImage(cv_file_path)) {
       // Envoi direct de l'image à Claude (PNG, JPG, WEBP)
       const mediaType = isImage(cv_file_path)!
@@ -221,7 +245,7 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
         },
       ]
     } else {
-      throw new Error('Format non supporté. Utilisez PDF, Word (.docx) ou image (.png, .jpg)')
+      throw new Error('Format non supporté. Utilisez PDF, Word (.docx), image (.png, .jpg) ou HTML')
     }
 
     // 4. Appel Claude
