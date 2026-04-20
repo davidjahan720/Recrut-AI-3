@@ -110,7 +110,6 @@ export default function Clients() {
                 <TableCell className="text-muted-foreground truncate max-w-[128px]">{c.sector}</TableCell>
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => openUpload(c)}>📄 CV</Button>
                     <Button size="sm" variant="outline" onClick={() => openEdit(c)}>Éditer</Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}>Suppr.</Button>
                   </div>
