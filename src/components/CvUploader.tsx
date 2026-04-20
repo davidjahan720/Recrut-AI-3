@@ -22,7 +22,9 @@ export function CvUploader({ jobId, onUploaded }: Props) {
     const accepted = Array.from(files).filter(f =>
       f.type === 'application/pdf' ||
       f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.doc')
+      f.type === 'image/png' || f.type === 'image/jpeg' || f.type === 'image/webp' ||
+      f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.doc') ||
+      f.name.endsWith('.png') || f.name.endsWith('.jpg') || f.name.endsWith('.jpeg') || f.name.endsWith('.webp')
     )
     if (accepted.length === 0) return
 
@@ -85,13 +87,13 @@ export function CvUploader({ jobId, onUploaded }: Props) {
           <>
             <p className="text-2xl mb-2">📄</p>
             <p className="font-medium text-slate-700 text-sm">Déposer des CV ici ou cliquer pour sélectionner</p>
-            <p className="text-xs text-slate-400 mt-1">PDF ou Word (.docx) — plusieurs fichiers acceptés</p>
+            <p className="text-xs text-slate-400 mt-1">PDF, Word (.docx) ou image (.png, .jpg) — plusieurs fichiers acceptés</p>
           </>
         )}
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.docx,.doc"
+          accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.webp"
           multiple
           className="hidden"
           onChange={e => e.target.files && processFiles(e.target.files)}

@@ -23,6 +23,14 @@ function isDocx(path: string) {
   return path.toLowerCase().endsWith('.docx') || path.toLowerCase().endsWith('.doc')
 }
 
+function isImage(path: string): 'image/png' | 'image/jpeg' | 'image/webp' | null {
+  const p = path.toLowerCase()
+  if (p.endsWith('.png')) return 'image/png'
+  if (p.endsWith('.jpg') || p.endsWith('.jpeg')) return 'image/jpeg'
+  if (p.endsWith('.webp')) return 'image/webp'
+  return null
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -194,8 +202,26 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
         type: 'text' as const,
         text: `DESCRIPTION DU POSTE :\n${job.description}\n\nCV DU CANDIDAT :\n${text}`,
       }]
+    } else if (isImage(cv_file_path)) {
+      // Envoi direct de l'image à Claude (PNG, JPG, WEBP)
+      const mediaType = isImage(cv_file_path)!
+      const base64 = toBase64(buffer)
+      messageContent = [
+        {
+          type: 'image' as const,
+          source: {
+            type: 'base64' as const,
+            media_type: mediaType,
+            data: base64,
+          },
+        },
+        {
+          type: 'text' as const,
+          text: `DESCRIPTION DU POSTE :\n${job.description}\n\nAnalyse ce CV (image) par rapport à ce poste.`,
+        },
+      ]
     } else {
-      throw new Error('Format non supporté. Utilisez PDF ou Word (.docx)')
+      throw new Error('Format non supporté. Utilisez PDF, Word (.docx) ou image (.png, .jpg)')
     }
 
     // 4. Appel Claude
