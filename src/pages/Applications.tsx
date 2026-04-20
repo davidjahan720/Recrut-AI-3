@@ -33,7 +33,12 @@ function StatusBadge({ status }: { status: Application['status'] }) {
     error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{label}</span>
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+      {status === 'pending' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
+      {label}
+    </span>
+  )
 }
 
 export default function Applications() {
@@ -104,9 +109,35 @@ export default function Applications() {
     setActiveJobs((data ?? []) as Job[])
   }
 
+  async function fetchOne(id: string): Promise<AppWithJob | null> {
+    const { data } = await supabase
+      .from('applications')
+      .select('*, jobs(title, score_threshold, client_id, clients(name))')
+      .eq('id', id)
+      .single()
+    return (data as AppWithJob | null)
+  }
+
   useEffect(() => {
     loadApplications()
     loadActiveJobs()
+
+    const channel = supabase
+      .channel('applications-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'applications' }, async ({ new: row }) => {
+        const full = await fetchOne(row.id)
+        if (full) setApplications(prev => [full, ...prev])
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'applications' }, async ({ new: row }) => {
+        const full = await fetchOne(row.id)
+        if (full) setApplications(prev => prev.map(a => a.id === row.id ? full : a))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'applications' }, ({ old: row }) => {
+        setApplications(prev => prev.filter(a => a.id !== row.id))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   function openUpload() {
