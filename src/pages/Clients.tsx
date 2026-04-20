@@ -87,11 +87,11 @@ export default function Clients() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Entreprise</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Email notification</TableHead>
-              <TableHead>Secteur</TableHead>
-              <TableHead className="w-48"></TableHead>
+              <TableHead className="w-48">Entreprise</TableHead>
+              <TableHead className="w-36">Contact</TableHead>
+              <TableHead className="w-48">Email notification</TableHead>
+              <TableHead className="w-32">Secteur</TableHead>
+              <TableHead className="w-44"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -104,10 +104,10 @@ export default function Clients() {
             )}
             {clients.map(c => (
               <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/clients/${c.id}`)}>
-                <TableCell className="font-semibold text-foreground">{c.name}</TableCell>
-                <TableCell className="text-slate-700 font-medium">{c.contact_name}</TableCell>
-                <TableCell className="text-slate-700">{c.notification_email}</TableCell>
-                <TableCell className="text-slate-700">{c.sector}</TableCell>
+                <TableCell className="font-semibold text-foreground truncate max-w-[192px]">{c.name}</TableCell>
+                <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{c.contact_name}</TableCell>
+                <TableCell className="text-muted-foreground truncate max-w-[192px]">{c.notification_email}</TableCell>
+                <TableCell className="text-muted-foreground truncate max-w-[128px]">{c.sector}</TableCell>
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" onClick={() => openUpload(c)}>📄 CV</Button>
