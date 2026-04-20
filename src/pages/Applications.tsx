@@ -366,17 +366,7 @@ export default function Applications() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => viewCv(a.cv_file_path, a.candidate_name)} aria-label={`Voir le CV de ${a.candidate_name ?? 'ce candidat'}`}>Voir</Button>
                     <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)} aria-label={`Télécharger le CV de ${a.candidate_name ?? 'ce candidat'}`}>PDF</Button>
-                    <Button
-                      size="sm" variant="outline"
-                      className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-xs px-2 h-7"
-                      disabled={sending.has(a.id) || sentOk.has(a.id)}
-                      onClick={() => sendAnalysis(a.id)}
-                      aria-label={`Envoyer l'analyse de ${a.candidate_name ?? 'ce candidat'} par email`}
-                    >
-                      {sentOk.has(a.id) ? '✅' : sending.has(a.id) ? '…' : '✉️'}
-                    </Button>
                     <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer la candidature de ${a.candidate_name ?? 'ce candidat'}`}>✕</Button>
                   </div>
                 </TableCell>
