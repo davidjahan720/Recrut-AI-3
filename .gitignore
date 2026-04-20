@@ -1,3 +1,13 @@
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+.env.test
+
+# Playwright
+test-results/
+playwright-report/
+
 # Logs
 logs
 *.log
