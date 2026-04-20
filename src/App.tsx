@@ -9,6 +9,7 @@ import ClientDetail from '@/pages/ClientDetail'
 import Jobs from '@/pages/Jobs'
 import JobDetail from '@/pages/JobDetail'
 import Applications from '@/pages/Applications'
+import CompareApplications from '@/pages/CompareApplications'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/applications" element={<Applications />} />
+          <Route path="/compare" element={<CompareApplications />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

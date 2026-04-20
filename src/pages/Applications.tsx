@@ -48,6 +48,17 @@ export default function Applications() {
   const [viewName, setViewName] = useState<string>('')
   const [sending, setSending] = useState<Set<string>>(new Set())
   const [sentOk, setSentOk] = useState<Set<string>>(new Set())
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set())
+
+  function toggleCompare(id: string) {
+    setCompareIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id); return next }
+      if (next.size >= 3) return prev
+      next.add(id)
+      return next
+    })
+  }
 
   async function loadApplications() {
     const { data } = await supabase
@@ -145,7 +156,23 @@ export default function Applications() {
           <h1 className="text-2xl font-semibold text-foreground">Candidatures</h1>
           <p className="text-muted-foreground text-base">{applications.length} candidature{applications.length !== 1 ? 's' : ''} au total</p>
         </div>
-        <Button onClick={openUpload}>+ Déposer des CV</Button>
+        <div className="flex items-center gap-2">
+          {compareIds.size >= 2 && (
+            <Button
+              variant="outline"
+              className="border-violet-400 text-violet-700 hover:bg-violet-50"
+              onClick={() => navigate(`/compare?ids=${[...compareIds].join(',')}`)}
+            >
+              Comparer ({compareIds.size})
+            </Button>
+          )}
+          {compareIds.size > 0 && (
+            <Button variant="ghost" className="text-muted-foreground text-sm" onClick={() => setCompareIds(new Set())}>
+              Annuler
+            </Button>
+          )}
+          <Button onClick={openUpload}>+ Déposer des CV</Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
@@ -172,6 +199,7 @@ export default function Applications() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8"></TableHead>
               <TableHead className="w-28">Candidat</TableHead>
               <TableHead className="w-36">Offre / Client</TableHead>
               <TableHead className="w-24">Score / Statut</TableHead>
@@ -189,7 +217,17 @@ export default function Applications() {
               </TableRow>
             )}
             {filtered.map(a => (
-              <TableRow key={a.id} className="hover:bg-muted/40 align-top">
+              <TableRow key={a.id} className={`hover:bg-muted/40 align-top ${compareIds.has(a.id) ? 'bg-violet-50 dark:bg-violet-950/20' : ''}`}>
+                <TableCell className="pr-0">
+                  <input
+                    type="checkbox"
+                    checked={compareIds.has(a.id)}
+                    onChange={() => toggleCompare(a.id)}
+                    disabled={!compareIds.has(a.id) && compareIds.size >= 3}
+                    className="w-4 h-4 accent-violet-600 cursor-pointer disabled:cursor-not-allowed"
+                    title={compareIds.size >= 3 && !compareIds.has(a.id) ? 'Maximum 3 candidats' : 'Sélectionner pour comparer'}
+                  />
+                </TableCell>
                 <TableCell>
                   <p className="text-sm font-semibold text-foreground line-clamp-1">
                     {a.candidate_name ?? <span className="text-muted-foreground italic">Inconnu</span>}
