@@ -50,6 +50,33 @@ export default function Applications() {
   const [sentOk, setSentOk] = useState<Set<string>>(new Set())
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set())
 
+  function exportQualifiedCsv() {
+    const qualified = applications.filter(a => a.status === 'qualified')
+    const headers = ['Nom', 'Email', 'Poste', 'Client', 'Score', 'Seuil', 'Synthèse', 'Points positifs', 'Points négatifs', 'Date']
+    const rows = qualified.map(a => [
+      a.candidate_name ?? '',
+      a.candidate_email ?? '',
+      a.jobs?.title ?? '',
+      (a.jobs?.clients as { name: string } | undefined)?.name ?? '',
+      a.score ?? '',
+      a.jobs?.score_threshold ?? '',
+      a.justification ?? '',
+      a.positive_points ? (JSON.parse(a.positive_points) as string[]).join(' | ') : '',
+      a.negative_points ? (JSON.parse(a.negative_points) as string[]).join(' | ') : '',
+      new Date(a.created_at).toLocaleDateString('fr-FR'),
+    ])
+    const csv = [headers, ...rows]
+      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';'))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `candidats-qualifies-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   function toggleCompare(id: string) {
     setCompareIds(prev => {
       const next = new Set(prev)
@@ -169,6 +196,11 @@ export default function Applications() {
           {compareIds.size > 0 && (
             <Button variant="ghost" className="text-muted-foreground text-sm" onClick={() => setCompareIds(new Set())}>
               Annuler
+            </Button>
+          )}
+          {counts.qualified > 0 && (
+            <Button variant="outline" onClick={exportQualifiedCsv}>
+              ↓ Export CSV ({counts.qualified})
             </Button>
           )}
           <Button onClick={openUpload}>+ Déposer des CV</Button>
