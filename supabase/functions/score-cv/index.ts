@@ -68,16 +68,98 @@ Deno.serve(async (req) => {
 
     const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY')! })
 
-    const systemPrompt = `Tu es un expert en recrutement. Tu analyses des CV par rapport à des fiches de poste.
+    const systemPrompt = `Tu es un expert en recrutement senior. Tu analyses des CV par rapport à des fiches de poste et attribues un score objectif.
 
 RÈGLE ABSOLUE : ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre.
 - Pas de markdown, pas de \`\`\`json, pas de texte avant, pas de texte après.
 - Commence directement par { et termine par }.
 
-Format imposé :
+━━━ GRILLE DE SCORING ━━━
+
+Le score est calculé sur 4 dimensions :
+
+1. EXPÉRIENCE MÉTIER (40 pts)
+   - Années d'expérience dans le domaine du poste
+   - Pertinence des postes précédents
+   - Progression de carrière cohérente
+
+2. COMPÉTENCES TECHNIQUES / HARD SKILLS (30 pts)
+   - Maîtrise des compétences clés listées dans la fiche de poste
+   - Outils, technologies, méthodes spécifiques au métier
+   - Certifications ou formations spécialisées
+
+3. FORMATION (15 pts)
+   - Niveau de diplôme requis atteint
+   - Spécialisation en adéquation avec le poste
+
+4. SOFT SKILLS & FIT (15 pts)
+   - Compétences comportementales mentionnées
+   - Cohérence du parcours avec la culture du poste
+
+Correspondance score / profil :
+- 0–10   : CV hors sujet — métier totalement différent du poste
+- 11–35  : Très faible adéquation — compétences clés absentes
+- 36–55  : Adéquation partielle — quelques points communs mais lacunes majeures
+- 56–74  : Bon profil — critères principaux présents, quelques manques
+- 75–89  : Très bon profil — forte adéquation, expérience solide
+- 90–100 : Profil idéal — correspond parfaitement au poste
+
+━━━ GESTION DES CV NON-PERTINENTS ━━━
+
+Si le CV décrit un métier sans rapport avec le poste (ex: plombier candidatant à un poste de développeur, comptable pour un poste de chef cuisinier) :
+- Mets "is_relevant": false
+- Le score doit être compris entre 0 et 10
+- Explique brièvement le décalage dans "justification"
+- "positive_points" peut être vide []
+- "negative_points" doit mentionner l'absence totale d'adéquation métier
+
+━━━ EXEMPLES FEW-SHOT ━━━
+
+Exemple 1 — Profil idéal (score élevé)
+Poste : Développeur React Senior, 5 ans d'expérience requis
+CV : 6 ans d'expérience React/TypeScript, a livré 3 SaaS en production, maîtrise Next.js et TailwindCSS, diplômé ingénieur informatique.
+→ {
+  "score": 88,
+  "is_relevant": true,
+  "justification": "Profil senior React avec 6 ans d'expérience, stack parfaitement alignée. Expérience SaaS concrète. Léger manque sur les tests automatisés mentionnés dans la fiche.",
+  "positive_points": ["6 ans React/TypeScript", "3 SaaS livrés en production", "Next.js et Tailwind maîtrisés"],
+  "negative_points": ["Tests automatisés non mentionnés", "Expérience équipe non détaillée"],
+  "candidate_name": "Jean Dupont",
+  "candidate_email": "jean.dupont@email.com"
+}
+
+Exemple 2 — Adéquation partielle (score moyen)
+Poste : Chef de projet digital, 3 ans requis, gestion Agile obligatoire
+CV : 2 ans en gestion de projet classique (waterfall), notions Agile en formation, pas d'expérience digitale directe.
+→ {
+  "score": 42,
+  "is_relevant": true,
+  "justification": "Expérience en gestion de projet présente mais insuffisante (2 ans vs 3 requis) et méthodologie Agile non pratiquée en contexte réel. Le profil digital est à construire.",
+  "positive_points": ["Base solide en gestion de projet", "Formation Agile suivie"],
+  "negative_points": ["Agile non pratiqué en conditions réelles", "1 an sous le minimum requis", "Zéro expérience secteur digital"],
+  "candidate_name": "Marie Martin",
+  "candidate_email": null
+}
+
+Exemple 3 — CV hors sujet
+Poste : Développeur Python / Data Engineer
+CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
+→ {
+  "score": 3,
+  "is_relevant": false,
+  "justification": "Le CV décrit un profil d'électricien industriel sans aucune compétence en développement Python ou data engineering. Les métiers n'ont aucun point commun.",
+  "positive_points": [],
+  "negative_points": ["Métier totalement différent du poste", "Aucune compétence technique informatique"],
+  "candidate_name": "Paul Leblanc",
+  "candidate_email": "p.leblanc@mail.fr"
+}
+
+━━━ FORMAT DE RÉPONSE ━━━
+
 {
   "score": <entier entre 0 et 100>,
-  "justification": "<synthèse en 2-3 phrases>",
+  "is_relevant": <true ou false>,
+  "justification": "<synthèse objective en 2-3 phrases>",
   "positive_points": ["<point 1>", "<point 2>", "<point 3>"],
   "negative_points": ["<point 1>", "<point 2>"],
   "candidate_name": "<prénom nom ou null si absent>",
@@ -128,6 +210,7 @@ Format imposé :
 
     let parsed: {
       score: number
+      is_relevant?: boolean
       justification: string
       positive_points?: string[]
       negative_points?: string[]
@@ -143,10 +226,10 @@ Format imposé :
       parsed = JSON.parse(match[0])
     }
 
-    const { score, justification, positive_points, negative_points, candidate_name, candidate_email } = parsed
+    const { score, is_relevant, justification, positive_points, negative_points, candidate_name, candidate_email } = parsed
     if (typeof score !== 'number' || score < 0 || score > 100) throw new Error('Score invalide : ' + score)
 
-    const qualified = score >= job.score_threshold
+    const qualified = is_relevant !== false && score >= job.score_threshold
     const status = qualified ? 'qualified' : 'rejected'
 
     // 5. Mise à jour de la candidature
