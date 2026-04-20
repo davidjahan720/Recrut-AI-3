@@ -172,83 +172,75 @@ export default function Applications() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Candidat</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Offre</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Score</TableHead>
-              <TableHead>Statut</TableHead>
+              <TableHead className="w-28">Candidat</TableHead>
+              <TableHead className="w-36">Offre / Client</TableHead>
+              <TableHead className="w-24">Score / Statut</TableHead>
               <TableHead>Analyse</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="w-20">Date</TableHead>
+              <TableHead className="w-32"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
                   Aucune candidature{statusFilter !== 'all' && ' pour ce filtre'}
                 </TableCell>
               </TableRow>
             )}
             {filtered.map(a => (
-              <TableRow key={a.id} className="hover:bg-muted/40">
-                <TableCell className="font-semibold text-foreground">
-                  {a.candidate_name ?? <span className="text-muted-foreground italic">Inconnu</span>}
-                </TableCell>
-                <TableCell className="text-slate-700">{a.candidate_email ?? '—'}</TableCell>
+              <TableRow key={a.id} className="hover:bg-muted/40 align-top">
                 <TableCell>
-                  <button onClick={() => navigate(`/jobs/${a.job_id}`)} className="text-base font-medium text-blue-700 hover:underline">
+                  <p className="text-sm font-semibold text-foreground line-clamp-1">
+                    {a.candidate_name ?? <span className="text-muted-foreground italic">Inconnu</span>}
+                  </p>
+                  <p className="text-xs text-foreground line-clamp-1">{a.candidate_email ?? ''}</p>
+                </TableCell>
+                <TableCell>
+                  <button onClick={() => navigate(`/jobs/${a.job_id}`)} className="text-xs font-medium text-blue-700 hover:underline text-left line-clamp-1 block">
                     {a.jobs?.title ?? '—'}
                   </button>
-                </TableCell>
-                <TableCell className="text-slate-700 font-medium">
-                  {(a.jobs?.clients as { name: string } | undefined)?.name ?? '—'}
+                  <p className="text-xs text-foreground line-clamp-1">{(a.jobs?.clients as { name: string } | undefined)?.name ?? '—'}</p>
                 </TableCell>
                 <TableCell>
-                  <ScoreBadge score={a.score} threshold={a.jobs?.score_threshold ?? 60} />
+                  <div className="flex flex-col gap-1">
+                    <ScoreBadge score={a.score} threshold={a.jobs?.score_threshold ?? 60} />
+                    <StatusBadge status={a.status} />
+                  </div>
                 </TableCell>
-                <TableCell><StatusBadge status={a.status} /></TableCell>
-                <TableCell className="max-w-xs">
-                  <p className="text-sm text-slate-700 mb-1.5 whitespace-normal break-words leading-relaxed">{a.justification ?? '—'}</p>
+                <TableCell className="max-w-[180px]">
+                  <p className="text-xs text-slate-700 line-clamp-1 leading-snug">{a.justification ?? '—'}</p>
                   {a.positive_points && (
-                    <div className="space-y-1">
-                      {(JSON.parse(a.positive_points) as string[]).map((p, i) => (
-                        <p key={i} className="text-sm font-medium text-green-800 whitespace-normal break-words">✅ {p}</p>
+                    <div className="space-y-0.5 mt-0.5">
+                      {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
+                        <p key={i} className="text-xs font-medium text-green-800 line-clamp-1">✅ {p}</p>
                       ))}
                     </div>
                   )}
                   {a.negative_points && (
-                    <div className="space-y-1 mt-1.5">
-                      {(JSON.parse(a.negative_points) as string[]).map((p, i) => (
-                        <p key={i} className="text-sm font-medium text-red-700 whitespace-normal break-words">⚠️ {p}</p>
+                    <div className="space-y-0.5 mt-0.5">
+                      {(JSON.parse(a.negative_points) as string[]).slice(0, 2).map((p, i) => (
+                        <p key={i} className="text-xs font-medium text-red-700 line-clamp-1">⚠️ {p}</p>
                       ))}
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-slate-600 whitespace-nowrap font-medium">
+                <TableCell className="text-xs text-slate-600 whitespace-nowrap">
                   {new Date(a.created_at).toLocaleDateString('fr-FR')}
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col gap-1 min-w-[90px]">
-                    <Button size="sm" variant="ghost" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>
-                      Voir
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)}>
-                      PDF
-                    </Button>
+                  <div className="flex flex-wrap gap-1">
+                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>Voir</Button>
+                    <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)}>PDF</Button>
                     <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-violet-600 border-violet-300 hover:bg-violet-50 text-xs"
+                      size="sm" variant="outline"
+                      className="text-violet-600 border-violet-300 hover:bg-violet-50 text-xs px-2 h-7"
                       disabled={sending.has(a.id) || sentOk.has(a.id)}
                       onClick={() => sendAnalysis(a.id)}
                     >
-                      {sentOk.has(a.id) ? '✅ Envoyé' : sending.has(a.id) ? '...' : 'Envoyer analyse'}
+                      {sentOk.has(a.id) ? '✅' : sending.has(a.id) ? '...' : '✉️'}
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => deleteCv(a.id, a.cv_file_path)}>
-                      Suppr.
-                    </Button>
+                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)}>✕</Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -287,7 +279,7 @@ export default function Applications() {
               </Select>
             </div>
             {selectedJobId && (
-              <CvUploader jobId={selectedJobId} onUploaded={() => { loadApplications() }} />
+              <CvUploader jobId={selectedJobId} onUploaded={() => { loadApplications(); setUploadOpen(false) }} />
             )}
             {!selectedJobId && (
               <p className="text-sm text-muted-foreground text-center py-4">

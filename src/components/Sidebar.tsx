@@ -6,7 +6,7 @@ const links = [
   { to: '/dashboard', label: 'Dashboard', icon: '▦' },
   { to: '/clients', label: 'Clients', icon: '🏢' },
   { to: '/jobs', label: 'Offres', icon: '📋' },
-  { to: '/applications', label: 'Candidatures', icon: '👤' },
+  { to: '/applications', label: 'Candidatures', icon: '📩' },
 ]
 
 export function Sidebar() {
@@ -50,7 +50,7 @@ export function Sidebar() {
               `flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                 isActive
                   ? 'bg-white/25 text-white'
-                  : 'text-white/80 hover:bg-white/15 hover:text-white'
+                  : 'text-white hover:bg-white/15'
               }`
             }
           >
@@ -63,15 +63,15 @@ export function Sidebar() {
       <div className="p-3 border-t border-white/15 space-y-1">
         <button
           onClick={() => setDark(!dark)}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-base font-medium rounded-lg text-white/80 hover:bg-white/15 hover:text-white transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-base font-medium rounded-lg text-white hover:bg-white/15 transition-colors"
         >
           <span className="text-xl">{dark ? '☀️' : '🌙'}</span>
           {dark ? 'Mode clair' : 'Mode sombre'}
         </button>
-        <p className="text-sm text-white/50 truncate px-4 py-1">{email}</p>
+        <p className="text-sm text-white font-medium truncate px-4 py-1">{email}</p>
         <button
           onClick={handleLogout}
-          className="w-full text-left px-4 py-2.5 text-base font-medium rounded-lg text-white/80 hover:bg-white/15 hover:text-white transition-colors"
+          className="w-full text-left px-4 py-2.5 text-base font-medium rounded-lg text-white hover:bg-white/15 transition-colors"
         >
           Déconnexion
         </button>

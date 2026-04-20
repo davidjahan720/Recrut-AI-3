@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import type { Client } from '@/lib/types'
+import type { Client, Job } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { CvUploader } from '@/components/CvUploader'
 
 const EMPTY: Omit<Client, 'id' | 'created_at'> = {
   name: '', contact_name: '', contact_email: '', notification_email: '', sector: '',
@@ -20,6 +22,12 @@ export default function Clients() {
   const [editId, setEditId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // CV upload dialog state
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [uploadClientName, setUploadClientName] = useState('')
+  const [clientJobs, setClientJobs] = useState<Job[]>([])
+  const [selectedJobId, setSelectedJobId] = useState('')
+
   async function load() {
     const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false })
     setClients(data ?? [])
@@ -31,6 +39,22 @@ export default function Clients() {
   function openEdit(c: Client) {
     setForm({ name: c.name, contact_name: c.contact_name, contact_email: c.contact_email, notification_email: c.notification_email, sector: c.sector })
     setEditId(c.id); setOpen(true)
+  }
+
+  async function openUpload(c: Client) {
+    setUploadClientName(c.name)
+    setSelectedJobId('')
+    setClientJobs([])
+    setUploadOpen(true)
+    const { data } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('client_id', c.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+    const jobs = data ?? []
+    setClientJobs(jobs)
+    if (jobs.length === 1) setSelectedJobId(jobs[0].id)
   }
 
   async function handleSave() {
@@ -67,7 +91,7 @@ export default function Clients() {
               <TableHead>Contact</TableHead>
               <TableHead>Email notification</TableHead>
               <TableHead>Secteur</TableHead>
-              <TableHead className="w-32"></TableHead>
+              <TableHead className="w-48"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,6 +110,7 @@ export default function Clients() {
                 <TableCell className="text-slate-700">{c.sector}</TableCell>
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => openUpload(c)}>📄 CV</Button>
                     <Button size="sm" variant="outline" onClick={() => openEdit(c)}>Éditer</Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}>Suppr.</Button>
                   </div>
@@ -96,6 +121,7 @@ export default function Clients() {
         </Table>
       </div>
 
+      {/* Dialog create/edit client */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -113,6 +139,51 @@ export default function Clients() {
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleSave} disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog upload CV pour un client */}
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Déposer des CV — {uploadClientName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {clientJobs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Aucune offre active pour ce client. <br />
+                <span className="text-xs">Créez d'abord une offre dans la page Offres.</span>
+              </p>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Offre associée</label>
+                  <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                    <SelectTrigger>
+                      <span className="truncate">
+                        {selectedJobId
+                          ? clientJobs.find(j => j.id === selectedJobId)?.title ?? 'Choisir une offre...'
+                          : 'Choisir une offre...'}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientJobs.map(j => (
+                        <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedJobId && (
+                  <CvUploader jobId={selectedJobId} onUploaded={() => setUploadOpen(false)} />
+                )}
+                {!selectedJobId && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Sélectionne une offre pour afficher la zone de dépôt
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

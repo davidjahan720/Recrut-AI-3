@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Client, Job } from '@/lib/types'
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 
-type FormData = {
+type JobForm = {
   client_id: string
   title: string
   location: string
@@ -21,7 +21,7 @@ type FormData = {
   status: 'active' | 'closed'
 }
 
-const EMPTY: FormData = {
+const EMPTY: JobForm = {
   client_id: '', title: '', location: '', contract_type: 'CDI', description: '', score_threshold: 60, status: 'active',
 }
 
@@ -30,10 +30,12 @@ export default function Jobs() {
   const [jobs, setJobs] = useState<(Job & { applications_count?: number })[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<FormData>({ ...EMPTY })
+  const [form, setForm] = useState<JobForm>({ ...EMPTY })
   const [editId, setEditId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<'all' | 'active' | 'closed'>('all')
+  const [parsing, setParsing] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function load() {
     const [{ data: jobsData }, { data: clientsData }] = await Promise.all([
@@ -60,6 +62,72 @@ export default function Jobs() {
       await supabase.from('jobs').insert(form)
     }
     setLoading(false); setOpen(false); load()
+  }
+
+  async function handleParsePdf(file: File) {
+    setParsing(true)
+    try {
+      const buffer = await file.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      let binary = ''
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
+      const pdf_base64 = btoa(binary)
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-job`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ pdf_base64 }),
+        }
+      )
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? `Erreur ${res.status}: ${JSON.stringify(json)}`)
+      if (json.error) throw new Error(json.error)
+
+      const d = json.data
+
+      // Cherche ou crée le client
+      let clientId = ''
+      if (d.company_name) {
+        const { data: existing } = await supabase
+          .from('clients')
+          .select('id')
+          .ilike('name', d.company_name.trim())
+          .maybeSingle()
+
+        if (existing) {
+          clientId = existing.id
+        } else {
+          const { data: created } = await supabase
+            .from('clients')
+            .insert({ name: d.company_name.trim(), contact_name: '', contact_email: '', notification_email: '', sector: '' })
+            .select('id')
+            .single()
+          if (created) {
+            clientId = created.id
+            await load()
+          }
+        }
+      }
+
+      setForm(f => ({
+        ...f,
+        ...(clientId ? { client_id: clientId } : {}),
+        title: d.title || f.title,
+        location: d.location || f.location,
+        contract_type: ['CDI','CDD','Alternance','Stage','Freelance'].includes(d.contract_type) ? d.contract_type : f.contract_type,
+        description: d.description || f.description,
+        score_threshold: Number(d.score_threshold) || f.score_threshold,
+      }))
+    } catch (e) {
+      alert('Erreur lors de la lecture du PDF : ' + String(e))
+    }
+    setParsing(false)
   }
 
   async function handleDelete(id: string) {
@@ -155,6 +223,17 @@ export default function Jobs() {
             <DialogTitle>{editId ? 'Modifier l\'offre' : 'Nouvelle offre'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+            {/* Import fiche de poste PDF */}
+            <div className="border-2 border-dashed border-border rounded-lg p-3 flex items-center justify-between gap-3 bg-muted/30">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Importer une fiche de poste PDF</p>
+                <p className="text-xs text-muted-foreground">Les champs seront remplis automatiquement par IA</p>
+              </div>
+              <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={e => { if (e.target.files?.[0]) handleParsePdf(e.target.files[0]) }} />
+              <Button type="button" size="sm" variant="outline" disabled={parsing} onClick={() => fileInputRef.current?.click()}>
+                {parsing ? '⏳ Analyse...' : '📄 Choisir PDF'}
+              </Button>
+            </div>
             <div className="space-y-1">
               <Label>Client</Label>
               <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v as string }))}>

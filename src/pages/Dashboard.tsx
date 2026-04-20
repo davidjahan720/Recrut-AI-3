@@ -20,10 +20,10 @@ interface Stats {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  qualified: '#16a34a',
-  rejected:  '#94a3b8',
+  qualified: '#7c3aed',
+  rejected:  '#ef4444',
   pending:   '#f59e0b',
-  error:     '#ef4444',
+  error:     '#f97316',
 }
 
 const KPI_STYLES = [
@@ -34,7 +34,7 @@ const KPI_STYLES = [
 ]
 
 function fmt(d: Date) {
-  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'numeric' })
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'numeric' })
 }
 
 export default function Dashboard() {
@@ -122,97 +122,89 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-5 flex flex-col gap-4 h-full">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground mb-1">Dashboard</h1>
-        <p className="text-muted-foreground text-base">Vue d'ensemble de l'activité RecrutAI</p>
+        <h1 className="text-xl font-semibold text-foreground leading-tight">Dashboard</h1>
+        <p className="text-muted-foreground text-sm">Vue d'ensemble de l'activité RecrutAI</p>
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {kpis.map((kpi, i) => (
-          <div key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-5 text-white shadow-sm`}>
+          <div key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-6 text-white shadow-sm`}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-white/80">{kpi.label}</p>
-              <span className="text-2xl">{KPI_STYLES[i].icon}</span>
+              <p className="text-base font-semibold text-white leading-tight">{kpi.label}</p>
+              <span className="text-3xl">{KPI_STYLES[i].icon}</span>
             </div>
-            <p className="text-4xl font-bold">{kpi.value}</p>
-            <p className="text-xs text-white/60 mt-1">{kpi.note}</p>
+            <p className="text-5xl font-bold leading-tight">{kpi.value}</p>
+            <p className="text-sm font-medium text-white mt-1">{kpi.note}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts — colonnes asymétriques */}
+      <div className="grid gap-4 flex-1 min-h-0" style={{ gridTemplateColumns: '1fr 1fr 2fr' }}>
 
         {/* CV par jour */}
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h2 className="text-base font-bold text-foreground mb-4">CV reçus — 7 derniers jours</h2>
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col min-h-0">
+          <h2 className="text-sm font-bold text-foreground mb-2">CV reçus — 7 derniers jours</h2>
           {stats.dailyData.every(d => d.count === 0) ? (
-            <p className="text-muted-foreground text-base text-center py-8">Aucun CV cette semaine</p>
+            <p className="text-muted-foreground text-sm text-center py-6">Aucun CV cette semaine</p>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stats.dailyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                  cursor={{ fill: 'hsl(var(--muted))' }}
-                />
-                <Bar dataKey="count" name="CV" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.dailyData} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
+                  <XAxis dataKey="day" tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <Bar dataKey="count" name="CV" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
 
         {/* Statuts donut */}
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h2 className="text-base font-bold text-foreground mb-4">Répartition des candidatures (7j)</h2>
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col min-h-0">
+          <h2 className="text-sm font-bold text-foreground mb-2">Répartition des candidatures (7j)</h2>
           {stats.statusData.length === 0 ? (
-            <p className="text-muted-foreground text-base text-center py-8">Aucune candidature cette semaine</p>
+            <p className="text-muted-foreground text-sm text-center py-6">Aucune candidature cette semaine</p>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={stats.statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {stats.statusData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.statusData} cx="50%" cy="50%" innerRadius="30%" outerRadius="55%" paddingAngle={3} dataKey="value">
+                    {stats.statusData.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} />
+                  <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 13, color: '#0f172a', fontWeight: 500 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Top offres */}
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col min-h-0">
+          <h2 className="text-sm font-bold text-foreground mb-2">CV reçus par offre (7j)</h2>
+          {stats.jobData.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-6">Aucune donnée</p>
+          ) : (
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.jobData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="title" width={120} tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <Bar dataKey="count" name="CV" fill="#4f46e5" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Top offres */}
-      {stats.jobData.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h2 className="text-base font-bold text-foreground mb-4">CV reçus par offre (7j)</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={stats.jobData} layout="vertical" margin={{ top: 0, right: 24, left: 0, bottom: 0 }}>
-              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="title" width={160} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-                cursor={{ fill: 'hsl(var(--muted))' }}
-              />
-              <Bar dataKey="count" name="CV" fill="#4f46e5" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   )
 }

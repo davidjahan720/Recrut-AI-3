@@ -75,6 +75,61 @@ export default function JobDetail() {
     }
   }
 
+  function exportFiche(a: Application) {
+    const statusLabel: Record<Application['status'], string> = {
+      qualified: 'Qualifié', rejected: 'Rejeté', pending: 'En attente', error: 'Erreur',
+    }
+    const positives: string[] = a.positive_points ? JSON.parse(a.positive_points) : []
+    const negatives: string[] = a.negative_points ? JSON.parse(a.negative_points) : []
+    const date = new Date(a.created_at).toLocaleDateString('fr-FR')
+
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Fiche — ${a.candidate_name ?? 'Candidat'}</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 680px; margin: 40px auto; color: #1e293b; font-size: 14px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #64748b; font-size: 13px; margin-bottom: 24px; }
+  .row { display: flex; gap: 32px; margin-bottom: 20px; }
+  .field label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; margin-bottom: 4px; display: block; }
+  .field span { font-weight: 600; font-size: 15px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .qualified { background: #dcfce7; color: #166534; }
+  .rejected { background: #f1f5f9; color: #475569; }
+  .pending { background: #fef9c3; color: #854d0e; }
+  .error { background: #fee2e2; color: #b91c1c; }
+  .score-ok { background: #dcfce7; color: #166534; }
+  .score-ko { background: #fee2e2; color: #b91c1c; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; margin-bottom: 8px; }
+  p.justif { line-height: 1.6; color: #334155; }
+  ul { margin: 0; padding-left: 18px; }
+  li { margin-bottom: 4px; line-height: 1.5; }
+  .section { margin-bottom: 18px; }
+  .green { color: #166534; } .red { color: #b91c1c; }
+  @media print { body { margin: 20px; } }
+</style></head><body>
+<h1>${a.candidate_name ?? 'Candidat inconnu'}</h1>
+<p class="sub">${a.candidate_email ?? ''} · Reçu le ${date}</p>
+<hr>
+<div class="row">
+  <div class="field"><label>Poste</label><span>${job?.title ?? ''}</span></div>
+  <div class="field"><label>Score</label><span class="badge ${(a.score ?? 0) >= (job?.score_threshold ?? 60) ? 'score-ok' : 'score-ko'}">${a.score ?? '—'} / 100</span></div>
+  <div class="field"><label>Statut</label><span class="badge ${a.status}">${statusLabel[a.status]}</span></div>
+</div>
+<hr>
+<div class="section">
+  <h3>Analyse IA</h3>
+  <p class="justif">${a.justification ?? '—'}</p>
+</div>
+${positives.length ? `<div class="section"><h3>Points positifs</h3><ul>${positives.map(p => `<li class="green">✅ ${p}</li>`).join('')}</ul></div>` : ''}
+${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negatives.map(p => `<li class="red">⚠️ ${p}</li>`).join('')}</ul></div>` : ''}
+<script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+</body></html>`
+
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
   async function deleteCv(appId: string, path: string) {
     if (!confirm('Supprimer ce candidat et son CV ?')) return
     await Promise.all([
@@ -165,19 +220,19 @@ export default function JobDetail() {
                   <TableCell className="text-slate-700">{a.candidate_email ?? '—'}</TableCell>
                   <TableCell><ScoreBadge score={a.score} threshold={job.score_threshold} /></TableCell>
                   <TableCell><StatusBadge status={a.status} /></TableCell>
-                  <TableCell className="max-w-sm">
-                    <p className="text-sm text-slate-700 mb-1.5 whitespace-normal break-words leading-relaxed">{a.justification ?? '—'}</p>
+                  <TableCell className="max-w-[200px]">
+                    <p className="text-xs text-slate-700 line-clamp-2 leading-snug mb-1">{a.justification ?? '—'}</p>
                     {a.positive_points && (
-                      <div className="space-y-1">
-                        {(JSON.parse(a.positive_points) as string[]).map((p, i) => (
-                          <p key={i} className="text-sm font-medium text-green-800 whitespace-normal break-words">✅ {p}</p>
+                      <div className="space-y-0.5">
+                        {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
+                          <p key={i} className="text-xs font-medium text-green-800 line-clamp-1">✅ {p}</p>
                         ))}
                       </div>
                     )}
                     {a.negative_points && (
-                      <div className="space-y-1 mt-1.5">
-                        {(JSON.parse(a.negative_points) as string[]).map((p, i) => (
-                          <p key={i} className="text-sm font-medium text-red-700 whitespace-normal break-words">⚠️ {p}</p>
+                      <div className="space-y-0.5 mt-0.5">
+                        {(JSON.parse(a.negative_points) as string[]).slice(0, 2).map((p, i) => (
+                          <p key={i} className="text-xs font-medium text-red-700 line-clamp-1">⚠️ {p}</p>
                         ))}
                       </div>
                     )}
@@ -186,12 +241,15 @@ export default function JobDetail() {
                     {new Date(a.created_at).toLocaleDateString('fr-FR')}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                       <Button size="sm" variant="ghost" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>
                         Voir
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)}>
                         PDF
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-violet-600 border-violet-300 hover:bg-violet-50" onClick={() => exportFiche(a)}>
+                        Fiche
                       </Button>
                       <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => deleteCv(a.id, a.cv_file_path)}>
                         Suppr.
