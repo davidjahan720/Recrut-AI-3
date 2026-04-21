@@ -3,19 +3,43 @@ import Anthropic from 'https://esm.sh/@anthropic-ai/sdk@0.30.0'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { pdf_base64 } = await req.json()
-    if (!pdf_base64) throw new Error('pdf_base64 manquant')
+    const { file_path } = await req.json()
+    if (!file_path) throw new Error('file_path manquant')
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const downloadRes = await fetch(
+      `${supabaseUrl}/storage/v1/object/cvs/${file_path}`,
+      { headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey } },
+    )
+    if (!downloadRes.ok) throw new Error(`Téléchargement impossible : ${downloadRes.status}`)
+
+    const arrayBuffer = await downloadRes.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    const chunkSize = 8192
+    let binary = ''
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+    }
+    const pdf_base64 = btoa(binary)
+
+    fetch(`${supabaseUrl}/storage/v1/object/cvs/${file_path}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+    }).catch(() => {})
 
     const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY')! })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-opus-4-7',
       max_tokens: 1024,
       messages: [{
         role: 'user',

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { rpcWithRetry } from '@/lib/rpc'
 import type { Client, Job } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 
 type JobForm = {
   client_id: string
+  company_name: string
   title: string
   location: string
   contract_type: string
@@ -22,7 +24,7 @@ type JobForm = {
 }
 
 const EMPTY: JobForm = {
-  client_id: '', title: '', location: '', contract_type: 'CDI', description: '', score_threshold: 60, status: 'active',
+  client_id: '', company_name: '', title: '', location: '', contract_type: 'CDI', description: '', score_threshold: 60, status: 'active',
 }
 
 export default function Jobs() {
@@ -35,6 +37,10 @@ export default function Jobs() {
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<'all' | 'active' | 'closed'>('all')
   const [parsing, setParsing] = useState(false)
+  const [parseError, setParseError] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [showClientForm, setShowClientForm] = useState(false)
+  const [clientForm, setClientForm] = useState({ contact_name: '', contact_email: '', notification_email: '' })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function load() {
@@ -50,74 +56,73 @@ export default function Jobs() {
 
   function openCreate() { setForm({ ...EMPTY }); setEditId(null); setOpen(true) }
   function openEdit(j: Job) {
-    setForm({ client_id: j.client_id, title: j.title, location: j.location, contract_type: j.contract_type, description: j.description, score_threshold: j.score_threshold, status: j.status })
+    const clientName = (j.clients as { name: string } | undefined)?.name ?? ''
+    setForm({ client_id: j.client_id, company_name: clientName, title: j.title, location: j.location, contract_type: j.contract_type, description: j.description, score_threshold: j.score_threshold, status: j.status })
     setEditId(j.id); setOpen(true)
   }
 
   async function handleSave() {
+    setSaveError('')
     setLoading(true)
-    if (editId) {
-      await supabase.from('jobs').update(form).eq('id', editId)
-    } else {
-      await supabase.from('jobs').insert(form)
+    try {
+      let clientId = form.client_id
+      if (!clientId && form.company_name.trim()) {
+        const name = form.company_name.trim()
+        const { data: existing } = await supabase.from('clients').select('id').ilike('name', name).maybeSingle()
+        if (existing) {
+          clientId = existing.id
+        } else {
+          clientId = await rpcWithRetry<string>('upsert_client', {
+            p_name: name,
+            p_contact_name: clientForm.contact_name,
+            p_contact_email: clientForm.contact_email,
+            p_notification_email: clientForm.notification_email,
+            p_sector: '',
+          })
+          await load()
+        }
+      }
+      if (!clientId) throw new Error('Veuillez renseigner un nom d\'entreprise ou sélectionner un client.')
+      const { company_name: _cn, ...jobData } = { ...form, client_id: clientId }
+      if (editId) {
+        const { error } = await supabase.from('jobs').update(jobData).eq('id', editId)
+        if (error) throw new Error(error.message)
+      } else {
+        const { error } = await supabase.from('jobs').insert(jobData)
+        if (error) throw new Error(error.message)
+      }
+      setOpen(false); load()
+    } catch (e) {
+      setSaveError(String(e))
     }
-    setLoading(false); setOpen(false); load()
+    setLoading(false)
   }
 
   async function handleParsePdf(file: File) {
     setParsing(true)
+    setParseError('')
     try {
-      const buffer = await file.arrayBuffer()
-      const bytes = new Uint8Array(buffer)
-      let binary = ''
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
-      const pdf_base64 = btoa(binary)
+      const pdf_base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(',')[1])
+        reader.onerror = () => reject(new Error('Lecture du fichier impossible'))
+        reader.readAsDataURL(file)
+      })
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-job`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ pdf_base64 }),
-        }
-      )
+      const res = await fetch('/api/parse-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_base64 }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`)
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? `Erreur ${res.status}: ${JSON.stringify(json)}`)
-      if (json.error) throw new Error(json.error)
-
-      const d = json.data
-
-      // Cherche ou crée le client
-      let clientId = ''
-      if (d.company_name) {
-        const { data: existing } = await supabase
-          .from('clients')
-          .select('id')
-          .ilike('name', d.company_name.trim())
-          .maybeSingle()
-
-        if (existing) {
-          clientId = existing.id
-        } else {
-          const { data: created } = await supabase
-            .from('clients')
-            .insert({ name: d.company_name.trim(), contact_name: '', contact_email: '', notification_email: '', sector: '' })
-            .select('id')
-            .single()
-          if (created) {
-            clientId = created.id
-            await load()
-          }
-        }
-      }
+      if (json?.error) throw new Error(json.error)
+      const d = json?.data
+      if (!d) throw new Error('Réponse vide du serveur')
 
       setForm(f => ({
         ...f,
-        ...(clientId ? { client_id: clientId } : {}),
+        company_name: d.company_name || f.company_name,
         title: d.title || f.title,
         location: d.location || f.location,
         contract_type: ['CDI','CDD','Alternance','Stage','Freelance'].includes(d.contract_type) ? d.contract_type : f.contract_type,
@@ -125,7 +130,7 @@ export default function Jobs() {
         score_threshold: Number(d.score_threshold) || f.score_threshold,
       }))
     } catch (e) {
-      alert('Erreur lors de la lecture du PDF : ' + String(e))
+      setParseError('Erreur : ' + String(e))
     }
     setParsing(false)
   }
@@ -234,12 +239,49 @@ export default function Jobs() {
                 {parsing ? '⏳ Analyse...' : '📄 Choisir PDF'}
               </Button>
             </div>
+            {parseError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{parseError}</p>}
             <div className="space-y-1">
-              <Label>Client</Label>
-              <Select value={form.client_id} onValueChange={v => setForm(f => ({ ...f, client_id: v as string }))}>
+              <Label>Nom de l'entreprise</Label>
+              <Input
+                placeholder="Ex : Acme Corp (extrait du PDF ou saisie manuelle)"
+                value={form.company_name}
+                onChange={e => { setForm(f => ({ ...f, company_name: e.target.value, client_id: '' })); setShowClientForm(false) }}
+              />
+              {(() => {
+                const matched = form.company_name && clients.find(c => c.name.toLowerCase() === form.company_name.toLowerCase())
+                const isNew = form.company_name.trim() && !form.client_id && !matched
+                return matched
+                  ? <p className="text-xs text-green-600 mt-1">✓ Client existant trouvé</p>
+                  : isNew
+                    ? <button type="button" className="text-xs text-blue-600 underline mt-1" onClick={() => setShowClientForm(v => !v)}>
+                        {showClientForm ? 'Masquer' : '+ Renseigner les coordonnées du client'}
+                      </button>
+                    : null
+              })()}
+            </div>
+            {showClientForm && (
+              <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/20">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fiche client</p>
+                <div className="space-y-1">
+                  <Label className="text-sm">Nom du contact</Label>
+                  <Input placeholder="Jean Dupont" value={clientForm.contact_name} onChange={e => setClientForm(f => ({ ...f, contact_name: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm">Email contact</Label>
+                  <Input type="email" placeholder="contact@entreprise.com" value={clientForm.contact_email} onChange={e => setClientForm(f => ({ ...f, contact_email: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm">Email notifications CV qualifiés</Label>
+                  <Input type="email" placeholder="recrutement@entreprise.com" value={clientForm.notification_email} onChange={e => setClientForm(f => ({ ...f, notification_email: e.target.value }))} />
+                </div>
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label>Client existant (optionnel)</Label>
+              <Select value={form.client_id} onValueChange={v => { setForm(f => ({ ...f, client_id: v ?? '', company_name: clients.find(c => c.id === v)?.name ?? f.company_name })); setShowClientForm(false) }}>
                 <SelectTrigger>
                   <span className="truncate">
-                    {clients.find(c => c.id === form.client_id)?.name ?? 'Sélectionner un client'}
+                    {clients.find(c => c.id === form.client_id)?.name ?? 'Sélectionner ou laisser vide'}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
@@ -287,6 +329,7 @@ export default function Jobs() {
               </div>
             </div>
           </div>
+          {saveError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mx-1">{saveError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleSave} disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Button>

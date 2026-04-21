@@ -25,7 +25,7 @@ const FEATURES = [
   {
     icon: '📧',
     title: 'Alertes email automatiques',
-    desc: "Dès qu'un profil qualifié arrive, le client reçoit un email complet avec le rapport IA. Aucune action manuelle requise.",
+    desc: "Dès qu'un profil qualifié arrive, le client reçoit un email complet avec le rapport IA. Juste une approbation manuelle (1 clic) requise.",
   },
   {
     icon: '📊',
@@ -48,14 +48,14 @@ const STEPS = [
   {
     n: '03',
     title: 'Recevez les résultats',
-    desc: 'Score, justification, points positifs et négatifs. Les profils qualifiés sont notifiés automatiquement au client.',
+    desc: 'Score, justification, points positifs et négatifs. Les profils qualifiés sont notifiés au client après validation manuelle.',
   },
 ]
 
 const FAQS = [
   {
     q: 'Quels formats de CV sont acceptés ?',
-    a: 'RecrutAI accepte les fichiers PDF et Word (.docx, .doc). Vous pouvez déposer plusieurs fichiers en une seule fois.',
+    a: 'RecrutAI accepte les fichiers PDF, Word (.docx, .doc), images (.png, .jpg, .jpeg, .webp) et HTML (.html, .htm). Vous pouvez déposer plusieurs fichiers en une seule fois.',
   },
   {
     q: 'Comment est calculé le score ?',
@@ -94,12 +94,6 @@ export default function Landing() {
             >
               Se connecter
             </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="text-base bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:opacity-90 transition-opacity"
-            >
-              Démarrer →
-            </button>
           </div>
         </div>
       </nav>
@@ -125,23 +119,8 @@ export default function Landing() {
 
           <p className="text-xl text-white/90 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
             RecrutAI analyse automatiquement chaque CV par rapport à vos offres, attribue un score de correspondance
-            et vous livre un rapport IA complet — en quelques secondes.
+            et vous livre un rapport IA complet en quelques secondes.
           </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto bg-white text-violet-700 font-bold px-8 py-4 rounded-xl hover:bg-violet-50 transition-colors text-base shadow-lg"
-            >
-              Accéder à la plateforme →
-            </button>
-            <a
-              href="#how-it-works"
-              className="w-full sm:w-auto text-white border border-white/40 px-8 py-4 rounded-xl hover:bg-white/10 transition-colors text-base font-medium"
-            >
-              Voir comment ça marche
-            </a>
-          </div>
 
           {/* Stats flottantes */}
           <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
@@ -210,17 +189,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* SOCIAL PROOF BAND */}
-      <section className="bg-gradient-to-r from-violet-600 to-indigo-600 py-14">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-white text-base font-semibold uppercase tracking-widest mb-5">Compatible avec</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-white font-semibold text-base">
-            {['PDF', 'Word (.docx)', 'Tous secteurs', 'Multi-clients', 'Illimité'].map(t => (
-              <span key={t} className="bg-white/20 border border-white/30 rounded-full px-5 py-2">{t}</span>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQ */}
       <section className="py-24 bg-slate-50">

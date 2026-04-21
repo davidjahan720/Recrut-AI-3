@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { rpcWithRetry } from '@/lib/rpc'
 import type { Client, Job } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ export default function Clients() {
   const [form, setForm] = useState({ ...EMPTY })
   const [editId, setEditId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   // CV upload dialog state
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -58,13 +60,22 @@ export default function Clients() {
   }
 
   async function handleSave() {
+    setSaveError('')
     setLoading(true)
-    if (editId) {
-      await supabase.from('clients').update(form).eq('id', editId)
-    } else {
-      await supabase.from('clients').insert(form)
+    try {
+      await rpcWithRetry('upsert_client', {
+        p_name: form.name,
+        p_contact_name: form.contact_name,
+        p_contact_email: form.contact_email,
+        p_notification_email: form.notification_email,
+        p_sector: form.sector,
+        ...(editId ? { p_id: editId } : {}),
+      })
+      setOpen(false); load()
+    } catch (e) {
+      setSaveError(String(e))
     }
-    setLoading(false); setOpen(false); load()
+    setLoading(false)
   }
 
   async function handleDelete(id: string) {
@@ -111,6 +122,7 @@ export default function Clients() {
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => openEdit(c)}>Éditer</Button>
+                    <Button size="sm" variant="outline" onClick={() => openUpload(c)}>CV</Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}>Suppr.</Button>
                   </div>
                 </TableCell>
@@ -134,6 +146,7 @@ export default function Clients() {
               </div>
             ))}
           </div>
+          {saveError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{saveError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleSave} disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Button>
@@ -157,7 +170,7 @@ export default function Clients() {
               <>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">Offre associée</label>
-                  <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                  <Select value={selectedJobId} onValueChange={v => setSelectedJobId(v ?? '')}>
                     <SelectTrigger>
                       <span className="truncate">
                         {selectedJobId
