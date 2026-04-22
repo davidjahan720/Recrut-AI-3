@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-ssr/
+.env
+.env.local
+.env.*.local
+.env.test
+*.local
+.vercel
+logs/
+*.log
+test-results/
+playwright-report/
+.DS_Store

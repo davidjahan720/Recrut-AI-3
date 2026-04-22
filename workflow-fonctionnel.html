@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow fonctionnel — RecrutAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --border: #e5e2da;
+      --text: #1a1a1a;
+      --text-light: #666660;
+
+      --recrut: #2563eb;
+      --recrut-light: #eff6ff;
+      --recrut-dk: #1d4ed8;
+
+      --client: #16a34a;
+      --client-light: #f0fdf4;
+      --client-dk: #15803d;
+
+      --ia: #7c3aed;
+      --ia-light: #f5f3ff;
+      --ia-dk: #6d28d9;
+
+      --sys: #0891b2;
+      --sys-light: #ecfeff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--text);
+      color: #fff;
+      padding: 56px 48px 44px;
+    }
+
+    .header-inner { max-width: 1040px; margin: 0 auto; }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      background: var(--ia);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    header h1 span { color: #a78bfa; }
+    header p { font-size: 1rem; color: #a1a1aa; max-width: 580px; font-weight: 300; }
+
+    .legend-bar {
+      display: flex;
+      gap: 24px;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid #333;
+      flex-wrap: wrap;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #a1a1aa; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 64px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ia);
+      margin-bottom: 4px;
+    }
+
+    h2 { font-family: 'DM Serif Display', serif; font-size: 1.65rem; margin-bottom: 6px; }
+    .section-desc { font-size: 0.9rem; color: var(--text-light); max-width: 640px; }
+
+    /* ── FLOW GLOBAL ─── */
+    .global-flow {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .flow-col { flex: 1; display: flex; flex-direction: column; }
+
+    .flow-col-header {
+      padding: 14px 18px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .flow-col-body {
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      border-right: 1px solid var(--border);
+    }
+
+    .flow-col:last-child .flow-col-body { border-right: none; }
+
+    .flow-node {
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .flow-node.recrut { background: var(--recrut-light); color: var(--recrut-dk); border: 1px solid #bfdbfe; }
+    .flow-node.client { background: var(--client-light); color: var(--client-dk); border: 1px solid #bbf7d0; }
+    .flow-node.ia     { background: var(--ia-light);     color: var(--ia-dk);     border: 1px solid #ddd6fe; }
+    .flow-node.sys    { background: var(--sys-light);    color: var(--sys);       border: 1px solid #a5f3fc; }
+    .flow-node.ghost  { opacity: 0.12; pointer-events: none; background: #f4f3f0; border: 1px solid var(--border); color: #999; }
+
+    .arrow-down { text-align: center; color: #d1d5db; font-size: 1rem; margin: -2px 0; }
+    .arrow-down.ghost { opacity: 0; }
+
+    /* ── BLOC ─── */
+    .bloc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .bloc-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bloc-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .bloc-title-group { flex: 1; }
+    .bloc-title { font-size: 1rem; font-weight: 600; }
+    .bloc-subtitle { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
+
+    .bloc-actor {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .bloc-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 620px) {
+      .bloc-body { grid-template-columns: 1fr; }
+      .global-flow { flex-direction: column; }
+    }
+
+    .bloc-steps {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-right: 1px solid var(--border);
+    }
+
+    .bloc-steps:last-child { border-right: none; }
+
+    .bloc-col-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .step-item { display: flex; gap: 12px; align-items: flex-start; }
+
+    .step-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-text strong { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 2px; }
+    .step-text p { font-size: 0.78rem; color: var(--text-light); line-height: 1.5; }
+
+    /* ── DATA MODEL ─── */
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .data-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .data-card-head {
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; }
+
+    .field { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; }
+    .field-name { color: var(--text); font-weight: 500; }
+    .field-type { color: #9ca3af; font-size: 0.7rem; }
+    .field-pk { color: var(--ia-dk); font-size: 0.68rem; font-weight: 700; }
+
+    /* ── TABLE ─── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #f4f3f0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-light);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td { padding: 12px 16px; border-bottom: 1px solid #f0eeea; vertical-align: top; color: #3d3d3d; }
+    tr:last-child td { border-bottom: none; }
+    td code { font-family: 'Courier New', monospace; font-size: 0.75rem; background: #f4f3f0; padding: 2px 6px; border-radius: 4px; color: var(--ia-dk); }
+
+    /* ── TAGS ─── */
+    .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .tag-recrut  { background: var(--recrut-light); color: var(--recrut-dk); }
+    .tag-client  { background: var(--client-light); color: var(--client-dk); }
+    .tag-ia      { background: var(--ia-light);     color: var(--ia-dk);     }
+    .tag-sys     { background: var(--sys-light);    color: var(--sys);       }
+    .tag-auto    { background: #fce7f3;             color: #9d174d;          }
+
+    .highlight {
+      background: var(--ia-light);
+      border-left: 3px solid var(--ia);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: var(--ia-dk);
+    }
+
+    .highlight code {
+      font-family: 'Courier New', monospace;
+      background: #ede9fe;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+
+    nav.doc-nav {
+      display: flex;
+      gap: 24px;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid #333;
+      flex-wrap: wrap;
+    }
+
+    nav.doc-nav a {
+      font-size: 0.85rem;
+      color: #a1a1aa;
+      text-decoration: none;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      transition: color .15s;
+    }
+
+    nav.doc-nav a:hover { color: #a78bfa; }
+    nav.doc-nav a.current { color: #fff; font-weight: 500; }
+    nav.doc-nav a span.num { font-size: 0.7rem; color: #52525b; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="badge">Document 2 / 3 — Workflow fonctionnel</div>
+    <h1>RecrutAI — <span>flux fonctionnel</span><br>de l'application</h1>
+    <p>Les blocs fonctionnels qui composent l'application, du point de vue du système. Ce document ne décrit pas les écrans — il décrit ce que l'application fait et dans quel ordre.</p>
+    <div class="legend-bar">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--recrut)"></div>Équipe RecrutAI</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--client)"></div>Client (entreprise)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--ia)"></div>IA / système automatique</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--sys)"></div>Supabase / infrastructure</div>
+    </div>
+    <nav class="doc-nav">
+      <a href="cas-etude-recrutai.html"><span class="num">01</span> Cas d'étude</a>
+      <a href="workflow-fonctionnel.html" class="current"><span class="num">02</span> Workflow fonctionnel</a>
+      <a href="brief-technique.html"><span class="num">03</span> Brief technique</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ VUE GLOBALE ══ -->
+  <section>
+    <p class="section-label">Vue d'ensemble</p>
+    <h2>Le flux complet en un coup d'œil</h2>
+    <p class="section-desc">L'application orchestre 3 acteurs autour d'un flux linéaire : une offre est créée, l'équipe dépose des CV (PDF) sur la fiche offre, l'IA score, le client est notifié automatiquement.</p>
+
+    <div class="global-flow" style="margin-top:24px;">
+
+      <div class="flow-col">
+        <div class="flow-col-header" style="background:var(--recrut-light); color:var(--recrut-dk);">Équipe RecrutAI</div>
+        <div class="flow-col-body">
+          <div class="flow-node recrut">Créer un client (nom, email de notification)</div>
+          <div class="arrow-down">↓</div>
+          <div class="flow-node recrut">Créer une offre d'emploi (titre + description du poste)</div>
+          <div class="arrow-down">↓</div>
+          <div class="flow-node recrut">Uploader les CV (PDF) sur la fiche offre</div>
+          <div class="arrow-down ghost">↓</div>
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down">↓</div>
+          <div class="flow-node recrut">Consulter le dashboard (scores, candidats, stats)</div>
+        </div>
+      </div>
+
+      <div class="flow-col">
+        <div class="flow-col-header" style="background:var(--ia-light); color:var(--ia-dk);">IA / Système</div>
+        <div class="flow-col-body">
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down ghost">↓</div>
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down ghost">↓</div>
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down">↓</div>
+          <div class="flow-node ia">CV uploadé → extraction texte (unpdf) → scoring Claude (system prompt + CV + offre) → score + justification + nom/email extraits</div>
+          <div class="arrow-down">↓</div>
+          <div class="flow-node sys">Si score ≥ seuil de l'offre → Resend envoie un email au client</div>
+        </div>
+      </div>
+
+      <div class="flow-col">
+        <div class="flow-col-header" style="background:var(--client-light); color:var(--client-dk);">Client</div>
+        <div class="flow-col-body">
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down ghost">↓</div>
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down ghost">↓</div>
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down ghost">↓</div>
+          <div class="flow-node ghost">—</div>
+          <div class="arrow-down">↓</div>
+          <div class="flow-node client">Reçoit un email pour chaque CV qualifié (score ≥ seuil de l'offre)</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ BLOC 1 — AUTH ══ -->
+  <section>
+    <p class="section-label">Bloc 01</p>
+    <h2>Authentification & accès</h2>
+    <p class="section-desc">L'application est accessible uniquement à l'équipe RecrutAI. Supabase Auth fournit un système email + mot de passe clé en main — rien à redévelopper.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-header">
+        <div class="bloc-num" style="background:var(--recrut);">01</div>
+        <div class="bloc-title-group">
+          <div class="bloc-title">Supabase Auth — email + mot de passe</div>
+          <div class="bloc-subtitle">Intégré nativement, aucun développement d'auth requis</div>
+        </div>
+        <span class="bloc-actor tag-recrut tag">Équipe RecrutAI</span>
+      </div>
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Ce que fait l'application</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">🔐</div>
+            <div class="step-text">
+              <strong>Login sécurisé</strong>
+              <p>L'utilisateur saisit son email et mot de passe. Supabase Auth vérifie les credentials et retourne une session JWT gérée automatiquement.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">🛡️</div>
+            <div class="step-text">
+              <strong>Protection des routes</strong>
+              <p>Toutes les pages de l'app redirigent vers le login si aucune session active n'est détectée. La session persiste entre les visites.</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Règles & contraintes</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:#f4f3f0; color:#6b7280;">✓</div>
+            <div class="step-text">
+              <strong>Pas d'inscription publique</strong>
+              <p>Les comptes sont créés directement dans le dashboard Supabase (onglet Authentication → Users → Invite user). Aucun écran d'inscription à développer.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#f4f3f0; color:#6b7280;">✓</div>
+            <div class="step-text">
+              <strong>Pas de gestion de rôles</strong>
+              <p>En V1, tous les utilisateurs connectés ont les mêmes droits. Pas de distinction admin / chargé / AM.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BLOC 2 — CLIENTS ══ -->
+  <section>
+    <p class="section-label">Bloc 02</p>
+    <h2>Gestion des clients</h2>
+    <p class="section-desc">Un client est une entreprise qui confie ses recrutements à RecrutAI. Il est créé et géré par l'équipe uniquement. La donnée clé : son email de notification, qui recevra les CV qualifiés.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-header">
+        <div class="bloc-num" style="background:var(--recrut);">02</div>
+        <div class="bloc-title-group">
+          <div class="bloc-title">CRUD Clients</div>
+          <div class="bloc-subtitle">Créer, lister, modifier un client</div>
+        </div>
+        <span class="bloc-actor tag-recrut tag">Équipe RecrutAI</span>
+      </div>
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Actions disponibles</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">＋</div>
+            <div class="step-text">
+              <strong>Créer un client</strong>
+              <p>Saisir : nom de l'entreprise, nom du contact, email de contact, email de notification (peut être différent), secteur.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">📋</div>
+            <div class="step-text">
+              <strong>Lister les clients</strong>
+              <p>Vue tabulaire avec le nombre d'offres actives par client et l'AM référent.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">✏️</div>
+            <div class="step-text">
+              <strong>Modifier un client</strong>
+              <p>Mise à jour possible de toutes les informations, notamment l'email de notification.</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Donnée critique</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fce7f3; color:#9d174d;">📧</div>
+            <div class="step-text">
+              <strong>Email de notification</strong>
+              <p>C'est l'adresse à laquelle tous les emails "CV qualifié" seront envoyés automatiquement. Elle doit toujours être à jour. Si elle est fausse, le client ne reçoit rien.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#f4f3f0; color:#6b7280;">→</div>
+            <div class="step-text">
+              <strong>Un client possède des offres</strong>
+              <p>Depuis la fiche client, on accède à toutes ses offres actives et archivées.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BLOC 3 — OFFRES ══ -->
+  <section>
+    <p class="section-label">Bloc 03</p>
+    <h2>Gestion des offres d'emploi</h2>
+    <p class="section-desc">L'offre est l'objet central. Elle contient la description du poste qui sera transmise à l'IA pour le matching. C'est aussi sur la page de l'offre que l'équipe dépose les CV à analyser.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-header">
+        <div class="bloc-num" style="background:var(--recrut);">03</div>
+        <div class="bloc-title-group">
+          <div class="bloc-title">CRUD Offres + upload de CV</div>
+          <div class="bloc-subtitle">Créer une offre → déposer les CV à analyser</div>
+        </div>
+        <span class="bloc-actor tag-recrut tag">Équipe RecrutAI</span>
+      </div>
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Création de l'offre</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">＋</div>
+            <div class="step-text">
+              <strong>Informations de base</strong>
+              <p>Titre du poste, localisation, type de contrat (CDI / CDD / alternance…), client associé.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">📝</div>
+            <div class="step-text">
+              <strong>Description du poste</strong>
+              <p>Texte libre décrivant le rôle, les responsabilités, les prérequis. C'est cette description qui est transmise à l'IA lors du scoring — elle doit être précise et complète.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#f4f3f0; color:#6b7280;">📊</div>
+            <div class="step-text">
+              <strong>Statut de l'offre</strong>
+              <p><strong>Active</strong> : l'offre accepte les CV entrants. <strong>Clôturée</strong> : l'offre est archivée, l'upload de CV est refusé.</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Paramètres de scoring</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--ia-light); color:var(--ia-dk);">🎯</div>
+            <div class="step-text">
+              <strong>Seuil de qualification (paramétrable)</strong>
+              <p>À la création de l'offre, l'équipe définit le <code>score_threshold</code> (0–100, défaut 60). Tout CV dont le score est ≥ à ce seuil déclenche la notification client. Modifiable à tout moment sur la fiche offre.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#f4f3f0; color:#6b7280;">📋</div>
+            <div class="step-text">
+              <strong>Vue des candidatures</strong>
+              <p>Depuis la fiche offre, on accède à tous les CV reçus avec leur score, statut et justification.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BLOC 4 — UPLOAD CV ══ -->
+  <section>
+    <p class="section-label">Bloc 04</p>
+    <h2>Upload des CV &amp; pipeline de traitement</h2>
+    <p class="section-desc">Les CV n'arrivent pas via une interface candidat ni via une API externe. Ils sont déposés manuellement par l'équipe RecrutAI sur la page de l'offre, sous forme de fichiers PDF. Dès le dépôt, le pipeline se déclenche : stockage → extraction → scoring → notification.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-header">
+        <div class="bloc-num" style="background:var(--recrut);">04</div>
+        <div class="bloc-title-group">
+          <div class="bloc-title">Upload PDF + pipeline automatique</div>
+          <div class="bloc-subtitle">Supabase Storage + Edge Function (extraction unpdf + scoring Claude)</div>
+        </div>
+        <span class="bloc-actor tag-recrut tag">Équipe RecrutAI</span>
+      </div>
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Ce que fait l'utilisateur</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">①</div>
+            <div class="step-text">
+              <strong>Déposer des fichiers PDF</strong>
+              <p>Sur la fiche offre, une zone de dépôt (drag &amp; drop ou sélection) permet de charger un ou plusieurs CV au format PDF en une seule opération. Aucun autre champ à remplir : le nom et l'email du candidat seront extraits automatiquement par l'IA.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#f4f3f0; color:#6b7280;">ℹ️</div>
+            <div class="step-text">
+              <strong>Feedback visuel par CV</strong>
+              <p>Chaque CV uploadé apparaît immédiatement dans la liste avec un statut <code>pending</code>, puis se met à jour en temps réel : <code>qualified</code>, <code>rejected</code>, ou <code>error</code>.</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Ce que fait le système</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--sys-light); color:var(--sys);">①</div>
+            <div class="step-text">
+              <strong>Stockage du PDF</strong>
+              <p>Le fichier est uploadé dans Supabase Storage (bucket privé <code>cvs</code>). Le chemin est enregistré dans <code>applications.cv_file_path</code>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--sys-light); color:var(--sys);">②</div>
+            <div class="step-text">
+              <strong>Extraction du texte (unpdf)</strong>
+              <p>L'Edge Function lit le PDF depuis Storage et en extrait le texte via la librairie Deno <code>unpdf</code>. Le texte est sauvegardé dans <code>applications.cv_text</code>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--ia-light); color:var(--ia-dk);">③</div>
+            <div class="step-text">
+              <strong>Scoring Claude</strong>
+              <p>Claude reçoit le texte + la description de l'offre. Il renvoie un JSON avec <code>score</code>, <code>justification</code>, <code>candidate_name</code>, <code>candidate_email</code>. La candidature est mise à jour avec tous ces champs.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BLOC 5 — SCORING IA ══ -->
+  <section>
+    <p class="section-label">Bloc 05</p>
+    <h2>Scoring IA automatique</h2>
+    <p class="section-desc">Le cœur de l'application. Un appel à Claude qui reçoit le CV et la description du poste, retourne un score et une justification, puis déclenche ou non l'email client.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-header">
+        <div class="bloc-num" style="background:var(--ia);">05</div>
+        <div class="bloc-title-group">
+          <div class="bloc-title">Scoring Claude API</div>
+          <div class="bloc-subtitle">Texte extrait du PDF + system prompt + description offre → score + justification</div>
+        </div>
+        <span class="bloc-actor tag-ia tag">Automatique</span>
+      </div>
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Étapes du scoring</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--ia-light); color:var(--ia-dk);">①</div>
+            <div class="step-text">
+              <strong>Construction du prompt</strong>
+              <p>La fonction assemble : le <strong>system prompt global</strong> (pré-rédigé, identique pour tous les CV) + le texte extrait du PDF uploadé + la description de l'offre ciblée.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--ia-light); color:var(--ia-dk);">②</div>
+            <div class="step-text">
+              <strong>Appel à Claude API</strong>
+              <p>Claude analyse le matching CV / offre et <strong>extrait aussi</strong> les métadonnées du candidat (nom, email) depuis le texte du CV. Retourne un JSON structuré.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--ia-light); color:var(--ia-dk);">③</div>
+            <div class="step-text">
+              <strong>Mise à jour de la candidature</strong>
+              <p>Les 4 champs (<code>score</code>, <code>justification</code>, <code>candidate_name</code>, <code>candidate_email</code>) sont écrits dans <code>applications</code>. Le statut passe à <code>qualified</code> (≥ seuil offre) ou <code>rejected</code> (&lt; seuil offre).</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Logique de qualification &amp; notification</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--client-light); color:var(--client-dk);">④</div>
+            <div class="step-text">
+              <strong>Comparaison au seuil de l'offre</strong>
+              <p>Le score Claude est comparé à <code>jobs.score_threshold</code> (défini sur l'offre, 60 par défaut). Si score ≥ seuil → qualifié. Sinon → rejeté. Le seuil peut varier d'une offre à l'autre (ex. 75 pour un poste senior rare, 50 pour un volume important).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fce7f3; color:#9d174d;">⑤</div>
+            <div class="step-text">
+              <strong>Email automatique (si qualifié)</strong>
+              <p>Resend envoie un email à l'adresse <code>notification_email</code> du client associé à l'offre. L'email contient : nom du candidat, score, justification IA. Timestamp enregistré dans <code>email_sent_at</code>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fef2f2; color:#dc2626;">⑥</div>
+            <div class="step-text">
+              <strong>Gestion des erreurs</strong>
+              <p>Si l'extraction PDF échoue, si Claude renvoie du non-JSON, ou si Resend retourne une erreur, la candidature passe en statut <code>error</code> avec le message d'erreur dans <code>justification</code>. Aucun email envoyé.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight" style="margin-top:16px;">
+      <strong>Format de réponse attendu de Claude :</strong><br>
+      <code>{"score": 74, "justification": "Profil solide sur les critères techniques, expérience insuffisante en management d'équipe.", "candidate_name": "Sophie Martin", "candidate_email": "sophie.martin@email.com"}</code><br><br>
+      Le system prompt impose ce format JSON strict. Le score est un entier entre 0 et 100. Si le nom ou l'email ne sont pas détectables dans le CV, Claude doit renvoyer <code>null</code> pour le champ concerné.
+    </div>
+  </section>
+
+  <!-- ══ BLOC 6 — DASHBOARD ══ -->
+  <section>
+    <p class="section-label">Bloc 06</p>
+    <h2>Dashboard & consultation</h2>
+    <p class="section-desc">L'équipe RecrutAI consulte les résultats en lecture. Il n'y a pas de validation manuelle à effectuer — le système a déjà tout traité automatiquement.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-header">
+        <div class="bloc-num" style="background:var(--recrut);">06</div>
+        <div class="bloc-title-group">
+          <div class="bloc-title">Consultation des candidatures</div>
+          <div class="bloc-subtitle">Lecture des scores et suivi de l'activité</div>
+        </div>
+        <span class="bloc-actor tag-recrut tag">Équipe RecrutAI</span>
+      </div>
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Ce que l'équipe peut voir</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">📊</div>
+            <div class="step-text">
+              <strong>Liste des candidatures par offre</strong>
+              <p>Triée par score décroissant. Chaque ligne affiche : nom du candidat, email, score, statut (qualifié / rejeté / en erreur), date de réception, justification IA, lien vers le PDF original dans Storage.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--recrut-light); color:var(--recrut);">🏠</div>
+            <div class="step-text">
+              <strong>Dashboard global</strong>
+              <p>Vue d'ensemble : offres actives, CV reçus aujourd'hui, CV qualifiés cette semaine, taux de qualification moyen.</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Ce qui n'existe pas (intentionnellement)</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fef2f2; color:#dc2626;">✕</div>
+            <div class="step-text">
+              <strong>Pas de validation manuelle</strong>
+              <p>L'équipe ne peut pas "approuver" ou "refuser" un CV. La décision est prise par l'IA selon le seuil de 60. Lecture seule.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fef2f2; color:#dc2626;">✕</div>
+            <div class="step-text">
+              <strong>Pas de renvoi manuel d'email</strong>
+              <p>Les emails sont envoyés automatiquement au moment du scoring. Aucun bouton "renvoyer" en V1.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ MODÈLE DE DONNÉES ══ -->
+  <section>
+    <p class="section-label">Modèle de données</p>
+    <h2>Tables Supabase</h2>
+    <p class="section-desc">3 tables métier. Le system prompt n'est pas en base — il est défini comme variable d'environnement dans l'Edge Function.</p>
+
+    <div class="data-grid" style="margin-top:20px;">
+
+      <div class="data-card">
+        <div class="data-card-head" style="background:var(--recrut-light); color:var(--recrut-dk);">clients</div>
+        <div class="data-card-body">
+          <div class="field"><span class="field-name">id</span><span class="field-pk">PK · uuid</span></div>
+          <div class="field"><span class="field-name">name</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">contact_name</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">contact_email</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">notification_email</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">sector</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">created_at</span><span class="field-type">timestamp</span></div>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-head" style="background:var(--recrut-light); color:var(--recrut-dk);">jobs</div>
+        <div class="data-card-body">
+          <div class="field"><span class="field-name">id</span><span class="field-pk">PK · uuid</span></div>
+          <div class="field"><span class="field-name">client_id</span><span class="field-type">FK → clients</span></div>
+          <div class="field"><span class="field-name">title</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">location</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">contract_type</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">description</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">score_threshold</span><span class="field-type">int (0–100, def. 60)</span></div>
+          <div class="field"><span class="field-name">status</span><span class="field-type">active | closed</span></div>
+          <div class="field"><span class="field-name">created_at</span><span class="field-type">timestamp</span></div>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-head" style="background:#fce7f3; color:#9d174d;">applications</div>
+        <div class="data-card-body">
+          <div class="field"><span class="field-name">id</span><span class="field-pk">PK · uuid</span></div>
+          <div class="field"><span class="field-name">job_id</span><span class="field-type">FK → jobs</span></div>
+          <div class="field"><span class="field-name">candidate_name</span><span class="field-type">text | null</span></div>
+          <div class="field"><span class="field-name">candidate_email</span><span class="field-type">text | null</span></div>
+          <div class="field"><span class="field-name">cv_file_path</span><span class="field-type">text (Storage)</span></div>
+          <div class="field"><span class="field-name">cv_text</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">score</span><span class="field-type">int (0–100)</span></div>
+          <div class="field"><span class="field-name">justification</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">status</span><span class="field-type">pending | qualified | rejected | error</span></div>
+          <div class="field"><span class="field-name">email_sent_at</span><span class="field-type">timestamp | null</span></div>
+          <div class="field"><span class="field-name">created_at</span><span class="field-type">timestamp</span></div>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-head" style="background:#f4f3f0; color:#6b7280;">users (Supabase Auth)</div>
+        <div class="data-card-body">
+          <div class="field"><span class="field-name">id</span><span class="field-pk">PK · uuid</span></div>
+          <div class="field"><span class="field-name">email</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">created_at</span><span class="field-type">timestamp</span></div>
+          <p style="font-size:0.72rem; color:#9ca3af; margin-top:8px;">Géré par Supabase Auth. Comptes créés via le dashboard Supabase, pas via l'app.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="highlight" style="margin-top:4px;">
+      <strong>System prompt :</strong> non stocké en base. Il est défini une fois comme variable d'environnement (<code>SYSTEM_PROMPT</code>) dans les secrets de l'Edge Function Supabase. Pour le modifier, on met à jour la variable — pas la base de données.
+    </div>
+  </section>
+
+  <!-- ══ RÉCAP DÉCLENCHEURS ══ -->
+  <section>
+    <p class="section-label">Récapitulatif</p>
+    <h2>Ce qui déclenche quoi</h2>
+    <p class="section-desc">Tout ce qui se passe automatiquement, sans action de l'équipe RecrutAI.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Événement déclencheur</th>
+            <th>Mécanisme</th>
+            <th>Action résultante</th>
+            <th>Acteur</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Upload d'un CV (PDF) sur la fiche offre</td>
+            <td>Frontend → Supabase Storage + Edge Function</td>
+            <td>PDF stocké, texte extrait, candidature créée en base + scoring IA déclenché</td>
+            <td><span class="tag tag-recrut">Équipe</span> + <span class="tag tag-auto">Auto</span></td>
+          </tr>
+          <tr>
+            <td>Scoring Claude API</td>
+            <td>Appel synchrone dans la même Edge Function</td>
+            <td>Score + justification écrits en base, statut mis à jour</td>
+            <td><span class="tag tag-ia">IA</span></td>
+          </tr>
+          <tr>
+            <td>Score ≥ <code>score_threshold</code> de l'offre</td>
+            <td>Condition dans l'Edge Function</td>
+            <td>Appel Resend → email envoyé à <code>notification_email</code> du client</td>
+            <td><span class="tag tag-auto">Auto</span></td>
+          </tr>
+          <tr>
+            <td>Score &lt; <code>score_threshold</code> de l'offre</td>
+            <td>Condition dans l'Edge Function</td>
+            <td>Statut <code>rejected</code> enregistré. Aucun email envoyé.</td>
+            <td><span class="tag tag-auto">Auto</span></td>
+          </tr>
+          <tr>
+            <td>Erreur extraction PDF / JSON Claude invalide / Resend KO</td>
+            <td>try/catch dans l'Edge Function</td>
+            <td>Statut <code>error</code>, message dans <code>justification</code>, aucun email</td>
+            <td><span class="tag tag-auto">Auto</span></td>
+          </tr>
+          <tr>
+            <td>Création d'une offre</td>
+            <td>INSERT dans <code>jobs</code> (avec <code>score_threshold</code>)</td>
+            <td>La fiche offre est disponible avec sa zone d'upload de CV</td>
+            <td><span class="tag tag-sys">Système</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ RGPD & DONNÉES PERSONNELLES ══ -->
+  <section>
+    <p class="section-label">Données personnelles</p>
+    <h2>RGPD &amp; sécurité des CV</h2>
+    <p class="section-desc">Un CV = données personnelles sensibles. Les règles appliquées par la plateforme pour rester conforme.</p>
+
+    <div class="bloc" style="margin-top:20px;">
+      <div class="bloc-body">
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Règles appliquées</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--sys-light); color:var(--sys);">🔒</div>
+            <div class="step-text">
+              <strong>Bucket Storage privé</strong>
+              <p>Le bucket <code>cvs</code> est en mode privé. Seuls les utilisateurs authentifiés peuvent lire un PDF, via des signed URLs à durée limitée (1h par défaut).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--sys-light); color:var(--sys);">🕒</div>
+            <div class="step-text">
+              <strong>Durée de rétention : 6 mois</strong>
+              <p>Les PDF et les textes extraits sont supprimés automatiquement 6 mois après réception (job planifié Supabase). Le candidat peut demander suppression immédiate via email RH.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:var(--sys-light); color:var(--sys);">🔑</div>
+            <div class="step-text">
+              <strong>Pas de clé API côté client</strong>
+              <p>Les clés Anthropic et Resend ne sont jamais exposées au navigateur. Elles vivent uniquement dans les secrets de l'Edge Function.</p>
+            </div>
+          </div>
+        </div>
+        <div class="bloc-steps">
+          <p class="bloc-col-label">Ce qui n'est pas fait en V1</p>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fef2f2; color:#dc2626;">✕</div>
+            <div class="step-text">
+              <strong>Pas de consentement candidat explicite</strong>
+              <p>Hypothèse : les clients RecrutAI se chargent de recueillir le consentement avant de transmettre les CV. À formaliser avec un DPO avant passage en prod réelle.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-icon" style="background:#fef2f2; color:#dc2626;">✕</div>
+            <div class="step-text">
+              <strong>Pas d'anonymisation automatique</strong>
+              <p>Le texte des CV est envoyé à Claude tel quel (incluant nom, email, téléphone). À évaluer selon les politiques Anthropic de traitement des données.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Document pédagogique — Formation vibe coding · Document 2/3 · Workflow fonctionnel RecrutAI
+</footer>
+
+</body>
+</html>

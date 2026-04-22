@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cas d'étude — RecrutAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --border: #e5e2da;
+      --text: #1a1a1a;
+      --text-light: #666660;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --accent-dk: #1d4ed8;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+      --purple: #7c3aed;
+      --purple-light: #f5f3ff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--text);
+      color: #fff;
+      padding: 64px 48px 48px;
+    }
+
+    .header-inner { max-width: 960px; margin: 0 auto; }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    header h1 span { color: #60a5fa; }
+
+    header p.subtitle {
+      font-size: 1.1rem;
+      color: #a1a1aa;
+      max-width: 620px;
+      font-weight: 300;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 32px;
+      margin-top: 36px;
+      padding-top: 36px;
+      border-top: 1px solid #333;
+      flex-wrap: wrap;
+    }
+
+    .meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #71717a; }
+    .meta-item .value { font-size: 1rem; font-weight: 500; color: #e4e4e7; }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 56px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+    }
+
+    section { display: flex; flex-direction: column; gap: 24px; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: -8px;
+    }
+
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.75rem;
+      line-height: 1.2;
+    }
+
+    h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    p { color: #3d3d3d; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .kpi-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .kpi {
+      background: var(--surface);
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kpi .kpi-value { font-size: 1.8rem; font-weight: 700; line-height: 1; color: var(--text); }
+    .kpi .kpi-label { font-size: 0.78rem; color: var(--text-light); text-transform: uppercase; letter-spacing: .06em; }
+    .kpi .kpi-note { font-size: 0.75rem; color: #9ca3af; margin-top: 2px; }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .team-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .team-card .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .team-card .name { font-weight: 600; font-size: 0.9rem; }
+    .team-card .role { font-size: 0.78rem; color: var(--text-light); }
+    .team-card .since { font-size: 0.72rem; color: #9ca3af; }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 4px;
+    }
+
+    .tag-blue { background: var(--accent-light); color: var(--accent-dk); }
+    .tag-green { background: var(--green-light); color: var(--green); }
+    .tag-amber { background: var(--amber-light); color: var(--amber); }
+    .tag-purple { background: var(--purple-light); color: var(--purple); }
+    .tag-red { background: var(--red-light); color: var(--red); }
+
+    .process-steps { display: flex; flex-direction: column; gap: 0; }
+
+    .step {
+      display: flex;
+      gap: 20px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-body { flex: 1; }
+    .step-body strong { display: block; margin-bottom: 4px; font-size: 0.95rem; }
+    .step-body p { font-size: 0.88rem; color: var(--text-light); }
+
+    .step-meta { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: #f4f3f0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-light);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f0eeea;
+      color: #3d3d3d;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    td strong { color: var(--text); font-weight: 500; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 580px) { .two-col { grid-template-columns: 1fr; } }
+
+    .pain-list, .gain-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pain-list li, .gain-list li {
+      font-size: 0.88rem;
+      color: var(--text-light);
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .pain-list li::before {
+      content: '✕';
+      position: absolute;
+      left: 0;
+      color: var(--red);
+      font-weight: 700;
+      font-size: 0.75rem;
+      top: 1px;
+    }
+
+    .gain-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 700;
+      font-size: 0.75rem;
+      top: 1px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    .highlight {
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      font-size: 0.9rem;
+      color: #1e40af;
+    }
+
+    nav.doc-nav {
+      display: flex;
+      gap: 24px;
+      margin-top: 36px;
+      padding-top: 36px;
+      border-top: 1px solid #333;
+      flex-wrap: wrap;
+    }
+
+    nav.doc-nav a {
+      font-size: 0.85rem;
+      color: #a1a1aa;
+      text-decoration: none;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      transition: color .15s;
+    }
+
+    nav.doc-nav a:hover { color: #60a5fa; }
+    nav.doc-nav a.current { color: #fff; font-weight: 500; }
+    nav.doc-nav a span.num { font-size: 0.7rem; color: #52525b; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="badge">Document 1 / 3 — Cas d'étude</div>
+    <h1>RecrutAI — <span>agence de recrutement</span><br>opérée par l'intelligence artificielle</h1>
+    <p class="subtitle">Un acteur spécialisé dans la qualification de candidatures pour les entreprises clientes. 100 % du chiffre d'affaires repose sur un seul métier : trier, scorer et transmettre les bons CV.</p>
+    <nav class="doc-nav">
+      <a href="cas-etude-recrutai.html" class="current"><span class="num">01</span> Cas d'étude</a>
+      <a href="workflow-fonctionnel.html"><span class="num">02</span> Workflow fonctionnel</a>
+      <a href="brief-technique.html"><span class="num">03</span> Brief technique</a>
+    </nav>
+    <div class="header-meta">
+      <div class="meta-item"><span class="label">Secteur</span><span class="value">Recrutement B2B</span></div>
+      <div class="meta-item"><span class="label">Effectif</span><span class="value">10 collaborateurs</span></div>
+      <div class="meta-item"><span class="label">Fondée en</span><span class="value">2019</span></div>
+      <div class="meta-item"><span class="label">Siège</span><span class="value">Lyon, France</span></div>
+      <div class="meta-item"><span class="label">Statut</span><span class="value">SAS — capital 50 000 €</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ 1. PORTRAIT ══ -->
+  <section>
+    <p class="section-label">01 — Portrait</p>
+    <h2>Qui est RecrutAI ?</h2>
+    <p>RecrutAI est une agence de recrutement indépendante fondée à Lyon en 2019 par Camille Arnaud, ancienne directrice RH dans le secteur industriel. L'entreprise ne propose qu'une seule prestation : <strong>identifier et qualifier les candidats</strong> pour le compte d'entreprises clientes, puis leur transmettre uniquement les profils qui méritent un entretien.</p>
+    <p>RecrutAI ne conduit aucun entretien. Elle ne fait pas de chasse de tête. Elle ne gère pas l'intégration des recrues. Son positionnement est délibérément étroit : être le meilleur filtre entre un flux de CV et une offre d'emploi.</p>
+    <div class="highlight">
+      La promesse client : <strong>recevoir uniquement des CV qualifiés, prêts à entretien</strong> — sans traiter soi-même le volume entrant. La qualification est entièrement automatisée par IA.
+    </div>
+
+    <div class="kpi-bar">
+      <div class="kpi">
+        <span class="kpi-value">1,15 M€</span>
+        <span class="kpi-label">Chiffre d'affaires annuel</span>
+        <span class="kpi-note">Exercice 2024</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-value">34</span>
+        <span class="kpi-label">Clients actifs</span>
+        <span class="kpi-note">Contrats en cours</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-value">~120</span>
+        <span class="kpi-label">Offres traitées / mois</span>
+        <span class="kpi-note">Toutes tailles confondues</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-value">~1 400</span>
+        <span class="kpi-label">CV reçus / mois</span>
+        <span class="kpi-note">Upload manuel par l'équipe</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-value">18 %</span>
+        <span class="kpi-label">Taux de qualification moyen</span>
+        <span class="kpi-note">Score ≥ seuil / total reçus</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-value">&lt; 2 min</span>
+        <span class="kpi-label">Délai de traitement par CV</span>
+        <span class="kpi-note">De la réception à l'email client</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 2. MODÈLE ÉCONOMIQUE ══ -->
+  <section>
+    <p class="section-label">02 — Modèle économique</p>
+    <h2>Comment RecrutAI gagne-t-elle de l'argent ?</h2>
+    <p>L'entreprise facture selon deux modèles selon le profil du client :</p>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Formule</th>
+            <th>Tarif</th>
+            <th>Inclus</th>
+            <th>Clientèle typique</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Abonnement mensuel</strong></td>
+            <td>1 200 – 3 500 € / mois</td>
+            <td>Jusqu'à 5 offres actives simultanées, CV illimités, rapport hebdo</td>
+            <td>PME avec recrutements réguliers</td>
+          </tr>
+          <tr>
+            <td><strong>À la mission</strong></td>
+            <td>850 – 1 800 € / offre</td>
+            <td>1 offre traitée jusqu'à 10 CV qualifiés transmis</td>
+            <td>Grands comptes ponctuels, TPE</td>
+          </tr>
+          <tr>
+            <td><strong>Volume entreprise</strong></td>
+            <td>Négocié (≥ 8 k€ / mois)</td>
+            <td>Offres illimitées, SLA garanti, account manager dédié</td>
+            <td>Groupes avec > 20 recrutements / mois</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ 3. ÉQUIPE ══ -->
+  <section>
+    <p class="section-label">03 — Équipe</p>
+    <h2>Les 10 collaborateurs</h2>
+
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="avatar" style="background:#1a1a1a;">CA</div>
+        <div class="name">Camille Arnaud</div>
+        <div class="role">CEO & Fondatrice</div>
+        <div class="since">Depuis 2019</div>
+        <span class="tag tag-blue">Direction</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#2563eb;">TM</div>
+        <div class="name">Thomas Mercier</div>
+        <div class="role">Directeur des Opérations (COO)</div>
+        <div class="since">Depuis 2020</div>
+        <span class="tag tag-blue">Direction</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#16a34a;">SB</div>
+        <div class="name">Sophie Blanchard</div>
+        <div class="role">Chargée de recrutement senior</div>
+        <div class="since">Depuis 2020</div>
+        <span class="tag tag-green">Ops</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#16a34a;">KD</div>
+        <div class="name">Karim Djaïd</div>
+        <div class="role">Chargé de recrutement</div>
+        <div class="since">Depuis 2021</div>
+        <span class="tag tag-green">Ops</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#16a34a;">AL</div>
+        <div class="name">Alix Lecomte</div>
+        <div class="role">Chargée de recrutement</div>
+        <div class="since">Depuis 2022</div>
+        <span class="tag tag-green">Ops</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#16a34a;">NF</div>
+        <div class="name">Nicolas Faure</div>
+        <div class="role">Chargé de recrutement</div>
+        <div class="since">Depuis 2023</div>
+        <span class="tag tag-green">Ops</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#d97706;">LR</div>
+        <div class="name">Laura Renard</div>
+        <div class="role">Account Manager</div>
+        <div class="since">Depuis 2021</div>
+        <span class="tag tag-amber">Commercial</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#d97706;">JC</div>
+        <div class="name">Julien Château</div>
+        <div class="role">Account Manager</div>
+        <div class="since">Depuis 2022</div>
+        <span class="tag tag-amber">Commercial</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#7c3aed;">MV</div>
+        <div class="name">Margaux Vidal</div>
+        <div class="role">Chargée de mission tech & data</div>
+        <div class="since">Depuis 2023</div>
+        <span class="tag tag-purple">Tech</span>
+      </div>
+      <div class="team-card">
+        <div class="avatar" style="background:#6b7280;">PB</div>
+        <div class="name">Pierre Borel</div>
+        <div class="role">Office Manager & Compta</div>
+        <div class="since">Depuis 2020</div>
+        <span class="tag tag-amber">Admin</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Répartition du temps — chargés de recrutement (avec la plateforme)</h3>
+      <table style="margin-top:12px;">
+        <thead>
+          <tr>
+            <th>Activité</th>
+            <th>% du temps hebdo</th>
+            <th>Commentaire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Échanges clients (mails, appels)</td>
+            <td><strong>40 %</strong></td>
+            <td>Transmission des résultats, questions sur l'offre</td>
+          </tr>
+          <tr>
+            <td>Création et paramétrage des offres</td>
+            <td>25 %</td>
+            <td>Saisie de l'offre dans la plateforme, vérification de la description</td>
+          </tr>
+          <tr>
+            <td>Revue des candidatures scorées</td>
+            <td>20 %</td>
+            <td>Consultation du dashboard, lecture des justifications IA</td>
+          </tr>
+          <tr>
+            <td>Sourcing complémentaire</td>
+            <td>10 %</td>
+            <td>Quand le volume entrant est insuffisant</td>
+          </tr>
+          <tr>
+            <td>Réunions internes</td>
+            <td>5 %</td>
+            <td>Point hebdo + briefs client</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ 4. PROCESSUS INTERNE ══ -->
+  <section>
+    <p class="section-label">04 — Processus interne</p>
+    <h2>Comment une mission se déroule-t-elle ?</h2>
+
+    <div class="card">
+      <div class="process-steps">
+
+        <div class="step">
+          <div class="step-num" style="background:var(--text); color:#fff;">1</div>
+          <div class="step-body">
+            <strong>Réception et saisie de l'offre client</strong>
+            <p>Le client transmet sa fiche de poste (email, PDF). Un account manager l'analyse avec le client et crée l'offre dans la plateforme : titre, localisation, type de contrat, description du poste. C'est cette description qui sera fournie à l'IA pour le matching.</p>
+            <div class="step-meta">
+              <span class="tag tag-amber">Commercial</span>
+              <span class="tag tag-blue">~1 h par offre</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num" style="background:var(--text); color:#fff;">2</div>
+          <div class="step-body">
+            <strong>Les CV sont déposés manuellement sur la fiche offre</strong>
+            <p>L'équipe RecrutAI dépose les CV (fichiers PDF) directement sur la page de l'offre dans la plateforme. Plusieurs CV peuvent être uploadés simultanément. Le système enregistre chaque candidature et déclenche immédiatement le scoring.</p>
+            <div class="step-meta">
+              <span class="tag tag-green">Ops</span>
+              <span class="tag tag-purple">Scoring automatique</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num" style="background:var(--text); color:#fff;">3</div>
+          <div class="step-body">
+            <strong>Scoring automatique par l'IA</strong>
+            <p>La plateforme envoie à Claude le CV, la description du poste, et un system prompt global. Claude retourne un score (0–100), une justification courte, et extrait le nom et l'email du candidat. Si le score dépasse le <strong>seuil défini sur l'offre</strong> (60 par défaut, modifiable offre par offre) : le candidat est qualifié. En dessous : il est rejeté. Tout se passe en quelques secondes, sans intervention humaine.</p>
+            <div class="step-meta">
+              <span class="tag tag-purple">IA</span>
+              <span class="tag tag-blue">~10 secondes / CV</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num" style="background:var(--text); color:#fff;">4</div>
+          <div class="step-body">
+            <strong>Notification automatique du client</strong>
+            <p>Dès qu'un CV franchit le seuil de qualification défini sur l'offre, un email est automatiquement envoyé à l'adresse de notification du client. L'email contient le nom du candidat, son score, et la justification produite par l'IA.</p>
+            <div class="step-meta">
+              <span class="tag tag-purple">Automatique</span>
+              <span class="tag tag-green">Envoi immédiat</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num" style="background:var(--text); color:#fff;">5</div>
+          <div class="step-body">
+            <strong>Suivi et clôture de la mission</strong>
+            <p>L'équipe consulte le dashboard pour suivre l'activité : scores reçus, taux de qualification, candidats transmis au client. La mission est clôturée quand le client a trouvé son candidat ou arrêté le processus.</p>
+            <div class="step-meta">
+              <span class="tag tag-green">Ops</span>
+              <span class="tag tag-amber">Commercial</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 5. PORTEFEUILLE CLIENTS ══ -->
+  <section>
+    <p class="section-label">05 — Portefeuille clients</p>
+    <h2>Exemples de clients actifs</h2>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Secteur</th>
+            <th>Formule</th>
+            <th>Offres actives</th>
+            <th>AM référent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Groupe Halbert</strong></td>
+            <td>Industrie manufacturière</td>
+            <td><span class="tag tag-purple">Volume entreprise</span></td>
+            <td>12</td>
+            <td>Laura Renard</td>
+          </tr>
+          <tr>
+            <td><strong>FinTech Norda</strong></td>
+            <td>Fintech / Scale-up</td>
+            <td><span class="tag tag-blue">Abonnement</span></td>
+            <td>5</td>
+            <td>Julien Château</td>
+          </tr>
+          <tr>
+            <td><strong>Cliniques du Rhône</strong></td>
+            <td>Santé & médico-social</td>
+            <td><span class="tag tag-blue">Abonnement</span></td>
+            <td>4</td>
+            <td>Laura Renard</td>
+          </tr>
+          <tr>
+            <td><strong>Bâtir & Co</strong></td>
+            <td>BTP & construction</td>
+            <td><span class="tag tag-green">À la mission</span></td>
+            <td>2</td>
+            <td>Julien Château</td>
+          </tr>
+          <tr>
+            <td><strong>EdTech Knoovi</strong></td>
+            <td>Éducation / SaaS</td>
+            <td><span class="tag tag-blue">Abonnement</span></td>
+            <td>3</td>
+            <td>Laura Renard</td>
+          </tr>
+          <tr>
+            <td><strong>Cabinet Solvay RH</strong></td>
+            <td>Conseil RH</td>
+            <td><span class="tag tag-green">À la mission</span></td>
+            <td>1</td>
+            <td>Julien Château</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ 6. EXEMPLES D'OFFRES TRAITÉES ══ -->
+  <section>
+    <p class="section-label">06 — Offres traitées</p>
+    <h2>Exemples de postes typiques</h2>
+
+    <div class="card-grid">
+
+      <div class="card" style="padding:20px 24px;">
+        <div class="tag tag-blue" style="margin-bottom:12px;">Industrie</div>
+        <h3>Technicien de maintenance H/F</h3>
+        <p style="font-size:0.82rem; color:var(--text-light); margin-top:4px;">Client : Groupe Halbert · Lyon</p>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem;">Bac+2 maintenance industrielle exigé. 3 ans d'expérience min. Habilitation électrique BR souhaitée. CACES 3 apprécié.</p>
+        <p style="font-size:0.78rem; color:#9ca3af; margin-top:10px;">Seuil : 60 · CV reçus : 87 · Qualifiés : 14</p>
+      </div>
+
+      <div class="card" style="padding:20px 24px;">
+        <div class="tag tag-purple" style="margin-bottom:12px;">Tech</div>
+        <h3>Développeur Full-Stack React/Node</h3>
+        <p style="font-size:0.82rem; color:var(--text-light); margin-top:4px;">Client : FinTech Norda · Paris (remote)</p>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem;">5 ans d'expérience min. Maîtrise TypeScript. Expérience en environnement agile. Bonus : connaissance des APIs bancaires open banking.</p>
+        <p style="font-size:0.78rem; color:#9ca3af; margin-top:10px;">Seuil : 70 · CV reçus : 143 · Qualifiés : 9</p>
+      </div>
+
+      <div class="card" style="padding:20px 24px;">
+        <div class="tag tag-red" style="margin-bottom:12px;">Santé</div>
+        <h3>Infirmier(ère) de nuit</h3>
+        <p style="font-size:0.82rem; color:var(--text-light); margin-top:4px;">Client : Cliniques du Rhône · Grenoble</p>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem;">Diplôme IDE obligatoire. Inscription RPPS valide. Expérience en clinique ou hôpital exigée. Disponibilité immédiate.</p>
+        <p style="font-size:0.78rem; color:#9ca3af; margin-top:10px;">Seuil : 55 · CV reçus : 31 · Qualifiés : 7</p>
+      </div>
+
+      <div class="card" style="padding:20px 24px;">
+        <div class="tag tag-amber" style="margin-bottom:12px;">BTP</div>
+        <h3>Conducteur de travaux TCE</h3>
+        <p style="font-size:0.82rem; color:var(--text-light); margin-top:4px;">Client : Bâtir & Co · Bordeaux</p>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem;">Bac+3/5 génie civil ou équivalent. 5 ans min sur des chantiers TCE > 2 M€. Maîtrise MS Project ou Primavera.</p>
+        <p style="font-size:0.78rem; color:#9ca3af; margin-top:10px;">Seuil : 65 · CV reçus : 54 · Qualifiés : 6</p>
+      </div>
+
+      <div class="card" style="padding:20px 24px;">
+        <div class="tag tag-green" style="margin-bottom:12px;">EdTech</div>
+        <h3>Customer Success Manager</h3>
+        <p style="font-size:0.82rem; color:var(--text-light); margin-top:4px;">Client : Knoovi · Lyon (hybride)</p>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem;">Expérience SaaS B2B 2 ans min. Anglais courant. Appétence produit forte. Connaissance du secteur éducatif appréciée.</p>
+        <p style="font-size:0.78rem; color:#9ca3af; margin-top:10px;">Seuil : 60 · CV reçus : 67 · Qualifiés : 11</p>
+      </div>
+
+      <div class="card" style="padding:20px 24px;">
+        <div class="tag tag-blue" style="margin-bottom:12px;">RH</div>
+        <h3>Consultant RH senior</h3>
+        <p style="font-size:0.82rem; color:var(--text-light); margin-top:4px;">Client : Cabinet Solvay RH · Paris</p>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem;">Master RH ou droit social. 7 ans min en cabinet. Expertise en droit du travail et restructurations. Portefeuille clients existant apprécié.</p>
+        <p style="font-size:0.78rem; color:#9ca3af; margin-top:10px;">Seuil : 75 · CV reçus : 28 · Qualifiés : 4</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 7. ANALYSE ══ -->
+  <section>
+    <p class="section-label">07 — Analyse</p>
+    <h2>Problèmes résolus par la plateforme</h2>
+
+    <div class="two-col">
+      <div class="card">
+        <h3 style="color:var(--red); margin-bottom:16px;">Avant la plateforme</h3>
+        <ul class="pain-list">
+          <li>55 % du temps des chargés passé à lire des CV — charge répétitive et peu à valeur ajoutée</li>
+          <li>Scoring subjectif et incohérent selon la personne qui traite le CV</li>
+          <li>Les emails de transmission aux clients rédigés manuellement à chaque fois</li>
+          <li>Impossible de traiter des pics de volume sans heures supplémentaires</li>
+          <li>Délai moyen de 46 h entre réception d'un CV et transmission au client</li>
+          <li>Pas de traçabilité sur pourquoi un CV a été rejeté</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 style="color:var(--green); margin-bottom:16px;">Avec la plateforme</h3>
+        <ul class="gain-list">
+          <li>Score IA automatique en quelques secondes dès l'upload du CV sur la fiche offre</li>
+          <li>Critères de scoring uniformes pour tous les candidats d'une même offre</li>
+          <li>Email automatique envoyé au client dès qu'un CV franchit le seuil de qualification paramétré sur l'offre</li>
+          <li>Scalabilité : 1 400 CV/mois ou 10 000, la charge machine reste identique</li>
+          <li>Délai de traitement ramené à moins de 2 minutes</li>
+          <li>Historique complet de chaque décision avec justification lisible</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <strong>Règle de qualification :</strong> un CV reçoit un score de 0 à 100. Chaque offre définit son propre <strong>seuil de qualification</strong> (60 par défaut, ajustable entre 0 et 100). Si le score franchit le seuil de l'offre, le candidat est qualifié et le client reçoit immédiatement un email de notification. En dessous, le candidat est rejeté. Aucune intervention humaine n'est requise dans ce processus.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Document pédagogique — Formation vibe coding · Cas fictif à usage interne · RecrutAI © 2025
+</footer>
+
+</body>
+</html>

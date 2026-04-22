@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brief technique — RecrutAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --surface-dark: #111418;
+      --border: #e5e2da;
+      --text: #1a1a1a;
+      --text-light: #666660;
+
+      --frontend: #2563eb;
+      --frontend-light: #eff6ff;
+
+      --db: #16a34a;
+      --db-light: #f0fdf4;
+
+      --edge: #7c3aed;
+      --edge-light: #f5f3ff;
+
+      --ext: #d97706;
+      --ext-light: #fffbeb;
+
+      --deploy: #0891b2;
+      --deploy-light: #ecfeff;
+
+      --accent: #7c3aed;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    code, pre { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+
+    header {
+      background: var(--text);
+      color: #fff;
+      padding: 56px 48px 44px;
+    }
+
+    .header-inner { max-width: 1040px; margin: 0 auto; }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    header h1 span { color: #a78bfa; }
+    header p { font-size: 1rem; color: #a1a1aa; max-width: 640px; font-weight: 300; }
+
+    nav.toc {
+      display: flex;
+      gap: 24px;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid #333;
+      flex-wrap: wrap;
+    }
+
+    nav.toc a {
+      font-size: 0.85rem;
+      color: #a1a1aa;
+      text-decoration: none;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      transition: color .15s;
+    }
+
+    nav.toc a:hover { color: #a78bfa; }
+    nav.toc a span.num { font-size: 0.7rem; color: #52525b; font-weight: 600; }
+
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 72px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    h2 { font-family: 'DM Serif Display', serif; font-size: 1.75rem; margin-bottom: 8px; line-height: 1.2; }
+    h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+    .section-desc { font-size: 0.92rem; color: var(--text-light); max-width: 680px; margin-bottom: 8px; }
+
+    p { color: #3d3d3d; font-size: 0.92rem; }
+
+    /* ── BLOCS TECHNIQUES ─── */
+    .arch-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background-color: var(--border);
+    }
+
+    @media (max-width: 720px) { .arch-diagram { grid-template-columns: 1fr; } }
+
+    .arch-cell {
+      background: var(--surface);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .arch-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      align-self: flex-start;
+    }
+
+    .arch-title { font-size: 1rem; font-weight: 600; }
+    .arch-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; }
+
+    .arch-tools {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .arch-tool {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: #f4f3f0;
+      color: #52525b;
+    }
+
+    /* ── STACK ─── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .stack-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stack-card .tool-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .stack-card .tool-name .version {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: #9ca3af;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stack-card .tool-role {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .stack-card p {
+      font-size: 0.84rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    .stack-card .docs-link {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--frontend);
+      text-decoration: none;
+    }
+
+    /* ── PHASES ─── */
+    .phase {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 22px 32px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(to right, #fafaf7, transparent);
+    }
+
+    .phase-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--edge-light);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .phase-title-group { flex: 1; }
+    .phase-title { font-size: 1.1rem; font-weight: 600; }
+    .phase-meta { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
+    .phase-duration {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-light);
+      background: #f4f3f0;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .phase-body { padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+    .task {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .task-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    .task-body { flex: 1; }
+    .task-body strong { display: block; font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .task-body p { font-size: 0.85rem; color: var(--text-light); line-height: 1.55; }
+
+    /* ── CODE BLOCKS ─── */
+    pre.code {
+      background: var(--surface-dark);
+      color: #e5e7eb;
+      padding: 16px 20px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    pre.code .comment { color: #6b7280; }
+    pre.code .cmd     { color: #a78bfa; }
+    pre.code .str     { color: #86efac; }
+    pre.code .var     { color: #fbbf24; }
+
+    code.inline {
+      background: #f4f3f0;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: var(--accent);
+    }
+
+    /* ── CALLOUTS ─── */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 0.86rem;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .callout-info { background: var(--frontend-light); color: #1e40af; border-left: 3px solid var(--frontend); }
+    .callout-warn { background: #fef3c7; color: #92400e; border-left: 3px solid var(--ext); }
+    .callout-ia { background: var(--edge-light); color: #5b21b6; border-left: 3px solid var(--edge); }
+
+    .callout strong { font-weight: 600; }
+
+    /* ── TABLE ─── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #f4f3f0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-light);
+    }
+
+    td { padding: 12px 16px; border-top: 1px solid #f0eeea; color: #3d3d3d; vertical-align: top; }
+    td code { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; background: #f4f3f0; padding: 2px 6px; border-radius: 4px; color: var(--accent); }
+
+    /* ── FLOW ARROWS ─── */
+    .file-tree {
+      background: var(--surface-dark);
+      color: #e5e7eb;
+      padding: 20px 24px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+    }
+
+    .file-tree .dir { color: #a78bfa; }
+    .file-tree .comment { color: #6b7280; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+
+    /* ── TAGS ─── */
+    .tag-frontend { background: var(--frontend-light); color: var(--frontend); }
+    .tag-db       { background: var(--db-light); color: var(--db); }
+    .tag-edge     { background: var(--edge-light); color: var(--edge); }
+    .tag-ext      { background: var(--ext-light); color: var(--ext); }
+    .tag-deploy   { background: var(--deploy-light); color: var(--deploy); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="badge">Document 3 / 3 — Brief technique</div>
+    <h1>RecrutAI — <span>brief technique</span><br>& guide de développement</h1>
+    <p>Identification des blocs techniques qui composent l'application, stack retenue, et guide pas à pas pour une semaine de build avec Claude Code.</p>
+    <nav class="toc">
+      <a href="#blocs"><span class="num">01</span> Blocs techniques</a>
+      <a href="#stack"><span class="num">02</span> Stack</a>
+      <a href="#guide"><span class="num">03</span> Guide de développement</a>
+      <a href="#evaluation"><span class="num">04</span> Évaluation</a>
+    </nav>
+    <nav class="toc" style="margin-top:16px; padding-top:16px;">
+      <a href="cas-etude-recrutai.html"><span class="num">DOC 1</span> Cas d'étude</a>
+      <a href="workflow-fonctionnel.html"><span class="num">DOC 2</span> Workflow fonctionnel</a>
+      <a href="brief-technique.html" style="color:#fff;"><span class="num">DOC 3</span> Brief technique</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ CHAPEAU ══ -->
+  <div class="callout callout-info" style="border-left-width:4px; padding:20px 24px;">
+    <span class="callout-icon" style="font-size:1.2rem;">📐</span>
+    <div>
+      <strong style="font-size:1rem;">Ce document décrit le socle minimal attendu.</strong><br>
+      Les blocs techniques, les phases et les fonctionnalités présentés ici constituent la <strong>brique fondamentale</strong> que chaque participant doit implémenter. C'est le minimum requis pour valider l'exercice.<br><br>
+      Chaque participant est libre d'ajouter des fonctionnalités supplémentaires (filtres avancés, analytics, notifications en temps réel, dark mode, etc.) — à la condition expresse de <strong>respecter et livrer d'abord l'intégralité du socle minimal</strong> décrit ci-dessous. Les ajouts personnels ne doivent pas compromettre le fonctionnement de la brique de base.
+    </div>
+  </div>
+
+  <!-- ══ SECTION 1 — BLOCS TECHNIQUES ══ -->
+  <section id="blocs">
+    <p class="section-label">Partie 1</p>
+    <h2>Les blocs techniques de l'application</h2>
+    <p class="section-desc">L'application se décompose en 6 blocs techniques clairement séparés. Chaque bloc a une responsabilité unique et communique avec les autres via des interfaces bien définies.</p>
+
+    <div class="arch-diagram" style="margin-top:24px;">
+
+      <div class="arch-cell">
+        <span class="arch-tag tag-frontend">01 · Frontend</span>
+        <div class="arch-title">SPA React</div>
+        <div class="arch-desc">Interface utilisée par l'équipe RecrutAI : login, dashboard, gestion des clients et des offres, consultation des candidatures.</div>
+        <div class="arch-tools">
+          <span class="arch-tool">React</span>
+          <span class="arch-tool">Vite</span>
+          <span class="arch-tool">Tailwind</span>
+          <span class="arch-tool">Shadcn/ui</span>
+        </div>
+      </div>
+
+      <div class="arch-cell">
+        <span class="arch-tag tag-db">02 · Base de données</span>
+        <div class="arch-title">Postgres Supabase</div>
+        <div class="arch-desc">3 tables métier (<code class="inline">clients</code>, <code class="inline">jobs</code>, <code class="inline">applications</code>). Row Level Security activée pour que seuls les utilisateurs connectés puissent lire/écrire.</div>
+        <div class="arch-tools">
+          <span class="arch-tool">Supabase Postgres</span>
+          <span class="arch-tool">RLS</span>
+        </div>
+      </div>
+
+      <div class="arch-cell">
+        <span class="arch-tag tag-db">03 · Authentification</span>
+        <div class="arch-title">Supabase Auth</div>
+        <div class="arch-desc">Email + mot de passe, clé en main. Session JWT gérée automatiquement. Comptes créés manuellement via le dashboard Supabase.</div>
+        <div class="arch-tools">
+          <span class="arch-tool">Supabase Auth</span>
+          <span class="arch-tool">JWT</span>
+        </div>
+      </div>
+
+      <div class="arch-cell">
+        <span class="arch-tag tag-edge">04 · Edge Function</span>
+        <div class="arch-title">Scoring IA & notification</div>
+        <div class="arch-desc">Reçoit le texte extrait du CV uploadé, appelle Claude pour le scoring, écrit le résultat en base, déclenche l'email si score ≥ 60. Le cœur logique de l'app.</div>
+        <div class="arch-tools">
+          <span class="arch-tool">Deno</span>
+          <span class="arch-tool">Supabase Functions</span>
+        </div>
+      </div>
+
+      <div class="arch-cell">
+        <span class="arch-tag tag-ext">05 · APIs externes</span>
+        <div class="arch-title">Claude + Resend</div>
+        <div class="arch-desc">Claude Sonnet 4.6 pour le scoring IA. Resend pour l'envoi transactionnel de l'email de qualification au client.</div>
+        <div class="arch-tools">
+          <span class="arch-tool">Anthropic API</span>
+          <span class="arch-tool">Resend API</span>
+        </div>
+      </div>
+
+      <div class="arch-cell">
+        <span class="arch-tag tag-deploy">06 · Déploiement</span>
+        <div class="arch-title">Vercel + Supabase CLI</div>
+        <div class="arch-desc">Frontend déployé sur Vercel via connexion GitHub. Edge Function déployée via la CLI Supabase. Secrets gérés côté Supabase.</div>
+        <div class="arch-tools">
+          <span class="arch-tool">Vercel</span>
+          <span class="arch-tool">Supabase CLI</span>
+          <span class="arch-tool">GitHub</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout callout-info" style="margin-top:20px;">
+      <span class="callout-icon">💡</span>
+      <div><strong>Principe de séparation :</strong> le frontend ne parle jamais directement à Claude ou à Resend. Il parle seulement à Supabase (base + Storage + Edge Function). Les clés d'API externes ne quittent jamais l'Edge Function. C'est ce qui garantit la sécurité de l'application.</div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 2 — STACK ══ -->
+  <section id="stack">
+    <p class="section-label">Partie 2</p>
+    <h2>La stack retenue</h2>
+    <p class="section-desc">Stack moderne, mature, et massivement documentée. Claude Code connaît parfaitement chacun de ces outils — le taux d'hallucination est quasi nul sur ce triplet React + Supabase + Vercel.</p>
+
+    <div class="stack-grid" style="margin-top:24px;">
+
+      <div class="stack-card">
+        <span class="tool-role">Frontend framework</span>
+        <div class="tool-name">React <span class="version">18+</span></div>
+        <p>Bibliothèque UI la plus utilisée au monde. Écosystème massif, parfaitement intégré à Vercel et Supabase.</p>
+        <a class="docs-link" href="https://react.dev" target="_blank">→ react.dev</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Build tool & dev server</span>
+        <div class="tool-name">Vite <span class="version">5+</span></div>
+        <p>Démarrage instantané, hot-reload ultra-rapide. Le choix par défaut pour créer une SPA React moderne.</p>
+        <a class="docs-link" href="https://vitejs.dev" target="_blank">→ vitejs.dev</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Styling</span>
+        <div class="tool-name">Tailwind CSS <span class="version">3+</span></div>
+        <p>Framework CSS utility-first. Permet de styler rapidement sans quitter le JSX. Claude Code est excellent avec.</p>
+        <a class="docs-link" href="https://tailwindcss.com" target="_blank">→ tailwindcss.com</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Components library</span>
+        <div class="tool-name">Shadcn/ui</div>
+        <p>Composants React pré-stylés (boutons, inputs, tables, dialogs…) copiés directement dans le projet. Zero dépendance, 100 % customisable.</p>
+        <a class="docs-link" href="https://ui.shadcn.com" target="_blank">→ ui.shadcn.com</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Backend-as-a-Service</span>
+        <div class="tool-name">Supabase</div>
+        <p>Postgres managé + Auth + Edge Functions + Storage + Realtime. Une seule plateforme pour tout ce qui n'est pas frontend.</p>
+        <a class="docs-link" href="https://supabase.com/docs" target="_blank">→ supabase.com/docs</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">IA générative</span>
+        <div class="tool-name">Claude API <span class="version">Sonnet 4.6</span></div>
+        <p>API Anthropic pour le scoring des CV. Modèle <code class="inline">claude-sonnet-4-6</code> : meilleur ratio qualité / prix / vitesse.</p>
+        <a class="docs-link" href="https://docs.anthropic.com" target="_blank">→ docs.anthropic.com</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Email transactionnel</span>
+        <div class="tool-name">Resend</div>
+        <p>API d'envoi d'email la plus simple du marché. Plan gratuit : 3 000 emails/mois — largement suffisant pour le projet.</p>
+        <a class="docs-link" href="https://resend.com/docs" target="_blank">→ resend.com/docs</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Hébergement & déploiement</span>
+        <div class="tool-name">Vercel</div>
+        <p>Déploiement du frontend connecté à GitHub. Chaque push déclenche une mise à jour automatique. URL publique en HTTPS incluse.</p>
+        <a class="docs-link" href="https://vercel.com/docs" target="_blank">→ vercel.com/docs</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Versioning & collaboration</span>
+        <div class="tool-name">GitHub</div>
+        <p>Repo Git pour le code. Point de connexion entre Claude Code, Vercel, et l'équipe.</p>
+        <a class="docs-link" href="https://github.com" target="_blank">→ github.com</a>
+      </div>
+
+      <div class="stack-card">
+        <span class="tool-role">Assistant de développement</span>
+        <div class="tool-name">Claude Code</div>
+        <p>L'assistant IA qui génère le code, crée les fichiers, exécute les commandes. Le vrai moteur de la semaine de build.</p>
+        <a class="docs-link" href="https://claude.com/claude-code" target="_blank">→ claude.com/claude-code</a>
+      </div>
+
+    </div>
+
+    <div class="callout callout-warn" style="margin-top:20px;">
+      <span class="callout-icon">⚠️</span>
+      <div><strong>Comptes à préparer avant le démarrage :</strong> un compte Supabase, un compte Vercel, un compte GitHub, une clé API Anthropic (crédit de 5 à 10 $ suffit), un compte Resend (plan gratuit).</div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 3 — GUIDE DE DÉVELOPPEMENT ══ -->
+  <section id="guide">
+    <p class="section-label">Partie 3</p>
+    <h2>Guide de développement semaine par jour</h2>
+    <p class="section-desc">7 phases de build, ordonnées pour que chaque brique repose sur la précédente. Chaque phase est pensée comme une unité livrable : à la fin, quelque chose fonctionne et se voit.</p>
+
+    <!-- ─── PHASE 0 ─── -->
+    <article class="phase" style="margin-top:28px;">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 0</div>
+        <div class="phase-title-group">
+          <div class="phase-title">Setup initial du projet</div>
+          <div class="phase-meta">Créer l'environnement de travail · comptes, repo, projet Vite</div>
+        </div>
+        <span class="phase-duration">Jour 1 matin · ~2 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Initialiser le workspace</strong>
+            <p>Créer le dossier de travail et y ouvrir Claude Code. Toutes les commandes suivantes seront lancées depuis ce dossier.</p>
+            <pre class="code"><span class="cmd">mkdir</span> recrutai-workspace <span class="cmd">&amp;&amp; cd</span> recrutai-workspace</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Créer le projet en TypeScript</strong>
+            <p>À la création Vite, choisir le template <code class="inline">react-ts</code>. Shadcn/ui est conçu pour TypeScript (types des composants, meilleure complétion par Claude Code), et ça évite les erreurs silencieuses au runtime.</p>
+            <pre class="code"><span class="cmd">npm create vite@latest</span> recrutai <span class="cmd">--</span> <span class="str">--template react-ts</span></pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Installer Tailwind + Shadcn/ui</strong>
+            <p>Tailwind via la doc officielle Vite, puis Shadcn via son CLI. Shadcn installera automatiquement les dépendances nécessaires.</p>
+            <pre class="code"><span class="cmd">npx shadcn@latest init</span>
+<span class="comment"># Choisir : TypeScript = oui, Style = default, Base color = slate</span>
+
+<span class="comment"># Puis installer les composants qui seront utilisés</span>
+<span class="cmd">npx shadcn@latest add</span> button input card table dialog form label textarea select badge</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">4</div>
+          <div class="task-body">
+            <strong>Créer le repo GitHub et le projet Supabase</strong>
+            <p>Un repo GitHub pour le code, un projet Supabase pour la base. Les deux gratuits. Noter l'URL et la clé anonyme du projet Supabase (tableau de bord → Settings → API).</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">5</div>
+          <div class="task-body">
+            <strong>Installer le client Supabase</strong>
+            <p>C'est la bibliothèque qui va permettre au frontend de parler à la base de données.</p>
+            <pre class="code"><span class="cmd">npm install</span> @supabase/supabase-js</pre>
+          </div>
+        </div>
+
+        <div class="callout callout-ia">
+          <span class="callout-icon">🤖</span>
+          <div><strong>Avec Claude Code :</strong> demander "<em>Setup le projet RecrutAI avec Vite + React + Tailwind + Shadcn/ui, et configure un client Supabase en lisant les variables d'environnement VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY</em>". Claude Code créera la structure de fichiers et le fichier <code class="inline">lib/supabase.js</code>.</div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 1 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 1</div>
+        <div class="phase-title-group">
+          <div class="phase-title">Base de données & authentification</div>
+          <div class="phase-meta">Créer les tables Supabase, activer Auth, router le login</div>
+        </div>
+        <span class="phase-duration">Jour 1 après-midi · ~3 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Créer les 3 tables métier dans Supabase</strong>
+            <p>Via l'éditeur SQL du dashboard Supabase, exécuter le script de création des tables <code class="inline">clients</code>, <code class="inline">jobs</code>, <code class="inline">applications</code> selon le modèle défini dans le workflow fonctionnel.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Activer Row Level Security</strong>
+            <p>Sur chaque table, activer RLS et créer une policy "<em>authenticated users only</em>" pour SELECT, INSERT, UPDATE. Sans ça, la base est accessible publiquement.</p>
+            <pre class="code"><span class="cmd">ALTER TABLE</span> clients <span class="cmd">ENABLE ROW LEVEL SECURITY</span>;
+<span class="cmd">CREATE POLICY</span> <span class="str">"authenticated_all"</span> <span class="cmd">ON</span> clients
+  <span class="cmd">FOR ALL TO</span> authenticated <span class="cmd">USING</span> (<span class="var">true</span>);</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Créer un premier utilisateur dans Supabase Auth</strong>
+            <p>Dashboard Supabase → Authentication → Users → Invite user. Entrer l'email de l'utilisateur et lui fixer un mot de passe.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">4</div>
+          <div class="task-body">
+            <strong>Construire la page de login et la protection des routes</strong>
+            <p>Une page <code class="inline">/login</code> avec les composants Shadcn, et un composant <code class="inline">&lt;ProtectedRoute&gt;</code> qui vérifie la session Supabase avant de rendre les pages de l'app.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-ia">
+          <span class="callout-icon">🤖</span>
+          <div><strong>Avec Claude Code :</strong> "<em>Crée une page Login avec Shadcn (email + password), connecte-la à Supabase Auth, et ajoute un ProtectedRoute qui redirige vers /login si pas de session active. Utilise react-router-dom pour le routing.</em>"</div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 2 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 2</div>
+        <div class="phase-title-group">
+          <div class="phase-title">Layout principal & navigation</div>
+          <div class="phase-meta">Sidebar, header, structure des pages</div>
+        </div>
+        <span class="phase-duration">Jour 2 matin · ~2 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Créer le layout avec sidebar</strong>
+            <p>Un layout persistant avec une sidebar à gauche (Dashboard, Clients, Offres, Candidatures) et le contenu principal à droite. Le bouton de déconnexion est dans le coin de la sidebar.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Créer les routes vides</strong>
+            <p>Créer les 4 routes : <code class="inline">/dashboard</code>, <code class="inline">/clients</code>, <code class="inline">/jobs</code>, <code class="inline">/applications</code>. Pour l'instant, des pages vides qui affichent juste leur titre.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Afficher le nom de l'utilisateur connecté</strong>
+            <p>Dans le header ou la sidebar : récupérer l'email de la session Supabase et l'afficher en haut de la sidebar.</p>
+          </div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 3 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 3</div>
+        <div class="phase-title-group">
+          <div class="phase-title">CRUD Clients</div>
+          <div class="phase-meta">Liste, création, modification des clients</div>
+        </div>
+        <span class="phase-duration">Jour 2 après-midi · ~3 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Liste des clients</strong>
+            <p>Table Shadcn avec les colonnes : nom, contact, email notification, secteur, nombre d'offres actives. Récupérer les données via <code class="inline">supabase.from('clients').select()</code>.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Création d'un client</strong>
+            <p>Bouton "Nouveau client" qui ouvre un Dialog Shadcn avec un formulaire. À la soumission : <code class="inline">supabase.from('clients').insert()</code>, puis rafraîchissement de la liste.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Modification et suppression</strong>
+            <p>Un bouton par ligne pour éditer (rouvre le Dialog pré-rempli), un bouton pour supprimer (avec confirmation). <code class="inline">update()</code> et <code class="inline">delete()</code> côté Supabase.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">4</div>
+          <div class="task-body">
+            <strong>Fiche client (page détail)</strong>
+            <p>Route <code class="inline">/clients/:id</code> qui affiche les infos du client et la liste de ses offres.</p>
+          </div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 4 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 4</div>
+        <div class="phase-title-group">
+          <div class="phase-title">CRUD Offres + upload de CV</div>
+          <div class="phase-meta">Liste, création d'offre, zone de dépôt de CV (PDF)</div>
+        </div>
+        <span class="phase-duration">Jour 3 matin · ~3 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Liste des offres</strong>
+            <p>Table avec les colonnes : titre, client, localisation, type de contrat, statut, nombre de candidatures. Filtre par statut (active / clôturée).</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Création d'une offre</strong>
+            <p>Formulaire avec : titre, client (select parmi les clients existants), localisation, type de contrat, description (textarea grande taille), et <strong>seuil de qualification</strong> (champ numérique 0–100, défaut 60). À la soumission, insertion en base.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Fiche offre avec zone d'upload de CV</strong>
+            <p>Sur la page détail d'une offre, intégrer une zone de dépôt (drag &amp; drop ou sélection) pour uploader un ou plusieurs CV au format PDF. Aucun champ de métadonnée à saisir : le nom et l'email du candidat seront extraits automatiquement par Claude à partir du texte du CV.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">4</div>
+          <div class="task-body">
+            <strong>Créer le bucket Supabase Storage</strong>
+            <p>Créer un bucket <code class="inline">cvs</code> dans Supabase Storage (dashboard → Storage → New bucket). <strong>Le laisser privé</strong> (ne pas cocher "Public bucket"). Configurer les policies pour que seuls les utilisateurs authentifiés puissent uploader et lire les fichiers.</p>
+            <pre class="code"><span class="comment">-- Policies SQL pour le bucket cvs</span>
+<span class="cmd">CREATE POLICY</span> <span class="str">"authenticated_upload"</span> <span class="cmd">ON</span> storage.objects
+  <span class="cmd">FOR INSERT TO</span> authenticated
+  <span class="cmd">WITH CHECK</span> (bucket_id = <span class="str">'cvs'</span>);
+
+<span class="cmd">CREATE POLICY</span> <span class="str">"authenticated_read"</span> <span class="cmd">ON</span> storage.objects
+  <span class="cmd">FOR SELECT TO</span> authenticated
+  <span class="cmd">USING</span> (bucket_id = <span class="str">'cvs'</span>);</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">5</div>
+          <div class="task-body">
+            <strong>Flux d'upload côté frontend</strong>
+            <p>Après chaque dépôt de fichier : (1) uploader le PDF dans Storage, (2) récupérer le <code class="inline">file_path</code>, (3) appeler l'Edge Function <code class="inline">score-cv</code> avec <code class="inline">{ job_id, cv_file_path }</code>. Afficher un statut <code class="inline">pending</code> dans l'UI, puis rafraîchir quand la réponse arrive.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">📎</span>
+          <div><strong>Un kit de test sera fourni :</strong> 3 offres prêtes à l'emploi (descriptions complètes) + 5 CV PDF par offre, avec des scores attendus indicatifs pour valider le bon fonctionnement du scoring de bout en bout.</div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 5 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 5</div>
+        <div class="phase-title-group">
+          <div class="phase-title">Edge Function — scoring IA & notification email</div>
+          <div class="phase-meta">La partie la plus délicate : appel Claude, scoring, envoi Resend</div>
+        </div>
+        <span class="phase-duration">Jour 3 après-midi + Jour 4 · ~6 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Installer la CLI Supabase et initialiser les functions</strong>
+            <pre class="code"><span class="cmd">npm install -g</span> supabase
+<span class="cmd">supabase login</span>
+<span class="cmd">supabase init</span>
+<span class="cmd">supabase functions new</span> score-cv</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Configurer les secrets de l'Edge Function</strong>
+            <p>Les 3 secrets nécessaires, à définir dans le dashboard Supabase (Edge Functions → Secrets) ou via la CLI.</p>
+            <pre class="code"><span class="cmd">supabase secrets set</span> ANTHROPIC_API_KEY=<span class="str">"sk-ant-..."</span>
+<span class="cmd">supabase secrets set</span> RESEND_API_KEY=<span class="str">"re_..."</span>
+<span class="cmd">supabase secrets set</span> SYSTEM_PROMPT=<span class="str">"Tu es un expert en recrutement..."</span></pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Extraire le texte du PDF avec unpdf (Deno)</strong>
+            <p>La librairie <code class="inline">unpdf</code> fonctionne nativement en Deno (zero-dep, pas de binaire natif). Elle lit un <code class="inline">ArrayBuffer</code> et renvoie le texte page par page.</p>
+            <pre class="code"><span class="comment">// dans l'Edge Function</span>
+<span class="cmd">import</span> { extractText } <span class="cmd">from</span> <span class="str">"https://esm.sh/unpdf"</span>;
+
+<span class="comment">// 1. Télécharger le PDF depuis Storage</span>
+<span class="cmd">const</span> { data: file } = <span class="cmd">await</span> supabase.storage
+  .from(<span class="str">'cvs'</span>).download(cv_file_path);
+<span class="cmd">const</span> buffer = <span class="cmd">await</span> file.arrayBuffer();
+
+<span class="comment">// 2. Extraire le texte</span>
+<span class="cmd">const</span> { text } = <span class="cmd">await</span> extractText(<span class="cmd">new</span> Uint8Array(buffer), { mergePages: <span class="var">true</span> });</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">4</div>
+          <div class="task-body">
+            <strong>Écrire la logique complète de la fonction</strong>
+            <p>Séquence complète exécutée par l'Edge Function à chaque appel depuis le frontend :</p>
+            <pre class="code"><span class="comment">// 1. Lire le body : { job_id, cv_file_path }</span>
+<span class="comment">// 2. Vérifier que l'offre existe + est active + récupérer score_threshold</span>
+<span class="comment">// 3. Créer la candidature (status = 'pending', cv_file_path)</span>
+<span class="comment">// 4. Télécharger le PDF depuis Storage → extraire texte (unpdf)</span>
+<span class="comment">// 5. Appeler Claude : SYSTEM_PROMPT + cv_text + job.description</span>
+<span class="comment">//    → attendu : { score, justification, candidate_name, candidate_email }</span>
+<span class="comment">// 6. Comparer score au score_threshold de l'offre</span>
+<span class="comment">// 7. UPDATE applications (score, justification, candidate_name,</span>
+<span class="comment">//    candidate_email, cv_text, status = qualified | rejected)</span>
+<span class="comment">// 8. Si qualified : appeler Resend → UPDATE email_sent_at</span>
+<span class="comment">// 9. Tout le corps dans un try/catch :</span>
+<span class="comment">//    toute exception → status = 'error', justification = err.message</span>
+<span class="comment">// 10. Retourner 200 + résultat (ne jamais renvoyer 500 au frontend)</span></pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">5</div>
+          <div class="task-body">
+            <strong>Configurer Resend avec un domaine de test</strong>
+            <p>Resend refuse l'envoi tant que le domaine <code class="inline">from</code> n'est pas vérifié. Pour le dev / la démo, utiliser l'adresse <code class="inline">onboarding@resend.dev</code> fournie par Resend (fonctionne sans vérification DNS). En production réelle, il faudra vérifier un vrai domaine.</p>
+            <pre class="code"><span class="cmd">await</span> resend.emails.send({
+  from: <span class="str">"RecrutAI &lt;onboarding@resend.dev&gt;"</span>, <span class="comment">// dev uniquement</span>
+  to: client.notification_email,
+  subject: <span class="str">`Nouveau CV qualifié — ${candidate_name}`</span>,
+  html: <span class="str">`...`</span>,
+});</pre>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">6</div>
+          <div class="task-body">
+            <strong>Tester en local puis déployer</strong>
+            <pre class="code"><span class="comment"># Test local avec hot-reload</span>
+<span class="cmd">supabase functions serve</span> score-cv <span class="cmd">--env-file</span> .env.local
+
+<span class="comment"># Déploiement quand tout passe</span>
+<span class="cmd">supabase functions deploy</span> score-cv</pre>
+            <p style="margin-top:10px;">Pas besoin du flag <code class="inline">--no-verify-jwt</code> : la fonction est appelée depuis le frontend authentifié, le token JWT est transmis automatiquement par le client Supabase. Si un appel externe (curl, Postman) est nécessaire pour debug, ajouter le flag <code class="inline">--no-verify-jwt</code> ponctuellement.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">7</div>
+          <div class="task-body">
+            <strong>Tester de bout en bout avec le kit de CV fournis</strong>
+            <p>Sur une offre créée, déposer les PDF du kit de test. Vérifier : scoring déclenché, score + justification + nom + email affichés dans le dashboard, email bien reçu pour les CV qualifiés (&gt; seuil de l'offre), statut <code class="inline">error</code> absent.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-ia">
+          <span class="callout-icon">🤖</span>
+          <div><strong>Avec Claude Code :</strong> lui donner l'objectif complet en une seule prompt, en lui précisant les noms des secrets, la structure de la base (avec <code class="inline">score_threshold</code> et <code class="inline">cv_file_path</code>), le format JSON attendu de Claude. Claude Code écrira l'Edge Function entière (Deno/TypeScript) et la déploiera.</div>
+        </div>
+
+        <div class="callout callout-warn">
+          <span class="callout-icon">⚠️</span>
+          <div><strong>Ne jamais renvoyer 500 au frontend.</strong> Toutes les erreurs (PDF illisible, JSON Claude malformé, Resend KO) doivent être capturées et traduites en <code class="inline">status = 'error'</code> dans la base. L'utilisateur doit voir la candidature passer en état "erreur" dans la liste, pas une notification d'échec brute.</div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 6 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 6</div>
+        <div class="phase-title-group">
+          <div class="phase-title">Dashboard & consultation des candidatures</div>
+          <div class="phase-meta">Lecture des scores, stats, justifications</div>
+        </div>
+        <span class="phase-duration">Jour 5 matin · ~3 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Page candidatures par offre</strong>
+            <p>Sur la fiche offre, afficher la liste des candidatures triée par score décroissant : nom, email, score (badge coloré selon ≥ seuil de l'offre ou &lt; seuil), statut (qualifié / rejeté / erreur), justification IA, date, lien de téléchargement du PDF original.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Dashboard global</strong>
+            <p>Page <code class="inline">/dashboard</code> avec 4 cartes de KPI : offres actives, CV reçus aujourd'hui, CV qualifiés cette semaine, taux de qualification global. Calculer ces stats via des requêtes SQL Supabase.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Filtres et tris</strong>
+            <p>Ajouter la possibilité de filtrer les candidatures par statut (qualifié / rejeté / en erreur), et de trier par score ou date.</p>
+          </div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ─── PHASE 7 ─── -->
+    <article class="phase">
+      <div class="phase-header">
+        <div class="phase-tag">Phase 7</div>
+        <div class="phase-title-group">
+          <div class="phase-title">Déploiement final sur Vercel</div>
+          <div class="phase-meta">Mise en production, variables d'environnement, test end-to-end</div>
+        </div>
+        <span class="phase-duration">Jour 5 après-midi · ~2 h</span>
+      </div>
+      <div class="phase-body">
+
+        <div class="task">
+          <div class="task-check">1</div>
+          <div class="task-body">
+            <strong>Push final sur GitHub</strong>
+            <p>S'assurer que tout le code est committé et poussé sur la branche principale.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">2</div>
+          <div class="task-body">
+            <strong>Connecter Vercel à GitHub</strong>
+            <p>Depuis le dashboard Vercel : Import Project → sélectionner le repo GitHub → Vercel détecte automatiquement que c'est un projet Vite.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">3</div>
+          <div class="task-body">
+            <strong>Configurer les variables d'environnement Vercel</strong>
+            <p>Dans les settings du projet Vercel, ajouter <code class="inline">VITE_SUPABASE_URL</code> et <code class="inline">VITE_SUPABASE_ANON_KEY</code>. Redéployer.</p>
+          </div>
+        </div>
+
+        <div class="task">
+          <div class="task-check">4</div>
+          <div class="task-body">
+            <strong>Test end-to-end en production</strong>
+            <p>Créer un client, créer une offre, uploader les faux CV fournis sur la fiche de l'offre, vérifier que les scores apparaissent, qu'un email est bien reçu pour les CV qualifiés, et que tout s'affiche correctement dans le dashboard.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">✓</span>
+          <div><strong>À la fin de cette phase, l'application est en production :</strong> URL publique HTTPS, base de données fonctionnelle, endpoint API prêt à recevoir des CV, scoring IA opérationnel, emails clients automatiques. C'est livré.</div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ── STRUCTURE FICHIERS ── -->
+    <div style="margin-top:36px;">
+      <h3 style="font-size:1.05rem; margin-bottom:12px;">Structure de fichiers suggérée</h3>
+      <div class="file-tree">
+<span class="dir">recrutai/</span>
+├── <span class="dir">src/</span>
+│   ├── <span class="dir">components/</span>           <span class="comment"># Shadcn/ui + composants custom</span>
+│   │   ├── <span class="dir">ui/</span>              <span class="comment"># Shadcn (bouton, card, table…)</span>
+│   │   ├── Sidebar.jsx
+│   │   ├── ProtectedRoute.jsx
+│   │   └── CvUploader.jsx        <span class="comment"># Zone d'upload de CV (drag & drop)</span>
+│   ├── <span class="dir">pages/</span>
+│   │   ├── Login.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── Clients.jsx
+│   │   ├── ClientDetail.jsx
+│   │   ├── Jobs.jsx
+│   │   └── JobDetail.jsx         <span class="comment"># Inclut la zone d'upload de CV</span>
+│   ├── <span class="dir">lib/</span>
+│   │   └── supabase.js           <span class="comment"># Client Supabase initialisé</span>
+│   ├── App.jsx                   <span class="comment"># Routeur + layout</span>
+│   └── main.jsx
+├── <span class="dir">supabase/</span>
+│   └── <span class="dir">functions/</span>
+│       └── <span class="dir">score-cv/</span>
+│           └── index.ts          <span class="comment"># Edge Function Deno (scoring IA)</span>
+├── .env.local                    <span class="comment"># VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY</span>
+├── package.json
+└── vite.config.js
+      </div>
+    </div>
+
+    <!-- ── VARIABLES D'ENV ── -->
+    <div style="margin-top:32px;">
+      <h3 style="font-size:1.05rem; margin-bottom:12px;">Récapitulatif des variables d'environnement</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Où la configurer</th>
+            <th>Utilité</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>VITE_SUPABASE_URL</code></td>
+            <td>.env.local (dev) + Vercel (prod)</td>
+            <td>URL du projet Supabase, utilisée par le frontend</td>
+          </tr>
+          <tr>
+            <td><code>VITE_SUPABASE_ANON_KEY</code></td>
+            <td>.env.local (dev) + Vercel (prod)</td>
+            <td>Clé publique du projet Supabase, utilisée par le frontend</td>
+          </tr>
+          <tr>
+            <td><code>ANTHROPIC_API_KEY</code></td>
+            <td>Supabase → Edge Functions → Secrets</td>
+            <td>Clé Claude API, utilisée par l'Edge Function</td>
+          </tr>
+          <tr>
+            <td><code>RESEND_API_KEY</code></td>
+            <td>Supabase → Edge Functions → Secrets</td>
+            <td>Clé Resend, utilisée pour l'envoi d'email</td>
+          </tr>
+          <tr>
+            <td><code>SYSTEM_PROMPT</code></td>
+            <td>Supabase → Edge Functions → Secrets</td>
+            <td>Prompt d'instruction de Claude pour le scoring</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── POINTS D'ATTENTION ── -->
+    <div style="margin-top:36px;">
+      <h3 style="font-size:1.05rem; margin-bottom:12px;">Points d'attention critiques pour la semaine</h3>
+
+      <div class="callout callout-warn" style="margin-bottom:10px;">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>Ne jamais mettre de clé API dans le frontend.</strong> <code class="inline">ANTHROPIC_API_KEY</code> et <code class="inline">RESEND_API_KEY</code> ne doivent exister QUE dans les secrets Supabase (Edge Function). Si elles apparaissent dans le code React, elles seront visibles publiquement.</div>
+      </div>
+
+      <div class="callout callout-warn" style="margin-bottom:10px;">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>Activer Row Level Security dès le début.</strong> Sans RLS, n'importe qui avec l'URL Supabase peut lire/modifier la base. C'est l'erreur la plus fréquente sur Supabase.</div>
+      </div>
+
+      <div class="callout callout-warn" style="margin-bottom:10px;">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>Contraindre Claude à répondre en JSON strict.</strong> Dans le system prompt, imposer explicitement le format <code class="inline">{"score": int, "justification": string, "candidate_name": string|null, "candidate_email": string|null}</code> et rien d'autre (pas de markdown, pas de texte avant/après). Sinon, le parsing de la réponse échoue aléatoirement.</div>
+      </div>
+
+      <div class="callout callout-warn" style="margin-bottom:10px;">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>Le bucket Storage <code class="inline">cvs</code> doit rester privé.</strong> Un CV contient des données personnelles. Jamais de bucket public. Les liens de téléchargement doivent passer par <code class="inline">createSignedUrl()</code> avec une expiration courte (1h max).</div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">💡</span>
+        <div><strong>Tester d'abord l'upload + scoring avec les CV du kit fourni.</strong> Uploader un seul CV de test sur une offre et vérifier que le score apparaît bien dans le dashboard. Quand le flux fonctionne pour un CV, passer au multi-upload.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══ SECTION 4 — ÉVALUATION ══ -->
+  <section id="evaluation">
+    <p class="section-label">Partie 4</p>
+    <h2>Grille d'évaluation du livrable</h2>
+    <p class="section-desc">Le livrable final est un lien vers l'application déployée sur Vercel + le repo GitHub. Voici les critères de validation.</p>
+
+    <div style="margin-top:20px;">
+      <h3 style="font-size:1.05rem; margin-bottom:12px;">Socle minimal — obligatoire pour valider l'exercice</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Critère</th>
+            <th>Attendu</th>
+            <th>Poids</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Déploiement Vercel</strong></td>
+            <td>URL publique HTTPS accessible, login fonctionnel</td>
+            <td>10 %</td>
+          </tr>
+          <tr>
+            <td><strong>Auth &amp; RLS</strong></td>
+            <td>Login Supabase opérationnel, RLS activée sur les 3 tables, bucket <code>cvs</code> privé</td>
+            <td>15 %</td>
+          </tr>
+          <tr>
+            <td><strong>CRUD Clients</strong></td>
+            <td>Création, lecture, mise à jour, suppression fonctionnels</td>
+            <td>10 %</td>
+          </tr>
+          <tr>
+            <td><strong>CRUD Offres</strong></td>
+            <td>CRUD + champ <code>score_threshold</code> paramétrable par offre</td>
+            <td>10 %</td>
+          </tr>
+          <tr>
+            <td><strong>Upload PDF + extraction</strong></td>
+            <td>PDF stocké dans Storage, texte extrait par <code>unpdf</code></td>
+            <td>15 %</td>
+          </tr>
+          <tr>
+            <td><strong>Scoring Claude</strong></td>
+            <td>JSON strict, score cohérent avec le CV, extraction nom/email</td>
+            <td>20 %</td>
+          </tr>
+          <tr>
+            <td><strong>Notification Resend</strong></td>
+            <td>Email reçu pour chaque CV au-dessus du seuil de l'offre</td>
+            <td>10 %</td>
+          </tr>
+          <tr>
+            <td><strong>Gestion d'erreurs</strong></td>
+            <td>Statut <code>error</code> utilisé correctement en cas d'échec (PDF, Claude, Resend)</td>
+            <td>5 %</td>
+          </tr>
+          <tr>
+            <td><strong>Dashboard</strong></td>
+            <td>Liste des candidatures triable + 4 KPI globaux</td>
+            <td>5 %</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:28px;">
+      <h3 style="font-size:1.05rem; margin-bottom:12px;">Bonus valorisés (non obligatoires)</h3>
+      <ul style="list-style:none; padding-left:0; display:flex; flex-direction:column; gap:8px; font-size:0.88rem;">
+        <li>→ <strong>Prompt system travaillé :</strong> critères de scoring explicites, exemples few-shot, gestion des CV non-pertinents au métier.</li>
+        <li>→ <strong>Comparaison de candidats :</strong> vue qui permet de mettre côte à côte 2 ou 3 candidatures.</li>
+        <li>→ <strong>Export :</strong> bouton pour télécharger la liste des candidats qualifiés au format CSV.</li>
+        <li>→ <strong>Temps réel :</strong> usage de Supabase Realtime pour voir les statuts se mettre à jour sans rafraîchir la page.</li>
+        <li>→ <strong>UI soignée :</strong> loading states, transitions, dark mode, accessibilité clavier.</li>
+        <li>→ <strong>Tests :</strong> tests unitaires sur le parsing du JSON Claude, tests end-to-end avec Playwright.</li>
+      </ul>
+    </div>
+
+    <div class="callout callout-info" style="margin-top:24px;">
+      <span class="callout-icon">📦</span>
+      <div><strong>À remettre à la fin de la semaine :</strong> (1) URL publique de l'app déployée, (2) lien du repo GitHub, (3) le system prompt final utilisé, (4) une courte note (10 lignes max) décrivant un choix technique que vous avez fait différemment du brief et pourquoi.</div>
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+  Document pédagogique — Formation vibe coding · Document 3/3 · Brief technique RecrutAI
+</footer>
+
+</body>
+</html>
