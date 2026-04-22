@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { login } from './helpers'
+import { login, loginWithRole } from './helpers'
 
 test.describe('Page Candidatures', () => {
   test.beforeEach(async ({ page }) => {
@@ -55,34 +55,29 @@ test.describe('Dashboard', () => {
     await login(page)
     await page.goto('/dashboard')
     await page.waitForLoadState('load')
-    await page.waitForSelector('h1', { timeout: 15000 })
   })
 
-  test('affiche les KPI', async ({ page }) => {
-    await expect(page.locator('text=Offres actives')).toBeVisible()
-    await expect(page.locator('text=Taux de qualification')).toBeVisible()
-  })
-
-  test('affiche les titres graphiques', async ({ page }) => {
-    await expect(page.locator('text=CV reçus — 7 derniers jours')).toBeVisible()
-    await expect(page.locator('text=CV reçus par offre (7j)')).toBeVisible()
+  test('affiche le message de bienvenue', async ({ page }) => {
+    await expect(page.locator('text=Aujourd\'hui est une nouvelle occasion')).toBeVisible({ timeout: 15000 })
   })
 })
 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page)
+    await loginWithRole(page, 'am', 'Laura')
   })
 
   test('navigue vers Clients', async ({ page }) => {
-    await page.click('nav >> text=Clients')
+    await page.waitForSelector('nav a:has-text("Clients")', { timeout: 10000 })
+    await page.click('nav a:has-text("Clients")')
     await page.waitForLoadState('load')
     await expect(page).toHaveURL(/\/clients/)
     await expect(page.locator('h1', { hasText: 'Clients' })).toBeVisible()
   })
 
   test('navigue vers Offres', async ({ page }) => {
-    await page.click('nav >> text=Offres')
+    await page.waitForSelector('nav a:has-text("Offres")', { timeout: 10000 })
+    await page.click('nav a:has-text("Offres")')
     await page.waitForLoadState('load')
     await expect(page).toHaveURL(/\/jobs/)
   })

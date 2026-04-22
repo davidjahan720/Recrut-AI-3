@@ -22,23 +22,23 @@ test.describe('Onglet Manager — protection mot de passe', () => {
   })
 
   test('donne accès au dashboard avec le bon mot de passe', async ({ page }) => {
-    await page.fill('input[type="password"]', '03121975')
+    await page.fill('input[type="password"]', '0')
     await page.click('button:has-text("Accéder")')
     await expect(page.locator('h1', { hasText: 'Vue Manager' })).toBeVisible({ timeout: 10000 })
   })
 
   test('le dashboard Manager affiche les KPIs recrutement', async ({ page }) => {
-    await page.fill('input[type="password"]', '03121975')
+    await page.fill('input[type="password"]', '0')
     await page.click('button:has-text("Accéder")')
     await expect(page.locator('text=Offres actives')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('text=CA mensuel')).toBeVisible()
+    await expect(page.locator('text=CA mensuel').first()).toBeVisible()
   })
 
   test('le tableau chargés de recrutement est présent', async ({ page }) => {
-    await page.fill('input[type="password"]', '03121975')
+    await page.fill('input[type="password"]', '0')
     await page.click('button:has-text("Accéder")')
     await expect(page.locator('text=Performance par chargé de recrutement')).toBeVisible({ timeout: 10000 })
     await expect(page.locator('text=Sophie')).toBeVisible()
-    await expect(page.locator('text=Thomas')).toBeVisible()
+    await expect(page.locator('text=Karim')).toBeVisible()
   })
 })
