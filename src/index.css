@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 14 80% 96%;
+    --foreground: 263 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 263 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 263 30% 12%;
+    --primary: 263 65% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 263 20% 90%;
+    --secondary-foreground: 263 50% 25%;
+    --muted: 263 15% 91%;
+    --muted-foreground: 263 15% 20%;
+    --accent: 217 91% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 263 20% 82%;
+    --input: 263 20% 82%;
+    --ring: 263 65% 52%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 263 30% 8%;
+    --foreground: 210 40% 96%;
+    --card: 263 25% 13%;
+    --card-foreground: 210 40% 96%;
+    --popover: 263 25% 13%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 263 70% 68%;
+    --primary-foreground: 263 30% 8%;
+    --secondary: 263 20% 22%;
+    --secondary-foreground: 210 40% 92%;
+    --muted: 263 20% 20%;
+    --muted-foreground: 263 15% 68%;
+    --accent: 217 91% 68%;
+    --accent-foreground: 263 30% 8%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 263 20% 26%;
+    --input: 263 20% 26%;
+    --ring: 263 70% 68%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  /* Taille de base des textes dans les tableaux et formulaires */
+  table { font-size: 0.9375rem; }
+  input, select, textarea, button { font-size: 0.9375rem; }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 10s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-float-delay { animation: float 4s ease-in-out 1.5s infinite; }
