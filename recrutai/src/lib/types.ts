@@ -12,6 +12,8 @@ export interface Client {
 
 export interface Job {
   id: string
+  ref_code: string | null
+  posted_by: string | null
   client_id: string
   title: string
   location: string
@@ -22,7 +24,7 @@ export interface Job {
   honoraires: number | null
   recruiter: string | null
   created_at: string
-  clients?: { name: string }
+  clients?: { name: string; contact_email?: string | null }
 }
 
 export interface Application {
@@ -34,9 +36,10 @@ export interface Application {
   cv_text: string | null
   score: number | null
   justification: string | null
-  status: 'pending' | 'pending_approval' | 'qualified' | 'rejected' | 'error'
+  status: 'pending' | 'qualified' | 'rejected' | 'error'
   positive_points: string | null
   negative_points: string | null
+  uploaded_by: string | null
   email_sent_at: string | null
   md_file_path: string | null
   created_at: string

@@ -49,6 +49,8 @@ export function CvUploader({ jobId, onUploaded }: Props) {
   const [progress, setProgress] = useState<Progress | null>(null)
   const noJob = !jobId
 
+  const uploaderName = sessionStorage.getItem('recruiter_session') || sessionStorage.getItem('am_session') || sessionStorage.getItem('manager_session')
+
   async function processFiles(files: FileList | File[]) {
     const accepted = Array.from(files).filter(f =>
       f.type === 'application/pdf' ||
@@ -71,9 +73,10 @@ export function CvUploader({ jobId, onUploaded }: Props) {
       const file = accepted[i]
       const t0 = Date.now()
 
+      const CV_ESTIMATED_S = 15
       setProgress({ current: i + 1, total: accepted.length, remainingSec: durations.length > 0
         ? Math.round((durations.reduce((a, b) => a + b) / durations.length) * (accepted.length - i) / 1000)
-        : null
+        : CV_ESTIMATED_S * (accepted.length - i)
       })
 
       const safeName = file.name
@@ -96,7 +99,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
         errMsg = String(e)
       }
 
-      // Déduplication : si même candidat (nom + email + poste), supprimer les anciens
+      // Déduplication et enregistrement de l'auteur
       if (!errMsg) {
         const { data: newApp } = await supabase
           .from('applications')
@@ -104,6 +107,10 @@ export function CvUploader({ jobId, onUploaded }: Props) {
           .eq('job_id', jobId)
           .eq('cv_file_path', fileName)
           .maybeSingle()
+
+        if (newApp && uploaderName) {
+          await supabase.from('applications').update({ uploaded_by: uploaderName }).eq('id', newApp.id)
+        }
 
         if (newApp?.candidate_name && newApp?.candidate_email) {
           const { data: dupes } = await supabase

@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { CvUploader } from '@/components/CvUploader'
 
 type SortKey = 'score' | 'created_at'
-type StatusFilter = 'all' | 'qualified' | 'rejected' | 'pending' | 'pending_approval' | 'error'
+type StatusFilter = 'all' | 'qualified' | 'rejected' | 'pending' | 'error'
 
 function formatName(raw: string | null): React.ReactNode {
   if (!raw) return null
@@ -32,11 +33,10 @@ function ScoreBadge({ score, threshold }: { score: number | null; threshold: num
 
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
-    pending:          { label: 'En attente',  cls: 'bg-amber-100 text-amber-700' },
-    pending_approval: { label: 'À approuver', cls: 'bg-violet-600 text-white' },
-    qualified:        { label: 'Qualifié',    cls: 'bg-green-100 text-green-800' },
-    rejected:         { label: 'Rejeté',      cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
-    error:            { label: 'Erreur',      cls: 'bg-red-100 text-red-700' },
+    pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-700' },
+    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-800' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{label}</span>
@@ -112,11 +112,12 @@ export default function JobDetail() {
   const [toggling, setToggling] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [compareOpen, setCompareOpen] = useState(false)
+  const [cvUploadOpen, setCvUploadOpen] = useState(false)
 
   const isRecruiter = !!sessionStorage.getItem('recruiter_session')
 
   async function loadJob() {
-    const { data } = await supabase.from('jobs').select('*, clients(name)').eq('id', id!).single()
+    const { data } = await supabase.from('jobs').select('*, clients(name, contact_email)').eq('id', id!).single()
     if (data) setJob(data)
   }
 
@@ -157,7 +158,7 @@ export default function JobDetail() {
 
   function exportFiche(a: Application) {
     const statusLabel: Record<Application['status'], string> = {
-      qualified: 'Qualifié', rejected: 'Rejeté', pending: 'En attente', pending_approval: 'À approuver', error: 'Erreur',
+      qualified: 'Qualifié', rejected: 'Rejeté', pending: 'En attente', error: 'Erreur',
     }
     const positives: string[] = a.positive_points ? JSON.parse(a.positive_points) : []
     const negatives: string[] = a.negative_points ? JSON.parse(a.negative_points) : []
@@ -268,7 +269,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
 
   const jobStatus = job.status as string
   const totalCv = applications.length
-  const qualifiedCv = applications.filter(a => a.status === 'pending_approval' || a.status === 'qualified').length
+  const qualifiedCv = applications.filter(a => a.status === 'qualified').length
   const daysSince = Math.max(1, Math.floor((Date.now() - new Date(job.created_at).getTime()) / 86_400_000))
 
   return (
@@ -281,8 +282,26 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
           <p className="text-muted-foreground text-base mt-1 font-medium">
             {(job.clients as { name: string } | undefined)?.name} · {job.location} · {job.contract_type} · Seuil {job.score_threshold}
           </p>
+          {isRecruiter && (
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              {job.ref_code && (
+                <span className="font-mono bg-muted px-2 py-1 rounded text-base font-semibold text-foreground">{job.ref_code}</span>
+              )}
+              {job.posted_by && (
+                <span>Créé par <span className="font-semibold text-foreground">{job.posted_by}</span> le {new Date(job.created_at).toLocaleDateString('fr-FR')} à {new Date(job.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
+              {(job.clients as { contact_email?: string | null } | undefined)?.contact_email && (
+                <span>Contact client : <a href={`mailto:${(job.clients as { contact_email?: string | null }).contact_email}`} className="font-semibold text-foreground underline underline-offset-2">{(job.clients as { contact_email?: string | null }).contact_email}</a></span>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {isRecruiter && (
+            <Button size="sm" onClick={() => setCvUploadOpen(true)}>
+              📄 Déposer CV
+            </Button>
+          )}
           {jobStatus === 'closed' ? (
             <Button size="sm" variant="outline" disabled={toggling}
               className="border-green-500 text-green-700 hover:bg-green-50"
@@ -360,8 +379,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
               onChange={e => setStatusFilter(e.target.value as StatusFilter)}
             >
               <option value="all">Tous statuts</option>
-              <option value="pending_approval">À approuver</option>
-              <option value="qualified">Approuvés</option>
+              <option value="qualified">Qualifiés</option>
               <option value="rejected">Rejetés</option>
               <option value="pending">En attente</option>
               <option value="error">Erreur</option>
@@ -381,7 +399,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead className="w-px whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -393,12 +411,12 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     Candidat
                   </div>
                 </TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Email</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Score</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Statut</TableHead>
                 <TableHead>Justification</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead></TableHead>
+                <TableHead className="w-px whitespace-nowrap">Date</TableHead>
+                <TableHead className="w-px whitespace-nowrap"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -423,25 +441,26 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     <TableCell className="text-slate-700">{a.candidate_email ?? '—'}</TableCell>
                     <TableCell><ScoreBadge score={a.score} threshold={job.score_threshold} /></TableCell>
                     <TableCell><StatusBadge status={a.status} /></TableCell>
-                    <TableCell className="max-w-[200px]">
-                      <p className="text-xs text-slate-700 line-clamp-2 leading-snug mb-1">{a.justification ?? '—'}</p>
+                    <TableCell>
+                      <p className="text-xs text-slate-700 leading-snug mb-1">{a.justification ?? '—'}</p>
                       {a.positive_points && (
                         <div className="space-y-0.5">
                           {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
-                            <p key={i} className="text-xs font-medium text-green-800 line-clamp-1">✅ {p}</p>
+                            <p key={i} className="text-xs font-medium text-green-800">{p}</p>
                           ))}
                         </div>
                       )}
                       {a.negative_points && (
                         <div className="space-y-0.5 mt-0.5">
                           {(JSON.parse(a.negative_points) as string[]).slice(0, 2).map((p, i) => (
-                            <p key={i} className="text-xs font-medium text-red-700 line-clamp-1">⚠️ {p}</p>
+                            <p key={i} className="text-xs font-medium text-red-700">{p}</p>
                           ))}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-slate-600 whitespace-nowrap font-medium">
-                      {new Date(a.created_at).toLocaleDateString('fr-FR')}
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {a.uploaded_by && <p className="font-medium text-foreground">{a.uploaded_by}</p>}
+                      <p className="text-muted-foreground">{new Date(a.created_at).toLocaleDateString('fr-FR')} {new Date(a.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
@@ -474,6 +493,15 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
         job={job}
         onViewCv={viewCv}
       />
+
+      <Dialog open={cvUploadOpen} onOpenChange={setCvUploadOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Déposer des CV</DialogTitle>
+          </DialogHeader>
+          <CvUploader jobId={id!} onUploaded={() => { loadApplications(); setCvUploadOpen(false) }} />
+        </DialogContent>
+      </Dialog>
 
     </div>
   )

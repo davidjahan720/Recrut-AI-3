@@ -17,16 +17,18 @@ export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(IS_E2E ? 'e2e-bypass' : null)
   const turnstileRef = useRef<TurnstileInstance | null>(null)
+
+  const skipCaptcha = IS_E2E || email === 'jahandavid@gmail.com'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
-    if (!captchaToken) {
+    if (!skipCaptcha && !captchaToken) {
       setError('Veuillez valider le captcha.')
       return
     }
@@ -88,8 +90,8 @@ export default function Login() {
               />
             </div>
 
-            {/* Cloudflare Turnstile CAPTCHA — masqué en mode test E2E */}
-            {!IS_E2E && <div className="flex justify-center py-1">
+            {/* Cloudflare Turnstile CAPTCHA — masqué en mode test E2E et pour jahandavid@gmail.com */}
+            {!skipCaptcha && <div className="flex justify-center py-1">
               <Turnstile
                 ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
@@ -100,16 +102,11 @@ export default function Login() {
               />
             </div>}
 
-            {error && (
-              <p className="text-base text-red-600 font-medium bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
 
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold"
-              disabled={loading || !captchaToken}
+              disabled={loading || (!skipCaptcha && !captchaToken)}
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </Button>

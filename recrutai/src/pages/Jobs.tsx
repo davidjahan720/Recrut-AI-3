@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { getClientFilter, getAmSession, getAmBaseClientNames, getAmExtraClientIds, addAmClientId, getRecruiterAmLink, getAmRecruiterAssignment } from '@/lib/sessionRole'
+import { getAmSession, getAmBaseClientNames, getAmExtraClientIds, addAmClientId } from '@/lib/sessionRole'
 import { rpcWithRetry } from '@/lib/rpc'
 import type { Client, Job } from '@/lib/types'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+
+function generateRefCode(): string {
+  const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const D = '0123456789'
+  return L[Math.floor(Math.random() * 26)] + L[Math.floor(Math.random() * 26)] + D[Math.floor(Math.random() * 10)] + D[Math.floor(Math.random() * 10)]
+}
 
 type JobForm = {
   client_id: string
@@ -39,13 +45,26 @@ export default function Jobs() {
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'closed'>('all')
   const [parsing, setParsing] = useState(false)
-  const [parseError, setParseError] = useState('')
-  const [saveError, setSaveError] = useState('')
-  const [matchMessage, setMatchMessage] = useState('')
+  const [parseElapsed, setParseElapsed] = useState(0)
+  const [, setParseError] = useState('')
+  const [, setSaveError] = useState('')
   const [showClientForm, setShowClientForm] = useState(false)
   const [clientForm, setClientForm] = useState({ contact_name: '', contact_email: '', notification_email: '', sector: '' })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const PARSE_ESTIMATED_S = 15
+
+  useEffect(() => {
+    if (!parsing) { setParseElapsed(0); return }
+    const start = Date.now()
+    const id = setInterval(() => setParseElapsed(Math.floor((Date.now() - start) / 1000)), 500)
+    return () => clearInterval(id)
+  }, [parsing])
+
+  function parseCountdown() {
+    const remaining = Math.max(0, PARSE_ESTIMATED_S - parseElapsed)
+    return remaining > 0 ? `⏳ ~${remaining}s restantes` : '⏳ Finalisation...'
+  }
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -85,60 +104,6 @@ export default function Jobs() {
     setEditId(j.id); setOpen(true)
   }
 
-  async function triggerExistingCvMatching(newJobId: string) {
-    const { data, error: fetchErr } = await supabase
-      .from('applications')
-      .select('cv_file_path')
-      .neq('job_id', newJobId)
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    if (fetchErr) { setMatchMessage(`Erreur lecture CV : ${fetchErr.message}`); return }
-    if (!data || data.length === 0) { setMatchMessage('Aucun CV existant à analyser'); setTimeout(() => setMatchMessage(''), 4000); return }
-
-    const uniquePaths = [...new Set(data.map(a => a.cv_file_path))]
-    setMatchMessage(`Analyse de ${uniquePaths.length} CV en cours...`)
-
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
-    const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
-
-    async function invokeScoreCv(jobId: string, cvPath: string) {
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/score-cv`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY },
-        body: JSON.stringify({ job_id: jobId, cv_file_path: cvPath }),
-      })
-      const body = await r.text()
-      if (!r.ok) throw new Error(`HTTP ${r.status}: ${body.slice(0, 200)}`)
-      const json = JSON.parse(body)
-      if (json?.error) throw new Error(json.error)
-      return json
-    }
-
-    const BATCH = 3
-    let processed = 0
-    let errors = 0
-    for (let i = 0; i < uniquePaths.length; i += BATCH) {
-      const batch = uniquePaths.slice(i, i + BATCH)
-      await Promise.allSettled(
-        batch.map(async (originalPath, batchIdx) => {
-          const basename = originalPath.split('/').pop() ?? 'cv'
-          const newPath = `${newJobId}/${Date.now() + i + batchIdx}-${basename}`
-          const { error: copyErr } = await supabase.storage.from('cvs').copy(originalPath, newPath)
-          if (copyErr) return // fichier absent en storage, on ignore
-          try { await invokeScoreCv(newJobId, newPath); processed++ } catch { errors++ }
-        })
-      )
-      setMatchMessage(`Analyse en cours... ${Math.min(i + batch.length, uniquePaths.length)}/${uniquePaths.length} CV`)
-    }
-
-    await load()
-    setMatchMessage(processed > 0
-      ? `✓ ${processed} CV analysé${processed > 1 ? 's' : ''} et ajouté${processed > 1 ? 's' : ''} à l'offre`
-      : 'Offre créée — aucun CV existant à réanalyser'
-    )
-    setTimeout(() => setMatchMessage(''), 8000)
-  }
 
   async function handleSave() {
     setSaveError('')
@@ -163,21 +128,19 @@ export default function Jobs() {
       }
       if (!clientId) throw new Error('Veuillez renseigner un nom d\'entreprise ou sélectionner un client.')
       const { company_name: _cn, honoraires: hon, ...jobData } = { ...form, client_id: clientId }
-      const recruiterAssignment = getAmRecruiterAssignment()
       const jobPayload = {
         ...jobData,
         honoraires: hon !== '' ? parseFloat(hon) : null,
-        ...(recruiterAssignment && !editId ? { recruiter: recruiterAssignment } : {}),
       }
       if (editId) {
         const { error } = await supabase.from('jobs').update(jobPayload).eq('id', editId)
         if (error) throw new Error(error.message)
         setOpen(false); load()
       } else {
-        const { data: newJob, error } = await supabase.from('jobs').insert(jobPayload).select('id').single()
+        const postedBy = sessionStorage.getItem('am_session') || sessionStorage.getItem('manager_session') || sessionStorage.getItem('recruiter_session')
+        const { data: newJob, error } = await supabase.from('jobs').insert({ ...jobPayload, ref_code: generateRefCode(), posted_by: postedBy }).select('id').single()
         if (error) throw new Error(error.message)
         addAmClientId(clientId)
-        triggerExistingCvMatching(newJob.id)
         setOpen(false)
         navigate(`/jobs/${newJob.id}`)
       }
@@ -239,24 +202,12 @@ export default function Jobs() {
     load()
   }
 
-  const clientFilter = getClientFilter()
   const amSession = getAmSession()
   const amBaseNames = getAmBaseClientNames()
   const amExtraIds = getAmExtraClientIds()
-  const recruiterAmLink = getRecruiterAmLink()
   const recruiterSession = sessionStorage.getItem('recruiter_session')
 
   const myJobs = (() => {
-    if (recruiterAmLink) {
-      // Chargé lié à un AM : voit uniquement les offres qui lui sont assignées
-      return jobs.filter(j => j.recruiter === recruiterSession)
-    }
-    if (clientFilter) {
-      return jobs.filter(j => {
-        const name = (j.clients as { name: string } | undefined)?.name ?? ''
-        return clientFilter.some(c => c.toLowerCase() === name.toLowerCase())
-      })
-    }
     if (amSession) {
       return jobs.filter(j => {
         const name = (j.clients as { name: string } | undefined)?.name ?? ''
@@ -264,7 +215,7 @@ export default function Jobs() {
             || amExtraIds.includes(j.client_id)
       })
     }
-    return jobs // Manager : toutes les offres
+    return jobs
   })()
   const filtered = filter === 'all' ? myJobs : myJobs.filter(j => j.status === filter)
 
@@ -273,16 +224,11 @@ export default function Jobs() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Offres</h1>
-          <p className="text-muted-foreground text-base">{myJobs.length} offre{myJobs.length !== 1 ? 's' : ''}{(clientFilter || amSession || recruiterAmLink) ? ' (mes offres)' : ''}</p>
+          <p className="text-muted-foreground text-base">{myJobs.length} offre{myJobs.length !== 1 ? 's' : ''}{amSession ? ' (mes offres)' : ''}</p>
         </div>
         {!recruiterSession && <Button onClick={openCreate}>+ Nouvelle offre</Button>}
       </div>
 
-      {matchMessage && (
-        <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm font-medium">
-          {matchMessage}
-        </div>
-      )}
 
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 mb-4 px-4 py-2 bg-muted rounded-lg border border-border">
@@ -311,23 +257,25 @@ export default function Jobs() {
                     className="w-4 h-4 accent-violet-600 cursor-pointer" />
                 )}
               </TableHead>
+              <TableHead className="w-16">Réf.</TableHead>
               <TableHead>Titre</TableHead>
               <TableHead className="w-36">Client</TableHead>
               <TableHead className="w-28">Localisation</TableHead>
               <TableHead className="w-16">Seuil</TableHead>
               <TableHead className="w-52">Candidatures</TableHead>
               <TableHead className="w-24">Statut</TableHead>
+              <TableHead className="w-40">Postée par</TableHead>
               <TableHead className="w-36"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8 text-base">Aucune offre</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8 text-base">Aucune offre</TableCell></TableRow>
             )}
             {filtered.map(j => {
               const apps = (j as Job & { applications?: { id: string; score: number | null; status: string }[] }).applications ?? []
               const total = apps.length
-              const qualifiedCount = apps.filter(a => a.status === 'pending_approval' || a.status === 'qualified').length
+              const qualifiedCount = apps.filter(a => a.status === 'qualified').length
               const days = Math.max(1, Math.floor((Date.now() - new Date(j.created_at).getTime()) / 86_400_000))
               return (
                 <TableRow key={j.id} className={`cursor-pointer hover:bg-muted/30 ${selectedIds.has(j.id) ? 'bg-violet-50 dark:bg-violet-950/20' : ''}`} onClick={() => navigate(`/jobs/${j.id}`)}>
@@ -335,6 +283,7 @@ export default function Jobs() {
                     <input type="checkbox" checked={selectedIds.has(j.id)} onChange={() => toggleSelect(j.id)}
                       className="w-4 h-4 accent-violet-600 cursor-pointer" />
                   </TableCell>
+                  <TableCell className="font-mono text-xs font-semibold text-muted-foreground">{j.ref_code ?? '—'}</TableCell>
                   <TableCell className="font-semibold text-foreground truncate max-w-0">{j.title}</TableCell>
                   <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{(j.clients as { name: string } | undefined)?.name}</TableCell>
                   <TableCell className="text-muted-foreground truncate max-w-[112px]">{j.location}</TableCell>
@@ -357,6 +306,12 @@ export default function Jobs() {
                       className={j.status === 'inactive' ? 'border-amber-400 text-amber-700 bg-amber-50' : ''}>
                       {j.status === 'active' ? 'Active' : j.status === 'inactive' ? 'En pause' : 'Clôturée'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs">
+                      {j.posted_by && <p className="font-medium text-foreground">{j.posted_by}</p>}
+                      <p className="text-muted-foreground">{new Date(j.created_at).toLocaleDateString('fr-FR')} {new Date(j.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
                   </TableCell>
                   <TableCell onClick={e => e.stopPropagation()}>
                     <div className="flex gap-2">
@@ -385,10 +340,9 @@ export default function Jobs() {
               </div>
               <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={e => { if (e.target.files?.[0]) handleParsePdf(e.target.files[0]) }} />
               <Button type="button" size="sm" variant="outline" disabled={parsing} onClick={() => fileInputRef.current?.click()}>
-                {parsing ? '⏳ Analyse...' : '📄 Choisir PDF'}
+                {parsing ? parseCountdown() : '📄 Choisir PDF'}
               </Button>
             </div>
-            {parseError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{parseError}</p>}
             <div className="space-y-1">
               <Label>Nom de l'entreprise</Label>
               <Input
@@ -454,10 +408,12 @@ export default function Jobs() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Description du poste</Label>
-              <Textarea rows={5} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-            </div>
+            {!amSession && (
+              <div className="space-y-1">
+                <Label>Description du poste</Label>
+                <Textarea rows={5} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Seuil de qualification (0–100)</Label>
@@ -480,10 +436,9 @@ export default function Jobs() {
               <Input type="number" min={0} placeholder="Ex : 8500" value={form.honoraires} onChange={e => setForm(f => ({ ...f, honoraires: e.target.value }))} />
             </div>
           </div>
-          {saveError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mx-1">{saveError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Button>
+            <Button onClick={handleSave} disabled={loading || parsing}>{loading ? 'Enregistrement...' : parsing ? parseCountdown() : 'Enregistrer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

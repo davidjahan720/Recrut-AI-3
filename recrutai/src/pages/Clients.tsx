@@ -21,11 +21,25 @@ export default function Clients() {
   const [form, setForm] = useState({ ...EMPTY })
   const [editId, setEditId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [saveError, setSaveError] = useState('')
+  const [, setSaveError] = useState('')
   const [parsing, setParsing] = useState(false)
-  const [parseError, setParseError] = useState('')
+  const [parseElapsed, setParseElapsed] = useState(0)
+  const [, setParseError] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const PARSE_ESTIMATED_S = 15
+
+  useEffect(() => {
+    if (!parsing) { setParseElapsed(0); return }
+    const start = Date.now()
+    const id = setInterval(() => setParseElapsed(Math.floor((Date.now() - start) / 1000)), 500)
+    return () => clearInterval(id)
+  }, [parsing])
+
+  function parseCountdown() {
+    const remaining = Math.max(0, PARSE_ESTIMATED_S - parseElapsed)
+    return remaining > 0 ? `⏳ ~${remaining}s restantes` : '⏳ Finalisation...'
+  }
 
   const amSession = getAmSession()
   const amBaseNames = getAmBaseClientNames()
@@ -133,7 +147,7 @@ export default function Clients() {
           <h1 className="text-2xl font-semibold text-foreground">Clients</h1>
           <p className="text-muted-foreground text-base">{displayedClients.length} client{displayedClients.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={openCreate}>+ Nouveau client</Button>
+        {!amSession && <Button onClick={openCreate}>+ Nouveau client</Button>}
       </div>
 
       {selectedIds.size > 0 && (
@@ -204,10 +218,9 @@ export default function Clients() {
               </div>
               <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={e => { if (e.target.files?.[0]) handleParsePdf(e.target.files[0]) }} />
               <Button type="button" size="sm" variant="outline" disabled={parsing} onClick={() => fileInputRef.current?.click()}>
-                {parsing ? '⏳ Analyse...' : '📄 Choisir PDF'}
+                {parsing ? parseCountdown() : '📄 Choisir PDF'}
               </Button>
             </div>
-            {parseError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{parseError}</p>}
             {([['name', 'Nom entreprise'], ['contact_name', 'Nom contact'], ['contact_email', 'Email contact'], ['notification_email', 'Email notification (CV qualifiés)'], ['sector', 'Secteur']] as [keyof typeof EMPTY, string][]).map(([field, label]) => (
               <div key={field} className="space-y-1">
                 <Label className="text-base">{label}</Label>
@@ -229,7 +242,6 @@ export default function Clients() {
               </div>
             </div>
           </div>
-          {saveError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{saveError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleSave} disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Button>
