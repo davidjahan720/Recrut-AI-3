@@ -59,7 +59,7 @@ export default function Clients() {
   }
   async function handleDeleteSelected() {
     if (!confirm(`Supprimer les ${selectedIds.size} client${selectedIds.size > 1 ? 's' : ''} sélectionnés ?`)) return
-    await Promise.all([...selectedIds].map(id => supabase.from('clients').delete().eq('id', id)))
+    await fetch('/api/delete-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [...selectedIds] }) })
     setSelectedIds(new Set()); load()
   }
 
@@ -136,7 +136,7 @@ export default function Clients() {
 
   async function handleDelete(id: string) {
     if (!confirm('Supprimer ce client ?')) return
-    await supabase.from('clients').delete().eq('id', id)
+    await fetch('/api/delete-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [id] }) })
     load()
   }
 

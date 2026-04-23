@@ -73,7 +73,7 @@ export default function Jobs() {
   }
   async function handleDeleteSelected() {
     if (!confirm(`Supprimer les ${selectedIds.size} offre${selectedIds.size > 1 ? 's' : ''} sélectionnées ?`)) return
-    await Promise.all([...selectedIds].map(id => supabase.from('jobs').delete().eq('id', id)))
+    await fetch('/api/delete-job', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [...selectedIds] }) })
     setSelectedIds(new Set()); load()
   }
 
@@ -229,7 +229,7 @@ export default function Jobs() {
 
   async function handleDelete(id: string) {
     if (!confirm('Supprimer cette offre ?')) return
-    await supabase.from('jobs').delete().eq('id', id)
+    await fetch('/api/delete-job', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [id] }) })
     load()
   }
 
