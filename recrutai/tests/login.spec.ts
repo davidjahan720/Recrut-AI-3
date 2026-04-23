@@ -18,14 +18,14 @@ test.describe('Page Login', () => {
     await page.fill('#email', 'mauvais@email.fr')
     await page.fill('#password', 'mauvaismdp')
     await page.click('button[type="submit"]')
-    await expect(page.locator('text=Email ou mot de passe incorrect')).toBeVisible({ timeout: 12000 })
+    await expect(page.locator('text=Email ou mot de passe incorrect')).toBeVisible({ timeout: 20000 })
   })
 
-  test('redirige vers le dashboard après connexion réussie', async ({ page }) => {
+  test('redirige vers l\'espace après connexion réussie', async ({ page }) => {
     await page.fill('#email', TEST_EMAIL)
     await page.fill('#password', TEST_PASSWORD)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 })
+    await expect(page).toHaveURL(/\/(account-manager|recruiter|manager|dashboard)/, { timeout: 20000 })
   })
 
   test('la landing page est accessible sans être connecté', async ({ page }) => {

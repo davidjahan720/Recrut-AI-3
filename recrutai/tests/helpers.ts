@@ -1,7 +1,8 @@
 import { Page } from '@playwright/test'
 
-export const TEST_EMAIL = 'jahandavid@gmail.com'
-export const TEST_PASSWORD = '03121975'
+// Credentials rôle-based (AM Laura) — n'utilisent pas Supabase auth
+export const TEST_EMAIL = 'laura@recrutai.fr'
+export const TEST_PASSWORD = 'recrutai'
 
 export async function login(page: Page) {
   await page.goto('/login')
@@ -10,7 +11,7 @@ export async function login(page: Page) {
   await page.fill('#email', TEST_EMAIL)
   await page.fill('#password', TEST_PASSWORD)
   await page.click('button[type="submit"]')
-  await page.waitForURL('**/dashboard', { timeout: 20000 })
+  await page.waitForURL(/\/(account-manager|recruiter|manager|dashboard)/, { timeout: 20000 })
   await page.waitForLoadState('load')
 }
 
@@ -20,7 +21,7 @@ export async function loginWithRole(page: Page, role: 'recruiter' | 'am' | 'mana
             : role === 'am'        ? 'am_session'
             :                        'manager_session'
   await page.evaluate(([k, n]) => {
-    sessionStorage.setItem(k, n)
+    localStorage.setItem(k, n)
     window.dispatchEvent(new Event('role-login'))
   }, [key, name] as [string, string])
   await page.waitForTimeout(500)

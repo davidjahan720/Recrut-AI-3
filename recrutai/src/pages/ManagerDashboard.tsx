@@ -103,7 +103,7 @@ const CORRECT_PWD = '0'
 
 function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   const [value, setValue] = useState('')
-  const [, setError] = useState(false)
+  const [error, setError] = useState(false)
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -124,6 +124,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
             placeholder="Mot de passe"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
+          {error && <p className="text-sm text-red-500 text-center">Mot de passe incorrect</p>}
           <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors">
             Accéder
           </button>
