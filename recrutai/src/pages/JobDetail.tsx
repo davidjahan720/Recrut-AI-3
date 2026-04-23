@@ -114,12 +114,14 @@ export default function JobDetail() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [compareOpen, setCompareOpen] = useState(false)
   const [cvUploadOpen, setCvUploadOpen] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   const isRecruiter = !!localStorage.getItem('recruiter_session')
 
   async function loadJob() {
-    const { data } = await supabase.from('jobs').select('*, clients(name, contact_email)').eq('id', id!).single()
+    const { data, error } = await supabase.from('jobs').select('*, clients(name, contact_email)').eq('id', id!).single()
     if (data) setJob(data)
+    else if (error) setLoadError(true)
   }
 
   async function loadApplications() {
@@ -266,6 +268,12 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
   const selectedCandidates = applications.filter(a => selected.has(a.id))
   const colSpan = 7
 
+  if (!job && loadError) return (
+    <div className="p-8 space-y-3">
+      <p className="text-destructive text-base font-medium">Impossible de charger cette offre.</p>
+      <button onClick={() => navigate('/jobs')} className="text-sm text-muted-foreground underline hover:text-foreground">← Retour aux offres</button>
+    </div>
+  )
   if (!job) return <div className="p-8 text-muted-foreground text-base">Chargement...</div>
 
   const jobStatus = job.status as string

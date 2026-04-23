@@ -16,14 +16,31 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
+    async function initSession() {
+      const { data } = await supabase.auth.getSession()
+      let sess = data.session
+      // Les utilisateurs à session locale (AM, recruteur, manager) n'ont pas de session Supabase.
+      // On les connecte anonymement pour qu'ils aient le rôle "authenticated" côté RLS.
+      if (!sess && hasRoleSession()) {
+        try {
+          const { data: anonData } = await supabase.auth.signInAnonymously()
+          sess = anonData.session
+        } catch {
+          // signInAnonymously non activé sur ce projet — le RLS anon prend le relais
+        }
+      }
+      setSession(sess)
+    }
+    initSession()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) return null
+  if (session === undefined) return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <span className="text-muted-foreground text-base">Chargement...</span>
+    </div>
+  )
   if (!session && !hasRoleSession()) return <Navigate to="/login" replace />
   return <>{children}</>
 }
