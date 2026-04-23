@@ -432,10 +432,10 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     Candidat
                   </div>
                 </TableHead>
-                <TableHead className="w-px whitespace-nowrap">Email</TableHead>
                 <TableHead className="w-px whitespace-nowrap">Score</TableHead>
-                <TableHead className="w-px whitespace-nowrap">Statut</TableHead>
                 <TableHead>Justification</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Email</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Statut</TableHead>
                 <TableHead className="w-px whitespace-nowrap">Date</TableHead>
                 <TableHead className="w-px whitespace-nowrap"></TableHead>
               </TableRow>
@@ -459,9 +459,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                         {formatName(a.candidate_name) ?? <span className="text-muted-foreground italic">Inconnu</span>}
                       </div>
                     </TableCell>
-                    <TableCell className="text-slate-700">{a.candidate_email ?? '—'}</TableCell>
                     <TableCell><ScoreBadge score={a.score} threshold={job.score_threshold} /></TableCell>
-                    <TableCell><StatusBadge status={a.status} /></TableCell>
                     <TableCell>
                       <p className="text-xs text-slate-700 leading-snug mb-1">{a.justification ?? '—'}</p>
                       {a.positive_points && (
@@ -479,6 +477,8 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                         </div>
                       )}
                     </TableCell>
+                    <TableCell className="text-slate-700 text-xs whitespace-nowrap">{a.candidate_email ?? '—'}</TableCell>
+                    <TableCell><StatusBadge status={a.status} /></TableCell>
                     <TableCell className="text-xs whitespace-nowrap">
                       {a.uploaded_by && <p className="font-medium text-foreground">{a.uploaded_by}</p>}
                       <p className="text-muted-foreground">{new Date(a.created_at).toLocaleDateString('fr-FR')} {new Date(a.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
