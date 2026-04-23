@@ -365,6 +365,26 @@ IMPORTANT : positive_points et negative_points sont limités à 3 éléments max
     }).eq('id', applicationId)
     if (updateError) throw new Error('Erreur mise à jour candidature : ' + updateError.message)
 
+    // 6. Déduplication : si même nom + même job + même email → garder le plus récent, supprimer les anciens
+    if (candidate_name && candidate_email) {
+      const { data: dupes } = await supabase
+        .from('applications')
+        .select('id, cv_file_path')
+        .eq('job_id', job_id)
+        .eq('candidate_name', candidate_name)
+        .eq('candidate_email', candidate_email)
+        .neq('id', applicationId!)
+
+      if (dupes && dupes.length > 0) {
+        const dupeIds = (dupes as { id: string; cv_file_path: string }[]).map(d => d.id)
+        const dupePaths = (dupes as { id: string; cv_file_path: string }[]).map(d => d.cv_file_path).filter(Boolean)
+        await Promise.all([
+          supabase.from('applications').delete().in('id', dupeIds),
+          dupePaths.length > 0 ? supabase.storage.from('cvs').remove(dupePaths) : Promise.resolve(),
+        ])
+      }
+    }
+
     return new Response(
       JSON.stringify({ id: applicationId, score, status, justification, positive_points, negative_points, candidate_name, candidate_email }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

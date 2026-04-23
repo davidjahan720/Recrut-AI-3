@@ -99,7 +99,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
         errMsg = String(e)
       }
 
-      // Déduplication et enregistrement de l'auteur
+      // Enregistrement de l'auteur (la déduplication est gérée dans score-cv)
       if (!errMsg) {
         const { data: newApp } = await supabase
           .from('applications')
@@ -110,25 +110,6 @@ export function CvUploader({ jobId, onUploaded }: Props) {
 
         if (newApp && uploaderName) {
           await supabase.from('applications').update({ uploaded_by: uploaderName }).eq('id', newApp.id)
-        }
-
-        if (newApp?.candidate_name && newApp?.candidate_email) {
-          const { data: dupes } = await supabase
-            .from('applications')
-            .select('id, cv_file_path')
-            .eq('job_id', jobId)
-            .eq('candidate_name', newApp.candidate_name)
-            .eq('candidate_email', newApp.candidate_email)
-            .neq('id', newApp.id)
-
-          if (dupes && dupes.length > 0) {
-            const dupeIds = dupes.map(d => d.id)
-            const dupePaths = dupes.map(d => d.cv_file_path as string).filter(Boolean)
-            await Promise.all([
-              supabase.from('applications').delete().in('id', dupeIds),
-              dupePaths.length > 0 ? supabase.storage.from('cvs').remove(dupePaths) : Promise.resolve(),
-            ])
-          }
         }
       }
 
