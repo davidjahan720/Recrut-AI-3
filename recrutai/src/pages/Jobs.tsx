@@ -246,7 +246,7 @@ export default function Jobs() {
       </div>
 
 
-      {selectedIds.size > 0 && (
+      {!recruiterSession && selectedIds.size > 0 && (
         <div className="flex items-center gap-3 mb-4 px-4 py-2 bg-muted rounded-lg border border-border">
           <span className="text-sm font-medium text-foreground">{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
           <Button size="sm" variant="destructive" onClick={handleDeleteSelected}>Supprimer</Button>
@@ -267,12 +267,14 @@ export default function Jobs() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8">
-                {selectedIds.size >= 2 && (
-                  <input type="checkbox" checked={filtered.every(j => selectedIds.has(j.id))} onChange={toggleSelectAll}
-                    className="w-4 h-4 accent-violet-600 cursor-pointer" />
-                )}
-              </TableHead>
+              {!recruiterSession && (
+                <TableHead className="w-8">
+                  {selectedIds.size >= 2 && (
+                    <input type="checkbox" checked={filtered.every(j => selectedIds.has(j.id))} onChange={toggleSelectAll}
+                      className="w-4 h-4 accent-violet-600 cursor-pointer" />
+                  )}
+                </TableHead>
+              )}
               <TableHead className="w-16">Réf.</TableHead>
               <TableHead>Titre</TableHead>
               <TableHead className="w-36">Client</TableHead>
@@ -281,7 +283,7 @@ export default function Jobs() {
               <TableHead className="w-52">Candidatures</TableHead>
               <TableHead className="w-24">Statut</TableHead>
               <TableHead className="w-40">Postée par</TableHead>
-              <TableHead className="w-36"></TableHead>
+              {!recruiterSession && <TableHead className="w-36"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -295,10 +297,12 @@ export default function Jobs() {
               const days = Math.max(1, Math.floor((Date.now() - new Date(j.created_at).getTime()) / 86_400_000))
               return (
                 <TableRow key={j.id} className={`cursor-pointer hover:bg-muted/30 ${selectedIds.has(j.id) ? 'bg-violet-50 dark:bg-violet-950/20' : ''}`} onClick={() => navigate(`/jobs/${j.id}`)}>
-                  <TableCell className="pr-0" onClick={e => e.stopPropagation()}>
-                    <input type="checkbox" checked={selectedIds.has(j.id)} onChange={() => toggleSelect(j.id)}
-                      className="w-4 h-4 accent-violet-600 cursor-pointer" />
-                  </TableCell>
+                  {!recruiterSession && (
+                    <TableCell className="pr-0" onClick={e => e.stopPropagation()}>
+                      <input type="checkbox" checked={selectedIds.has(j.id)} onChange={() => toggleSelect(j.id)}
+                        className="w-4 h-4 accent-violet-600 cursor-pointer" />
+                    </TableCell>
+                  )}
                   <TableCell className="font-mono text-xs font-semibold text-muted-foreground">{j.ref_code ?? '—'}</TableCell>
                   <TableCell className="font-semibold text-foreground truncate max-w-0">{j.title}</TableCell>
                   <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{(j.clients as { name: string } | undefined)?.name}</TableCell>
@@ -329,12 +333,14 @@ export default function Jobs() {
                       <p className="text-muted-foreground">{new Date(j.created_at).toLocaleDateString('fr-FR')} {new Date(j.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </TableCell>
-                  <TableCell onClick={e => e.stopPropagation()}>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(j)}>Éditer</Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(j.id)}>Suppr.</Button>
-                    </div>
-                  </TableCell>
+                  {!recruiterSession && (
+                    <TableCell onClick={e => e.stopPropagation()}>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => openEdit(j)}>Éditer</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(j.id)}>Suppr.</Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               )
             })}
