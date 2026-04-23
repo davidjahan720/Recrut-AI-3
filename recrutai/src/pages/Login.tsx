@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { findAppUser, setRoleSession } from '@/lib/users'
+import { setRoleSession } from '@/lib/users'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,12 +19,22 @@ export default function Login() {
     setError('')
     setLoading(true)
 
-    // Check role users first (local credentials)
-    const appUser = findAppUser(email.trim().toLowerCase(), password)
-    if (appUser) {
+    // Vérification des credentials côté serveur (mots de passe hors bundle)
+    const loginRes = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+    })
+    if (loginRes.ok) {
+      const appUser = await loginRes.json()
       setRoleSession(appUser)
       window.dispatchEvent(new Event('role-login'))
       navigate(appUser.redirect, { replace: true })
+      setLoading(false)
+      return
+    }
+    if (loginRes.status !== 401) {
+      setError('Erreur serveur, veuillez réessayer.')
       setLoading(false)
       return
     }
