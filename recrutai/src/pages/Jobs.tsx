@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { getAmSession, getAmBaseClientNames, getAmExtraClientIds, addAmClientId } from '@/lib/sessionRole'
-import { rpcWithRetry } from '@/lib/rpc'
 import type { Client, Job } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,8 +45,8 @@ export default function Jobs() {
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'closed'>('all')
   const [parsing, setParsing] = useState(false)
   const [parseElapsed, setParseElapsed] = useState(0)
-  const [, setParseError] = useState('')
-  const [, setSaveError] = useState('')
+  const [parseError, setParseError] = useState('')
+  const [saveError, setSaveError] = useState('')
   const [showClientForm, setShowClientForm] = useState(false)
   const [clientForm, setClientForm] = useState({ contact_name: '', contact_email: '', notification_email: '', sector: '' })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -97,11 +96,11 @@ export default function Jobs() {
     }
   }, [])
 
-  function openCreate() { setForm({ ...EMPTY }); setEditId(null); setOpen(true) }
+  function openCreate() { setForm({ ...EMPTY }); setEditId(null); setSaveError(''); setParseError(''); setOpen(true) }
   function openEdit(j: Job) {
     const clientName = (j.clients as { name: string } | undefined)?.name ?? ''
     setForm({ client_id: j.client_id, company_name: clientName, title: j.title, location: j.location, contract_type: j.contract_type, description: j.description, score_threshold: j.score_threshold, status: j.status, honoraires: j.honoraires != null ? String(j.honoraires) : '' })
-    setEditId(j.id); setOpen(true)
+    setEditId(j.id); setSaveError(''); setParseError(''); setOpen(true)
   }
 
 
@@ -116,36 +115,53 @@ export default function Jobs() {
         if (existing) {
           clientId = existing.id
         } else {
-          clientId = await rpcWithRetry<string>('upsert_client', {
-            p_name: name,
-            p_contact_name: clientForm.contact_name,
-            p_contact_email: clientForm.contact_email,
-            p_notification_email: clientForm.notification_email,
-            p_sector: clientForm.sector,
+          const res = await fetch('/api/upsert-client', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              p_name: name,
+              p_contact_name: clientForm.contact_name,
+              p_contact_email: clientForm.contact_email,
+              p_notification_email: clientForm.notification_email || clientForm.contact_email || 'notifications@recrutai.fr',
+              p_sector: clientForm.sector,
+            }),
           })
+          const json = await res.json()
+          if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
+          clientId = json.data as string
           await load()
         }
       }
-      if (!clientId) throw new Error('Veuillez renseigner un nom d\'entreprise ou sélectionner un client.')
+      if (!clientId) throw new Error("Veuillez renseigner un nom d'entreprise ou sélectionner un client.")
       const { company_name: _cn, honoraires: hon, ...jobData } = { ...form, client_id: clientId }
       const jobPayload = {
         ...jobData,
         honoraires: hon !== '' ? parseFloat(hon) : null,
       }
       if (editId) {
-        const { error } = await supabase.from('jobs').update(jobPayload).eq('id', editId)
-        if (error) throw new Error(error.message)
+        const res = await fetch('/api/upsert-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editId, ...jobPayload }),
+        })
+        const json = await res.json()
+        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
         setOpen(false); load()
       } else {
         const postedBy = localStorage.getItem('am_session') || localStorage.getItem('manager_session') || localStorage.getItem('recruiter_session')
-        const { data: newJob, error } = await supabase.from('jobs').insert({ ...jobPayload, ref_code: generateRefCode(), posted_by: postedBy }).select('id').single()
-        if (error) throw new Error(error.message)
+        const res = await fetch('/api/upsert-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...jobPayload, ref_code: generateRefCode(), posted_by: postedBy }),
+        })
+        const json = await res.json()
+        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
         addAmClientId(clientId)
         setOpen(false)
-        navigate(`/jobs/${newJob.id}`)
+        navigate(`/jobs/${json.data.id}`)
       }
     } catch (e) {
-      setSaveError(String(e))
+      setSaveError(e instanceof Error ? e.message : String(e))
     }
     setLoading(false)
   }
@@ -436,6 +452,16 @@ export default function Jobs() {
               <Input type="number" min={0} placeholder="Ex : 8500" value={form.honoraires} onChange={e => setForm(f => ({ ...f, honoraires: e.target.value }))} />
             </div>
           </div>
+          {parseError && (
+            <div className="mt-2 px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm">
+              {parseError}
+            </div>
+          )}
+          {saveError && (
+            <div className="mt-2 px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm">
+              <span className="font-semibold">Erreur : </span>{saveError}
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleSave} disabled={loading || parsing}>{loading ? 'Enregistrement...' : parsing ? parseCountdown() : 'Enregistrer'}</Button>

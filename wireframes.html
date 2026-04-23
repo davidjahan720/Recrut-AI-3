@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecrutAI — Wireframes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #1a1a2e; color: #1a1a24; }
+
+  /* Nav tabs */
+  .tabs { display: flex; gap: 6px; padding: 16px 24px; background: #0f0d1f; border-bottom: 1px solid #2a2050; position: sticky; top: 0; z-index: 100; }
+  .tab { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: #1e1a3a; color: #9090b8; transition: all .15s; }
+  .tab:hover { background: #2a2450; color: #c0c0e0; }
+  .tab.active { background: #7c45eb; color: #fff; }
+  .tab-label { font-size: 11px; opacity: .7; }
+
+  /* Screen wrapper */
+  .screen { display: none; min-height: 900px; }
+  .screen.active { display: flex; }
+
+  /* ── Sidebar ── */
+  .sidebar { width: 240px; min-height: 900px; background: #14102e; display: flex; flex-direction: column; padding: 0; position: relative; flex-shrink: 0; }
+  .sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 22px 20px 16px; }
+  .logo-icon { width: 36px; height: 36px; background: #7c45eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px; }
+  .logo-name { font-weight: 700; font-size: 16px; color: #fff; }
+  .nav { flex: 1; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-item { padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #7878a8; cursor: pointer; font-weight: 400; }
+  .nav-item.active { background: #7c45eb; color: #fff; font-weight: 500; }
+  .sidebar-user { margin: 12px; padding: 10px 12px; background: #1e1650; border-radius: 10px; display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #7c45eb; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-name { font-size: 13px; font-weight: 600; color: #e8e8f8; }
+  .user-role { font-size: 11px; color: #7878a8; }
+
+  /* ── Main content ── */
+  .main { flex: 1; background: #f2f2f5; padding: 32px; overflow: auto; }
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-size: 24px; font-weight: 700; color: #1a1a24; }
+  .page-sub { font-size: 13px; color: #9090a8; margin-top: 6px; }
+
+  /* ── KPI cards ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { border-radius: 12px; padding: 16px; color: #fff; }
+  .kpi-label { font-size: 11px; font-weight: 500; opacity: .9; }
+  .kpi-value { font-size: 28px; font-weight: 700; margin: 6px 0 4px; line-height: 1; }
+  .kpi-note { font-size: 11px; opacity: .8; }
+  .kpi-3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* ── Filter tabs ── */
+  .filter-row { display: flex; gap: 4px; margin-bottom: 16px; }
+  .filter-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #9090a8; }
+  .filter-btn.active { background: #fff; color: #1a1a24; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+  /* ── Table ── */
+  .table-wrap { background: #fff; border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #ededf0; }
+  th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #7878a8; text-transform: uppercase; letter-spacing: .04em; }
+  td { padding: 12px; font-size: 13px; color: #5a5a78; border-bottom: 1px solid #ededf0; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .td-bold { font-weight: 600; color: #1a1a24; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green  { background: #dcfce7; color: #16a34a; }
+  .badge-gray   { background: #ededf0; color: #7878a8; }
+  .badge-amber  { background: #fef3c7; color: #b45309; }
+  .badge-red    { background: #fee2e2; color: #dc2626; }
+  .badge-score-ok  { background: #dcfce7; color: #16a34a; font-weight: 700; }
+  .badge-score-ko  { background: #fee2e2; color: #dc2626; font-weight: 700; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* Actions */
+  .action-link { color: #7c45eb; font-size: 12px; font-weight: 500; text-decoration: none; cursor: pointer; }
+  .action-link:hover { text-decoration: underline; }
+  .action-sep { color: #c0c0d0; margin: 0 4px; }
+
+  /* Button */
+  .btn-primary { background: #7c45eb; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* ── Login ── */
+  .login-screen { min-height: 900px; background: linear-gradient(135deg, #1e0b5c, #2d1f7a, #1a3a8a); display: flex; align-items: center; justify-content: center; }
+  .login-card { background: #fff; border-radius: 16px; width: 380px; padding: 36px 32px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .login-logo-icon { width: 40px; height: 40px; background: #7c45eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 18px; }
+  .login-logo-name { font-size: 20px; font-weight: 700; color: #1a1a24; }
+  .login-title { font-size: 22px; font-weight: 700; color: #1a1a24; margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: #9090a8; margin-bottom: 28px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 13px; font-weight: 500; color: #1a1a24; margin-bottom: 6px; display: block; }
+  .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid #e5e5ea; border-radius: 8px; font-size: 13px; color: #9090a8; background: #f8f8fb; outline: none; }
+  .login-btn { width: 100%; padding: 13px; background: #7c45eb; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .login-footer { text-align: center; font-size: 12px; color: #c0c0d0; margin-top: 20px; }
+
+  /* ── Espace perso ── */
+  .espace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .espace-card { background: #fff; border-radius: 12px; overflow: hidden; }
+  .espace-header { padding: 20px 24px; display: flex; align-items: center; gap: 16px; }
+  .espace-avatar { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0; }
+  .espace-name { font-size: 18px; font-weight: 700; color: #fff; }
+  .espace-role { font-size: 12px; color: rgba(255,255,255,.8); margin-top: 2px; }
+  .espace-kpis { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .espace-kpi { border-radius: 10px; padding: 14px 16px; color: #fff; }
+  .espace-clients { padding: 16px; }
+  .espace-clients-title { font-size: 13px; font-weight: 600; color: #1a1a24; margin-bottom: 10px; }
+  .client-row { padding: 9px 12px; background: #f2f2f5; border-radius: 8px; font-size: 13px; color: #1a1a24; margin-bottom: 6px; }
+
+  /* Colors */
+  .bg-violet { background: linear-gradient(135deg, #7c45eb, #5a2dc0); }
+  .bg-pink   { background: linear-gradient(135deg, #e63f8c, #c0256e); }
+  .bg-teal   { background: linear-gradient(135deg, #0d9488, #0f766e); }
+  .bg-blue   { background: linear-gradient(135deg, #2b88f4, #1a6fd8); }
+  .bg-cyan   { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+  .bg-orange { background: linear-gradient(135deg, #f28d1a, #d97706); }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="tabs">
+  <button class="tab active" onclick="show(0)"><div>1. Login</div></button>
+  <button class="tab" onclick="show(1)"><div>2. Offres Laura</div><div class="tab-label">Account Manager</div></button>
+  <button class="tab" onclick="show(2)"><div>3. Offres Sophie</div><div class="tab-label">Recruteur</div></button>
+  <button class="tab" onclick="show(3)"><div>4. CV Analysés</div><div class="tab-label">Candidatures</div></button>
+  <button class="tab" onclick="show(4)"><div>5. Espace perso</div><div class="tab-label">Sophie & Laura</div></button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     1. LOGIN
+══════════════════════════════════════════════════ -->
+<div class="screen active" id="s0">
+  <div class="login-screen" style="width:100%">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">R</div>
+        <div class="login-logo-name">RecrutAI</div>
+      </div>
+      <div class="login-title">Connexion</div>
+      <div class="login-sub">Accès réservé à l'équipe RecrutAI</div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <div class="form-input">prenom@recrutai.fr</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <div class="form-input">••••••••</div>
+      </div>
+      <button class="login-btn">Accéder à l'app</button>
+      <div class="login-footer">RecrutAI v2.0 — Accès sécurisé</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     2. OFFRES LAURA (AM)
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s1">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">R</div>
+      <div class="logo-name">RecrutAI</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item">Mon espace</div>
+      <div class="nav-item active">Offres</div>
+      <div class="nav-item">Candidatures</div>
+      <div class="nav-item">Clients</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:#e63f8c">LA</div>
+      <div>
+        <div class="user-name">Laura</div>
+        <div class="user-role">Account Manager</div>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">Mes Offres</div>
+      <div class="page-sub">Laura — Account Manager · Nexeo, Solvay, BTP Pro</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card bg-teal"><div class="kpi-label">CA Mensuel</div><div class="kpi-value">55k €</div><div class="kpi-note">Cible : 58k €</div></div>
+      <div class="kpi-card bg-blue"><div class="kpi-label">CA Trimestriel</div><div class="kpi-value">165k €</div><div class="kpi-note">Cible : 174k €</div></div>
+      <div class="kpi-card bg-violet"><div class="kpi-label">CV / semaine</div><div class="kpi-value">430</div><div class="kpi-note">Cette semaine</div></div>
+      <div class="kpi-card bg-orange"><div class="kpi-label">Qualifiés</div><div class="kpi-value">153</div><div class="kpi-note">Ce mois</div></div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active">Toutes</button>
+      <button class="filter-btn">Actives</button>
+      <button class="filter-btn">Fermées</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Poste</th><th>Client</th><th>Statut</th><th>CV reçus</th><th>Seuil</th><th>Honoraires</th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="td-bold">Dev Full Stack Senior</td><td>Nexeo</td><td><span class="badge badge-green">Actif</span></td><td>47</td><td>65</td><td>9 500 €</td></tr>
+          <tr><td class="td-bold">Chef de projet IT</td><td>Solvay</td><td><span class="badge badge-green">Actif</span></td><td>32</td><td>60</td><td>8 000 €</td></tr>
+          <tr><td class="td-bold">Ingénieur R&D</td><td>BTP Pro</td><td><span class="badge badge-green">Actif</span></td><td>28</td><td>70</td><td>10 000 €</td></tr>
+          <tr><td class="td-bold">Data Analyst</td><td>Nexeo</td><td><span class="badge badge-gray">Inactif</span></td><td>15</td><td>55</td><td>7 500 €</td></tr>
+          <tr><td class="td-bold">Technicien Réseau</td><td>Solvay</td><td><span class="badge badge-green">Actif</span></td><td>61</td><td>60</td><td>8 500 €</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     3. OFFRES SOPHIE (Recruteur)
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s2">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">R</div>
+      <div class="logo-name">RecrutAI</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item">Mon espace</div>
+      <div class="nav-item active">Offres</div>
+      <div class="nav-item">Candidatures</div>
+      <div class="nav-item">Clients</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">SO</div>
+      <div>
+        <div class="user-name">Sophie</div>
+        <div class="user-role">Chargée de recrutement</div>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">Mes Offres</div>
+      <div class="page-sub">Sophie — Recruteur · Nexeo, BTP Pro, Inovev</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card bg-blue"><div class="kpi-label">CV / semaine</div><div class="kpi-value">93</div><div class="kpi-note">Cette semaine</div></div>
+      <div class="kpi-card bg-cyan"><div class="kpi-label">CV / mois</div><div class="kpi-value">400</div><div class="kpi-note">Avril 2026</div></div>
+      <div class="kpi-card bg-violet"><div class="kpi-label">Qualifiés</div><div class="kpi-value">72</div><div class="kpi-note">Ce mois</div></div>
+      <div class="kpi-card bg-orange"><div class="kpi-label">Taux</div><div class="kpi-value">18 %</div><div class="kpi-note">Qualification</div></div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active">Toutes</button>
+      <button class="filter-btn">Actives</button>
+      <button class="filter-btn">Fermées</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Poste</th><th>Client</th><th>Statut</th><th>CV reçus</th><th>Seuil score</th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="td-bold">Dev Backend Node.js</td><td>Nexeo</td><td><span class="badge badge-green">Actif</span></td><td>34</td><td>65</td></tr>
+          <tr><td class="td-bold">Chef de chantier</td><td>BTP Pro</td><td><span class="badge badge-green">Actif</span></td><td>22</td><td>60</td></tr>
+          <tr><td class="td-bold">Technicien BIM</td><td>Inovev</td><td><span class="badge badge-gray">Inactif</span></td><td>8</td><td>70</td></tr>
+          <tr><td class="td-bold">Lead Dev React</td><td>Nexeo</td><td><span class="badge badge-green">Actif</span></td><td>51</td><td>65</td></tr>
+          <tr><td class="td-bold">Conducteur travaux</td><td>BTP Pro</td><td><span class="badge badge-green">Actif</span></td><td>19</td><td>60</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     4. CV ANALYSÉS
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s3">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">R</div>
+      <div class="logo-name">RecrutAI</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item">Mon espace</div>
+      <div class="nav-item">Offres</div>
+      <div class="nav-item active">Candidatures</div>
+      <div class="nav-item">Clients</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">SO</div>
+      <div>
+        <div class="user-name">Sophie</div>
+        <div class="user-role">Chargée de recrutement</div>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div class="page-title">Candidatures</div>
+        <div class="page-sub">Dev Full Stack Senior · Nexeo</div>
+      </div>
+      <button class="btn-primary">+ Uploader des CV</button>
+    </div>
+    <div class="filter-row" style="margin-top:8px">
+      <button class="filter-btn active">Tous</button>
+      <button class="filter-btn">Qualifiés</button>
+      <button class="filter-btn">En analyse</button>
+      <button class="filter-btn">Rejetés</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Candidat</th><th>Poste</th><th>Client</th><th>Score IA</th><th>Statut</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="td-bold">MARTIN Thomas</td>
+            <td>Dev Full Stack Senior</td><td>Nexeo</td>
+            <td><span class="badge badge-score-ok">78</span></td>
+            <td><span class="badge badge-green">Qualifié</span></td>
+            <td><a class="action-link">Voir CV</a><span class="action-sep">·</span><a class="action-link">Comparer</a></td>
+          </tr>
+          <tr>
+            <td class="td-bold">DUPONT Claire</td>
+            <td>Dev Full Stack Senior</td><td>Nexeo</td>
+            <td><span class="badge badge-score-ko">45</span></td>
+            <td><span class="badge badge-gray">Rejeté</span></td>
+            <td><a class="action-link">Voir CV</a><span class="action-sep">·</span><a class="action-link">Comparer</a></td>
+          </tr>
+          <tr>
+            <td class="td-bold">BERNARD Paul</td>
+            <td>Chef de projet IT</td><td>Solvay</td>
+            <td><span style="color:#9090a8">—</span></td>
+            <td><span class="badge badge-amber"><span class="dot"></span>En analyse</span></td>
+            <td><a class="action-link">Voir CV</a></td>
+          </tr>
+          <tr>
+            <td class="td-bold">LEROY Julie</td>
+            <td>Dev Full Stack Senior</td><td>Nexeo</td>
+            <td><span class="badge badge-score-ok">82</span></td>
+            <td><span class="badge badge-green">Qualifié</span></td>
+            <td><a class="action-link">Voir CV</a><span class="action-sep">·</span><a class="action-link">Comparer</a></td>
+          </tr>
+          <tr>
+            <td class="td-bold">MOREAU Alex</td>
+            <td>Dev Full Stack Senior</td><td>Nexeo</td>
+            <td><span class="badge badge-score-ko">51</span></td>
+            <td><span class="badge badge-gray">Rejeté</span></td>
+            <td><a class="action-link">Voir CV</a><span class="action-sep">·</span><a class="action-link">Comparer</a></td>
+          </tr>
+          <tr>
+            <td class="td-bold">PETIT Sandra</td>
+            <td>Ingénieur R&D</td><td>BTP Pro</td>
+            <td><span style="color:#9090a8">—</span></td>
+            <td><span class="badge badge-amber"><span class="dot"></span>En analyse</span></td>
+            <td><a class="action-link">Voir CV</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     5. ESPACE SOPHIE & LAURA
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s4">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">R</div>
+      <div class="logo-name">RecrutAI</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item active">Mon espace</div>
+      <div class="nav-item">Offres</div>
+      <div class="nav-item">Candidatures</div>
+      <div class="nav-item">Clients</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">SO</div>
+      <div>
+        <div class="user-name">Sophie / Laura</div>
+        <div class="user-role">Espace personnel</div>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">Mon espace</div>
+      <div class="page-sub">Tableau de bord personnel — adapté au rôle</div>
+    </div>
+    <div class="espace-grid">
+
+      <!-- Sophie -->
+      <div class="espace-card">
+        <div class="espace-header bg-violet">
+          <div class="espace-avatar">SO</div>
+          <div>
+            <div class="espace-name">Sophie</div>
+            <div class="espace-role">Chargée de recrutement</div>
+          </div>
+        </div>
+        <div class="espace-kpis">
+          <div class="espace-kpi bg-blue">
+            <div class="kpi-label">CV reçus — semaine</div>
+            <div class="kpi-value" style="font-size:22px">93</div>
+            <div class="kpi-note">Cette semaine</div>
+          </div>
+          <div class="espace-kpi bg-cyan">
+            <div class="kpi-label">CV reçus — mois</div>
+            <div class="kpi-value" style="font-size:22px">400</div>
+            <div class="kpi-note">Avril 2026</div>
+          </div>
+          <div class="espace-kpi bg-violet">
+            <div class="kpi-label">Qualifiés</div>
+            <div class="kpi-value" style="font-size:22px">72</div>
+            <div class="kpi-note">Ce mois</div>
+          </div>
+        </div>
+        <div class="espace-clients">
+          <div class="espace-clients-title">Mes clients</div>
+          <div class="client-row">Nexeo</div>
+          <div class="client-row">BTP Pro</div>
+          <div class="client-row">Inovev</div>
+        </div>
+      </div>
+
+      <!-- Laura -->
+      <div class="espace-card">
+        <div class="espace-header bg-pink">
+          <div class="espace-avatar">LA</div>
+          <div>
+            <div class="espace-name">Laura</div>
+            <div class="espace-role">Account Manager</div>
+          </div>
+        </div>
+        <div class="espace-kpis">
+          <div class="espace-kpi bg-teal">
+            <div class="kpi-label">CA Mensuel</div>
+            <div class="kpi-value" style="font-size:22px">55k €</div>
+            <div class="kpi-note">Cible : 58k €</div>
+          </div>
+          <div class="espace-kpi bg-blue">
+            <div class="kpi-label">CA Trimestriel</div>
+            <div class="kpi-value" style="font-size:22px">165k €</div>
+            <div class="kpi-note">Cible : 174k €</div>
+          </div>
+          <div class="espace-kpi bg-violet">
+            <div class="kpi-label">Qualifiés</div>
+            <div class="kpi-value" style="font-size:22px">153</div>
+            <div class="kpi-note">Ce mois</div>
+          </div>
+        </div>
+        <div class="espace-clients">
+          <div class="espace-clients-title">Mes clients</div>
+          <div class="client-row">Nexeo</div>
+          <div class="client-row">Solvay</div>
+          <div class="client-row">BTP Pro</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function show(idx) {
+  document.querySelectorAll('.screen').forEach((s,i) => s.classList.toggle('active', i===idx));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+}
+</script>
+</body>
+</html>

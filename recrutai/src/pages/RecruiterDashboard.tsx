@@ -108,9 +108,9 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
 
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="flex gap-3">
           {kpis.map(k => (
-            <div key={k.label} className={`bg-gradient-to-br ${k.bg} rounded-xl p-4 text-white shadow-sm`}>
+            <div key={k.label} className={`w-48 shrink-0 bg-gradient-to-br ${k.bg} rounded-xl p-4 text-white shadow-sm`}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-white leading-tight">{k.label}</p>
                 <span className="text-xl">{k.icon}</span>
