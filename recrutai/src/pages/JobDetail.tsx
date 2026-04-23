@@ -3,7 +3,6 @@ import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Job, Application } from '@/lib/types'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -291,54 +290,63 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
           <p className="text-muted-foreground text-base mt-1 font-medium">
             {(job.clients as { name: string } | undefined)?.name} · {job.location} · {job.contract_type} · Seuil {job.score_threshold}
           </p>
-          {isRecruiter && (
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {job.ref_code && (
-                <span className="font-mono bg-muted px-2 py-1 rounded text-base font-semibold text-foreground">{job.ref_code}</span>
-              )}
-              {job.posted_by && (
-                <span>Créé par <span className="font-semibold text-foreground">{job.posted_by}</span> le {new Date(job.created_at).toLocaleDateString('fr-FR')} à {new Date(job.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-              )}
-              {(job.clients as { contact_email?: string | null } | undefined)?.contact_email && (
-                <span>Contact client : <a href={`mailto:${(job.clients as { contact_email?: string | null }).contact_email}`} className="font-semibold text-foreground underline underline-offset-2">{(job.clients as { contact_email?: string | null }).contact_email}</a></span>
-              )}
-            </div>
-          )}
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            {job.ref_code && (
+              <span className="font-mono bg-muted px-2 py-1 rounded text-base font-semibold text-foreground">{job.ref_code}</span>
+            )}
+            {job.posted_by && (
+              <span>Créé par <span className="font-semibold text-foreground">{job.posted_by}</span> le {new Date(job.created_at).toLocaleDateString('fr-FR')} à {new Date(job.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+            )}
+            {(job.clients as { contact_email?: string | null } | undefined)?.contact_email && (
+              <span>Contact client : <a href={`mailto:${(job.clients as { contact_email?: string | null }).contact_email}`} className="font-semibold text-foreground underline underline-offset-2">{(job.clients as { contact_email?: string | null }).contact_email}</a></span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-6 shrink-0">
           {isRecruiter && (
-            <Button size="sm" onClick={() => setCvUploadOpen(true)}>
+            <Button
+              onClick={() => setCvUploadOpen(true)}
+              className="h-12 px-6 text-base font-semibold"
+            >
               📄 Déposer CV
             </Button>
           )}
-          {jobStatus === 'closed' ? (
-            <Button size="sm" variant="outline" disabled={toggling}
-              className="border-green-500 text-green-700 hover:bg-green-50"
-              onClick={() => setStatus('active')}>
-              {toggling ? '...' : 'Réouvrir'}
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="outline"
+              disabled={toggling}
+              className={`h-11 px-6 text-base font-semibold ${jobStatus === 'active'
+                ? 'bg-green-600 border-green-600 text-white hover:bg-green-700 hover:border-green-700'
+                : 'border-green-500 text-green-700 hover:bg-green-50'}`}
+              onClick={() => jobStatus !== 'active' && setStatus('active')}
+            >
+              {toggling && jobStatus !== 'active' ? '...' : 'Active'}
             </Button>
-          ) : (
-            <>
-              <Button size="sm" variant="outline" disabled={toggling}
-                className={jobStatus === 'inactive'
-                  ? 'border-green-500 text-green-700 hover:bg-green-50'
-                  : 'border-amber-400 text-amber-700 hover:bg-amber-50'}
-                onClick={() => setStatus(jobStatus === 'inactive' ? 'active' : 'inactive')}>
-                {toggling ? '...' : jobStatus === 'inactive' ? 'Réactiver' : 'Mettre en pause'}
-              </Button>
-              <Button size="sm" variant="outline" disabled={toggling}
-                className="border-slate-400 text-slate-700 hover:bg-slate-50"
-                onClick={() => confirm('Clôturer cette offre ? Elle ne recevra plus de CV.') && setStatus('closed')}>
-                Clôturer
-              </Button>
-            </>
-          )}
-          <Badge
-            variant={jobStatus === 'active' ? 'default' : jobStatus === 'inactive' ? 'outline' : 'secondary'}
-            className={jobStatus === 'inactive' ? 'border-amber-400 text-amber-700 bg-amber-50' : ''}
-          >
-            {jobStatus === 'active' ? 'Active' : jobStatus === 'inactive' ? 'En pause' : 'Clôturée'}
-          </Badge>
+            <Button
+              variant="outline"
+              disabled={toggling}
+              className={`h-11 px-6 text-base font-semibold ${jobStatus === 'inactive'
+                ? 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:border-amber-600'
+                : 'border-amber-400 text-amber-700 hover:bg-amber-50'}`}
+              onClick={() => jobStatus !== 'inactive' && setStatus('inactive')}
+            >
+              {toggling && jobStatus !== 'inactive' ? '...' : 'Mettre en pause'}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={toggling}
+              className={`h-11 px-6 text-base font-semibold ${jobStatus === 'closed'
+                ? 'bg-slate-600 border-slate-600 text-white hover:bg-slate-700 hover:border-slate-700'
+                : 'border-slate-400 text-slate-700 hover:bg-slate-50'}`}
+              onClick={() => {
+                if (jobStatus !== 'closed' && confirm('Clôturer cette offre ? Elle ne recevra plus de CV.')) {
+                  setStatus('closed')
+                }
+              }}
+            >
+              {toggling && jobStatus !== 'closed' ? '...' : 'Clôturer'}
+            </Button>
+          </div>
         </div>
       </div>
 
