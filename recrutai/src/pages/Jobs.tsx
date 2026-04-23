@@ -307,9 +307,9 @@ export default function Jobs() {
                   <TableCell>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-700 px-2 py-1 rounded-md">
-                        <span className="text-slate-400">CV</span> {total}
+                        <span className="text-slate-600">CV</span> {total}
                       </span>
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${qualifiedCount > 0 ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-400'}`}>
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md ${qualifiedCount > 0 ? 'bg-green-100 text-green-900' : 'bg-slate-100 text-slate-600'}`}>
                         <span>✓</span> {qualifiedCount}
                       </span>
                       <span className="inline-flex items-center gap-1 text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded-md">

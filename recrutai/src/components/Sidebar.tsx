@@ -20,7 +20,7 @@ function DropdownItem({ icon, label, isActive, open, onToggle, whiteIcon, childr
       >
         <span className="text-xl" style={whiteIcon ? { filter: 'brightness(0) invert(1)' } : undefined}>{icon}</span>
         <span className="flex-1 text-left">{label}</span>
-        <span className="text-xs text-white/60">{open ? '▲' : '▼'}</span>
+        <span className="text-xs text-white/80">{open ? '▲' : '▼'}</span>
       </button>
       {open && <div className="ml-4 mt-1 space-y-0.5">{children}</div>}
     </div>
@@ -169,7 +169,7 @@ export function Sidebar() {
           ))}
         </DropdownItem>
       </nav>
-      <button onClick={scrollNav} className="flex items-center justify-center py-1.5 text-white/40 hover:text-white/70 transition-colors text-xs shrink-0" title="Défiler vers le bas">▼</button>
+      <button onClick={scrollNav} className="flex items-center justify-center py-1.5 text-white/70 hover:text-white transition-colors text-xs shrink-0" aria-label="Défiler vers le bas">▼</button>
 
       <div className="p-3 border-t border-white/15 space-y-1">
         <button

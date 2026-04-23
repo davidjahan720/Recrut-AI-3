@@ -22,8 +22,8 @@ function ScoreRing({ score, threshold }: { score: number | null; threshold: numb
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
     pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-700' },
-    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-800' },
-    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-600' },
+    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-900' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-700' },
     error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]

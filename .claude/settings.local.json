@@ -45,7 +45,13 @@
       "Bash(cat .env.local)",
       "Bash(cat .env)",
       "Bash(git init *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(npx -y @notionhq/notion-mcp-server --version)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('object'\\), d.get\\('type', d.get\\('status', '?'\\)\\)\\)\")",
+      "mcp__claude_ai_Figma__whoami",
+      "mcp__claude_ai_Figma__get_metadata",
+      "mcp__claude_ai_Figma__use_figma",
+      "mcp__claude_ai_Figma__create_new_file"
     ]
   }
 }

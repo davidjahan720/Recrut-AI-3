@@ -191,7 +191,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
           <>
             <p className="text-2xl mb-2">📄</p>
             <p className="font-medium text-slate-700 text-sm">Déposer des CV ici ou cliquer pour sélectionner</p>
-            <p className="text-xs text-slate-400 mt-1">PDF, Word, image (.png, .jpg) ou HTML — plusieurs fichiers acceptés</p>
+            <p className="text-xs text-slate-500 mt-1">PDF, Word, image (.png, .jpg) ou HTML — plusieurs fichiers acceptés</p>
           </>
         )}
         <input

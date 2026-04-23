@@ -25,7 +25,7 @@ function ScoreBadge({ score, threshold }: { score: number | null; threshold: num
   if (score === null) return <span className="text-muted-foreground text-sm">—</span>
   const qualified = score >= threshold
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${qualified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${qualified ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-700'}`}>
       {score}
     </span>
   )
@@ -34,8 +34,8 @@ function ScoreBadge({ score, threshold }: { score: number | null; threshold: num
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
     pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-700' },
-    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-800' },
-    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-900' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' },
     error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
@@ -327,7 +327,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                 {toggling ? '...' : jobStatus === 'inactive' ? 'Réactiver' : 'Mettre en pause'}
               </Button>
               <Button size="sm" variant="outline" disabled={toggling}
-                className="border-slate-400 text-slate-600 hover:bg-slate-50"
+                className="border-slate-400 text-slate-700 hover:bg-slate-50"
                 onClick={() => confirm('Clôturer cette offre ? Elle ne recevra plus de CV.') && setStatus('closed')}>
                 Clôturer
               </Button>

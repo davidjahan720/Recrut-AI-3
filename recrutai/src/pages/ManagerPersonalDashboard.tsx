@@ -56,7 +56,7 @@ function LoginScreen({ preselect, onLogin }: { preselect: ManagerProfile | null;
             value={pwd}
             onChange={e => { setPwd(e.target.value); setError(false) }}
             placeholder="Mot de passe"
-            className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
+            className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/80 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
           />
           <button type="submit" className="w-full bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors border border-white/30">
             Accéder à mon espace

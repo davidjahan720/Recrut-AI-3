@@ -60,19 +60,19 @@ function fmtEur(n: number) {
 }
 
 const KPI_STYLES = [
-  { bg: 'from-emerald-500 to-emerald-700', icon: '📋' },
-  { bg: 'from-blue-500 to-blue-700',       icon: '📄' },
-  { bg: 'from-violet-500 to-violet-700',   icon: '✅' },
-  { bg: 'from-orange-400 to-orange-600',   icon: '📊' },
+  { bg: 'from-emerald-700 to-emerald-900', icon: '📋' },
+  { bg: 'from-blue-700 to-blue-900',       icon: '📄' },
+  { bg: 'from-violet-700 to-violet-900',   icon: '✅' },
+  { bg: 'from-orange-700 to-orange-900',   icon: '📊' },
 ]
 
 const BIZ_STYLES = [
-  { bg: 'from-teal-500 to-teal-700',       icon: '💰' },
-  { bg: 'from-cyan-500 to-cyan-700',       icon: '📆' },
-  { bg: 'from-indigo-500 to-indigo-700',   icon: '📐' },
-  { bg: 'from-rose-500 to-rose-700',       icon: '🤝' },
-  { bg: 'from-amber-500 to-amber-700',     icon: '🆕' },
-  { bg: 'from-lime-500 to-lime-700',       icon: '♻' },
+  { bg: 'from-teal-700 to-teal-900',       icon: '💰' },
+  { bg: 'from-cyan-700 to-cyan-900',       icon: '📆' },
+  { bg: 'from-indigo-700 to-indigo-900',   icon: '📐' },
+  { bg: 'from-rose-700 to-rose-900',       icon: '🤝' },
+  { bg: 'from-amber-700 to-amber-900',     icon: '🆕' },
+  { bg: 'from-lime-700 to-lime-900',       icon: '♻' },
 ]
 
 const RECRUITERS = [

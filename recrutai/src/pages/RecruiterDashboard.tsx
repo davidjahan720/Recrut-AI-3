@@ -15,10 +15,10 @@ interface RecruiterData {
 }
 
 const RECRUITERS: RecruiterData[] = [
-  { name: 'Sophie',  password: '0', color: 'from-violet-500 to-violet-700',   initials: 'SO', clients: ['Nexeo', 'BTP Pro', 'Inovev'],     offresActives: 0, cvSemaine: 93,  cvMois: 400, qualifies: 72, taux: 18 },
-  { name: 'Karim',   password: '0', color: 'from-blue-500 to-blue-700',       initials: 'KA', clients: ['Solvay', 'Altair RH'],             offresActives: 0, cvSemaine: 81,  cvMois: 350, qualifies: 63, taux: 18 },
-  { name: 'Alix',    password: '0', color: 'from-emerald-500 to-emerald-700', initials: 'AL', clients: ['Terralys', 'Vinci RH', 'Kalexia'], offresActives: 0, cvSemaine: 105, cvMois: 450, qualifies: 81, taux: 18 },
-  { name: 'Nicolas', password: '0', color: 'from-orange-500 to-orange-700',   initials: 'NI', clients: ['Elexia', 'Groupe Avena'],          offresActives: 0, cvSemaine: 47,  cvMois: 200, qualifies: 36, taux: 18 },
+  { name: 'Sophie',  password: '0', color: 'from-violet-700 to-violet-900',   initials: 'SO', clients: ['Nexeo', 'BTP Pro', 'Inovev'],     offresActives: 0, cvSemaine: 93,  cvMois: 400, qualifies: 72, taux: 18 },
+  { name: 'Karim',   password: '0', color: 'from-blue-700 to-blue-900',       initials: 'KA', clients: ['Solvay', 'Altair RH'],             offresActives: 0, cvSemaine: 81,  cvMois: 350, qualifies: 63, taux: 18 },
+  { name: 'Alix',    password: '0', color: 'from-emerald-700 to-emerald-900', initials: 'AL', clients: ['Terralys', 'Vinci RH', 'Kalexia'], offresActives: 0, cvSemaine: 105, cvMois: 450, qualifies: 81, taux: 18 },
+  { name: 'Nicolas', password: '0', color: 'from-orange-700 to-orange-900',   initials: 'NI', clients: ['Elexia', 'Groupe Avena'],          offresActives: 0, cvSemaine: 47,  cvMois: 200, qualifies: 36, taux: 18 },
 ]
 
 function getWeekLabel() {
@@ -76,7 +76,7 @@ function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin
             value={pwd}
             onChange={e => { setPwd(e.target.value); setError(false) }}
             placeholder="Mot de passe"
-            className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
+            className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/80 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
           />
           <button type="submit" className="w-full bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors border border-white/30">
             Accéder à mon espace
@@ -91,9 +91,9 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
   const r = recruiter
 
   const kpis = [
-    { label: 'CV reçus — semaine', value: r.cvSemaine, note: getWeekLabel(),  bg: 'from-blue-500 to-blue-700',     icon: '📄' },
-    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-cyan-500 to-cyan-700',     icon: '📅' },
-    { label: 'Qualifiés',          value: r.qualifies, note: 'Ce mois-ci',    bg: 'from-violet-500 to-violet-700', icon: '✅' },
+    { label: 'CV reçus — semaine', value: r.cvSemaine, note: getWeekLabel(),  bg: 'from-blue-700 to-blue-900',     icon: '📄' },
+    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-cyan-700 to-cyan-900',     icon: '📅' },
+    { label: 'Qualifiés',          value: r.qualifies, note: 'Ce mois-ci',    bg: 'from-violet-700 to-violet-900', icon: '✅' },
   ]
 
   return (

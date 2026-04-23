@@ -31,8 +31,8 @@ interface AMData {
 }
 
 const ACCOUNT_MANAGERS: AMData[] = [
-  { name: 'Laura',  password: '0', color: 'from-pink-500 to-pink-700', initials: 'LA', clients: ['Nexeo', 'Solvay', 'BTP Pro'], offresActives: 0, cvSemaine: 430, cvMois: 850, qualifies: 153, taux: 18, caMensuel: 55000, caTrimestriel: 165000, avgHon: 8000, tauxTransfo: 25, nouveaux: 2, fidelisation: 73, targetNouveauxClientsMois: 3, targetCaMensuel: 58000, targetCaTrimestriel: 174000, ytdCa: 215000, ytdNouveauxClients: 8, targetYtdCa: 232000, targetYtdNouveauxClients: 12, targetAvgHon: 10000 },
-  { name: 'Julien', password: '0', color: 'from-sky-500 to-sky-700',  initials: 'JU', clients: ['Inovev', 'Altair RH'],        offresActives: 0, cvSemaine: 320, cvMois: 550, qualifies: 99,  taux: 18, caMensuel: 41000, caTrimestriel: 123000, avgHon: 8000, tauxTransfo: 18, nouveaux: 1, fidelisation: 65, targetNouveauxClientsMois: 2, targetCaMensuel: 46000, targetCaTrimestriel: 138000, ytdCa: 162000, ytdNouveauxClients: 5, targetYtdCa: 184000, targetYtdNouveauxClients: 8,  targetAvgHon: 10000 },
+  { name: 'Laura',  password: '0', color: 'from-pink-700 to-pink-900', initials: 'LA', clients: ['Nexeo', 'Solvay', 'BTP Pro'], offresActives: 0, cvSemaine: 430, cvMois: 850, qualifies: 153, taux: 18, caMensuel: 55000, caTrimestriel: 165000, avgHon: 8000, tauxTransfo: 25, nouveaux: 2, fidelisation: 73, targetNouveauxClientsMois: 3, targetCaMensuel: 58000, targetCaTrimestriel: 174000, ytdCa: 215000, ytdNouveauxClients: 8, targetYtdCa: 232000, targetYtdNouveauxClients: 12, targetAvgHon: 10000 },
+  { name: 'Julien', password: '0', color: 'from-sky-700 to-sky-900',  initials: 'JU', clients: ['Inovev', 'Altair RH'],        offresActives: 0, cvSemaine: 320, cvMois: 550, qualifies: 99,  taux: 18, caMensuel: 41000, caTrimestriel: 123000, avgHon: 8000, tauxTransfo: 18, nouveaux: 1, fidelisation: 65, targetNouveauxClientsMois: 2, targetCaMensuel: 46000, targetCaTrimestriel: 138000, ytdCa: 162000, ytdNouveauxClients: 5, targetYtdCa: 184000, targetYtdNouveauxClients: 8,  targetAvgHon: 10000 },
 ]
 
 const SESSION_KEY = 'am_session'
@@ -83,7 +83,7 @@ function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin
             value={pwd}
             onChange={e => { setPwd(e.target.value); setError(false) }}
             placeholder="Mot de passe"
-            className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
+            className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/80 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
           />
           <button type="submit" className="w-full bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors border border-white/30">
             Accéder à mon espace
@@ -136,9 +136,9 @@ function PersonalDashboard({ am }: { am: AMData }) {
   const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
   const kpis = [
-    { label: 'Offres actives', value: activeCount,             note: 'En cours',            bg: 'from-emerald-500 to-emerald-700', icon: '📋' },
-    { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`,  note: 'Prospects → clients', bg: 'from-rose-500 to-rose-700',       icon: '🤝' },
-    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-500 to-lime-700',       icon: '♻' },
+    { label: 'Offres actives', value: activeCount,             note: 'En cours',            bg: 'from-emerald-700 to-emerald-900', icon: '📋' },
+    { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`,  note: 'Prospects → clients', bg: 'from-rose-700 to-rose-900',       icon: '🤝' },
+    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-700 to-lime-900',       icon: '♻' },
   ]
 
   return (

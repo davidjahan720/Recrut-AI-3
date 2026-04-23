@@ -175,9 +175,9 @@ export default function Landing() {
             {STEPS.map((step, i) => (
               <div key={step.n} className="relative text-center">
                 <div className={`w-18 h-18 w-[72px] h-[72px] mx-auto rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 bg-gradient-to-br ${
-                  i === 0 ? 'from-violet-500 to-violet-700' :
-                  i === 1 ? 'from-indigo-500 to-indigo-700' :
-                  'from-blue-500 to-blue-700'
+                  i === 0 ? 'from-violet-700 to-violet-900' :
+                  i === 1 ? 'from-indigo-700 to-indigo-900' :
+                  'from-blue-700 to-blue-900'
                 }`}>
                   {step.n}
                 </div>
