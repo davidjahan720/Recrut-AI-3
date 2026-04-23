@@ -137,7 +137,11 @@ export default function JobDetail() {
   async function setStatus(newStatus: string) {
     if (!job || toggling) return
     setToggling(true)
-    await supabase.from('jobs').update({ status: newStatus }).eq('id', id!)
+    await fetch('/api/update-job-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: newStatus }),
+    })
     await loadJob()
     setToggling(false)
   }
