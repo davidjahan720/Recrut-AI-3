@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { rpcWithRetry } from '@/lib/rpc'
 import type { Client } from '@/lib/types'
 import { getAmSession, getAmBaseClientNames, getAmExtraClientIds, addAmClientId } from '@/lib/sessionRole'
 import { Button } from '@/components/ui/button'
@@ -10,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 
-const EMPTY: Omit<Client, 'id' | 'created_at'> = {
+const EMPTY: Omit<Client, 'id' | 'created_at' | 'added_by'> = {
   name: '', contact_name: '', contact_email: '', notification_email: '', sector: '', type: 'client', signed_at: null,
 }
 
@@ -110,23 +109,27 @@ export default function Clients() {
     setSaveError('')
     setLoading(true)
     try {
-      await rpcWithRetry('upsert_client', {
-        p_name: form.name,
-        p_contact_name: form.contact_name,
-        p_contact_email: form.contact_email,
-        p_notification_email: form.notification_email,
-        p_sector: form.sector,
-        ...(editId ? { p_id: editId } : {}),
+      const addedBy = !editId
+        ? (localStorage.getItem('am_session') || localStorage.getItem('manager_session') || null)
+        : undefined
+      const res = await fetch('/api/upsert-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          p_name: form.name,
+          p_contact_name: form.contact_name,
+          p_contact_email: form.contact_email,
+          p_notification_email: form.notification_email,
+          p_sector: form.sector,
+          p_type: form.type,
+          p_signed_at: form.signed_at || null,
+          ...(editId ? { p_id: editId } : {}),
+          ...(addedBy ? { p_added_by: addedBy } : {}),
+        }),
       })
-      if (editId) {
-        await supabase.from('clients').update({ type: form.type, signed_at: form.signed_at || null }).eq('id', editId)
-      } else {
-        const { data: last } = await supabase.from('clients').select('id').order('created_at', { ascending: false }).limit(1).single()
-        if (last) {
-          await supabase.from('clients').update({ type: form.type, signed_at: form.signed_at || null }).eq('id', last.id)
-          if (amSession) addAmClientId(last.id)
-        }
-      }
+      const json = await res.json()
+      if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
+      if (!editId && amSession) addAmClientId(json.data)
       setOpen(false); load()
     } catch (e) {
       setSaveError(String(e))
@@ -172,13 +175,14 @@ export default function Clients() {
               <TableHead className="w-36">Contact</TableHead>
               <TableHead className="w-48">Email notification</TableHead>
               <TableHead className="w-32">Secteur</TableHead>
+              <TableHead className="w-40">Ajouté par</TableHead>
               <TableHead className="w-44"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayedClients.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-base">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8 text-base">
                   Aucun client
                 </TableCell>
               </TableRow>
@@ -191,8 +195,14 @@ export default function Clients() {
                 </TableCell>
                 <TableCell className="font-semibold text-foreground truncate max-w-[192px]">{c.name}</TableCell>
                 <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{c.contact_name}</TableCell>
-                <TableCell className="text-muted-foreground truncate max-w-[192px]">{c.notification_email}</TableCell>
+                <TableCell className="text-muted-foreground truncate max-w-[192px]">jahandavid@gmail.com</TableCell>
                 <TableCell className="text-muted-foreground truncate max-w-[128px]">{c.sector}</TableCell>
+                <TableCell>
+                  <div className="text-xs">
+                    {c.added_by && <p className="font-medium text-foreground">{c.added_by}</p>}
+                    <p className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString('fr-FR')} {new Date(c.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                </TableCell>
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => openEdit(c)}>Éditer</Button>

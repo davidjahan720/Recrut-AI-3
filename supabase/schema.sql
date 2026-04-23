@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS clients (
   contact_email      TEXT NOT NULL DEFAULT '',
   notification_email TEXT NOT NULL,
   sector             TEXT NOT NULL DEFAULT '',
+  added_by           TEXT,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -113,24 +113,37 @@ function PersonalDashboard({ am }: { am: AMData }) {
     })
   }, [])
 
-  const [newMonthClients, setNewMonthClients] = useState<string[]>([])
+  const [newMonthClients, setNewMonthClients] = useState<{ name: string; date: string }[]>([])
 
   useEffect(() => {
     const extraIds = getAmExtraClientIds()
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
-    supabase.from('clients').select('id, name, signed_at, type').then(({ data }) => {
-      if (!data) return
-      const names = (data as { id: string; name: string; signed_at: string | null; type: string }[])
-        .filter(c =>
-          (baseClientNames.some(n => n.toLowerCase() === c.name.toLowerCase()) || extraIds.includes(c.id))
-          && c.signed_at
-          && new Date(c.signed_at) >= startOfMonth
-        )
-        .map(c => c.name)
-      setNewMonthClients(names)
-    })
+    supabase
+      .from('jobs')
+      .select('id, title, created_at, client_id, clients(name)')
+      .gte('created_at', startOfMonth.toISOString())
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        if (!data) return
+        const seen = new Set<string>()
+        const entries: { name: string; date: string }[] = []
+        ;(data as unknown as { id: string; title: string; created_at: string; client_id: string; clients: { name: string } | null }[])
+          .filter(j => {
+            const clientName = (j.clients as { name: string } | null)?.name ?? ''
+            return baseClientNames.some(n => n.toLowerCase() === clientName.toLowerCase())
+              || extraIds.includes(j.client_id)
+          })
+          .forEach(j => {
+            const clientName = (j.clients as { name: string } | null)?.name ?? ''
+            if (clientName && !seen.has(clientName)) {
+              seen.add(clientName)
+              entries.push({ name: clientName, date: j.created_at })
+            }
+          })
+        setNewMonthClients(entries)
+      })
   }, [])
 
   const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -152,11 +165,16 @@ function PersonalDashboard({ am }: { am: AMData }) {
       </div>
 
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Nouveaux clients — {monthLabel}</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          Nouveaux clients — {monthLabel} <span className="normal-case font-normal">({newMonthClients.length})</span>
+        </p>
         <div className="flex flex-wrap gap-2">
           {newMonthClients.length > 0
             ? newMonthClients.map(c => (
-                <span key={c} className="inline-flex px-3 py-1.5 rounded-lg text-sm font-medium bg-card border border-border text-foreground shadow-sm">{c}</span>
+                <span key={c.name} className="inline-flex flex-col px-3 py-1.5 rounded-lg text-sm font-medium bg-card border border-border text-foreground shadow-sm">
+                  <span>{c.name}</span>
+                  <span className="text-xs text-muted-foreground font-normal">{new Date(c.date).toLocaleDateString('fr-FR')}</span>
+                </span>
               ))
             : <p className="text-sm text-muted-foreground">Aucun nouveau client ce mois-ci</p>
           }

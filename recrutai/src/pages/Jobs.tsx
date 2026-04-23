@@ -109,6 +109,7 @@ export default function Jobs() {
     setLoading(true)
     try {
       let clientId = form.client_id
+      let clientIsNew = false
       if (!clientId && form.company_name.trim()) {
         const name = form.company_name.trim()
         const { data: existing } = await supabase.from('clients').select('id, contact_name, contact_email, notification_email, sector').ilike('name', name).maybeSingle()
@@ -130,6 +131,7 @@ export default function Jobs() {
             await load()
           }
         } else {
+          const postedBy = localStorage.getItem('am_session') || localStorage.getItem('manager_session') || null
           const res = await fetch('/api/upsert-client', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -139,11 +141,13 @@ export default function Jobs() {
               p_contact_email: clientForm.contact_email,
               p_notification_email: clientForm.notification_email || clientForm.contact_email || 'notifications@recrutai.fr',
               p_sector: clientForm.sector,
+              ...(postedBy ? { p_added_by: postedBy } : {}),
             }),
           })
           const json = await res.json()
           if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
           clientId = json.data as string
+          clientIsNew = true
           await load()
         }
       }
@@ -171,7 +175,7 @@ export default function Jobs() {
         })
         const json = await res.json()
         if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
-        addAmClientId(clientId)
+        if (clientIsNew) addAmClientId(clientId)
         setOpen(false)
         navigate(`/jobs/${json.data.id}`)
       }
@@ -292,7 +296,7 @@ export default function Jobs() {
               )}
               <TableHead className="w-16">Réf.</TableHead>
               <TableHead>Titre</TableHead>
-              <TableHead className="w-36">Client</TableHead>
+              <TableHead>Client</TableHead>
               <TableHead className="w-28">Localisation</TableHead>
               <TableHead className="w-16">Seuil</TableHead>
               <TableHead className="w-52">Candidatures</TableHead>
@@ -319,8 +323,8 @@ export default function Jobs() {
                     </TableCell>
                   )}
                   <TableCell className="font-mono text-xs font-semibold text-muted-foreground">{j.ref_code ?? '—'}</TableCell>
-                  <TableCell className="font-semibold text-foreground truncate max-w-0">{j.title}</TableCell>
-                  <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{(j.clients as { name: string } | undefined)?.name}</TableCell>
+                  <TableCell className="font-semibold text-foreground">{j.title}</TableCell>
+                  <TableCell className="text-muted-foreground font-medium">{(j.clients as { name: string } | undefined)?.name}</TableCell>
                   <TableCell className="text-muted-foreground truncate max-w-[112px]">{j.location}</TableCell>
                   <TableCell className="font-medium">{j.score_threshold}</TableCell>
                   <TableCell>

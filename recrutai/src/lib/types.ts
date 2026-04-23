@@ -7,6 +7,7 @@ export interface Client {
   sector: string
   type: 'prospect' | 'client'
   signed_at: string | null
+  added_by: string | null
   created_at: string
 }
 

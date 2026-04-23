@@ -93,7 +93,12 @@ export default function ClientDetail() {
           </div>
           <div>
             <p className="text-sm font-bold text-foreground uppercase tracking-wide mb-1">Email notifications</p>
-            <p className="text-base text-foreground">{client.notification_email}</p>
+            <p className="text-base text-foreground">jahandavid@gmail.com</p>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground uppercase tracking-wide mb-1">Ajouté par</p>
+            <p className="text-base font-semibold text-foreground">{client.added_by ?? '—'}</p>
+            <p className="text-sm text-muted-foreground">{new Date(client.created_at).toLocaleDateString('fr-FR')} à {new Date(client.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
         </div>
       )}

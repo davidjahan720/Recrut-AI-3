@@ -49,17 +49,24 @@ export function CvUploader({ jobId, onUploaded }: Props) {
   const [progress, setProgress] = useState<Progress | null>(null)
   const noJob = !jobId
 
+  const isRecruiter = !!localStorage.getItem('recruiter_session')
   const uploaderName = localStorage.getItem('recruiter_session') || localStorage.getItem('am_session') || localStorage.getItem('manager_session')
 
   async function processFiles(files: FileList | File[]) {
-    const accepted = Array.from(files).filter(f =>
-      f.type === 'application/pdf' ||
-      f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      f.type === 'image/png' || f.type === 'image/jpeg' || f.type === 'image/webp' ||
-      f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.doc') ||
-      f.name.endsWith('.png') || f.name.endsWith('.jpg') || f.name.endsWith('.jpeg') || f.name.endsWith('.webp') ||
-      f.type === 'text/html' || f.name.endsWith('.html') || f.name.endsWith('.htm')
-    )
+    const accepted = Array.from(files).filter(f => {
+      if (isRecruiter && (
+        f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        f.name.endsWith('.docx') || f.name.endsWith('.doc')
+      )) return false
+      return (
+        f.type === 'application/pdf' ||
+        f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        f.type === 'image/png' || f.type === 'image/jpeg' || f.type === 'image/webp' ||
+        f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.doc') ||
+        f.name.endsWith('.png') || f.name.endsWith('.jpg') || f.name.endsWith('.jpeg') || f.name.endsWith('.webp') ||
+        f.type === 'text/html' || f.name.endsWith('.html') || f.name.endsWith('.htm')
+      )
+    })
     if (accepted.length === 0) return
 
     setProcessing(true)
@@ -99,18 +106,12 @@ export function CvUploader({ jobId, onUploaded }: Props) {
         errMsg = String(e)
       }
 
-      // Enregistrement de l'auteur (la déduplication est gérée dans score-cv)
-      if (!errMsg) {
-        const { data: newApp } = await supabase
-          .from('applications')
-          .select('id, candidate_name, candidate_email')
-          .eq('job_id', jobId)
-          .eq('cv_file_path', fileName)
-          .maybeSingle()
-
-        if (newApp && uploaderName) {
-          await supabase.from('applications').update({ uploaded_by: uploaderName }).eq('id', newApp.id)
-        }
+      if (!errMsg && uploaderName) {
+        await fetch('/api/set-uploaded-by', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cv_file_path: fileName, job_id: jobId, uploaded_by: uploaderName }),
+        })
       }
 
       newResults.push({
@@ -172,13 +173,13 @@ export function CvUploader({ jobId, onUploaded }: Props) {
           <>
             <p className="text-2xl mb-2">📄</p>
             <p className="font-medium text-slate-700 text-sm">Déposer des CV ici ou cliquer pour sélectionner</p>
-            <p className="text-xs text-slate-500 mt-1">PDF, Word, image (.png, .jpg) ou HTML — plusieurs fichiers acceptés</p>
+            <p className="text-xs text-slate-500 mt-1">{isRecruiter ? 'PDF, image (.png, .jpg, .webp) ou HTML — plusieurs fichiers acceptés' : 'PDF, Word, image (.png, .jpg) ou HTML — plusieurs fichiers acceptés'}</p>
           </>
         )}
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.html,.htm"
+          accept={isRecruiter ? '.pdf,.png,.jpg,.jpeg,.webp,.html,.htm' : '.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.html,.htm'}
           multiple
           className="hidden"
           onChange={e => e.target.files && processFiles(e.target.files)}

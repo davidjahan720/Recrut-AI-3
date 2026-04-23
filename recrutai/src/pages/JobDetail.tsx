@@ -309,7 +309,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
         <div className="flex items-start gap-6 shrink-0">
           {isRecruiter && (
             <Button
-              onClick={() => setCvUploadOpen(true)}
+              onClick={() => jobStatus === 'active' && setCvUploadOpen(true)}
               className="h-12 px-6 text-base font-semibold"
             >
               📄 Déposer CV
@@ -436,7 +436,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                 <TableHead>Justification</TableHead>
                 <TableHead className="w-px whitespace-nowrap">Email</TableHead>
                 <TableHead className="w-px whitespace-nowrap">Statut</TableHead>
-                <TableHead className="w-px whitespace-nowrap">Date</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Ajouté par</TableHead>
                 <TableHead className="w-px whitespace-nowrap"></TableHead>
               </TableRow>
             </TableHeader>
@@ -461,7 +461,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     </TableCell>
                     <TableCell><ScoreBadge score={a.score} threshold={job.score_threshold} /></TableCell>
                     <TableCell>
-                      <p className="text-xs text-slate-700 leading-snug mb-1">{a.justification ?? '—'}</p>
+                      <p className="text-xs text-foreground leading-snug mb-1">{a.justification ?? '—'}</p>
                       {a.positive_points && (
                         <div className="space-y-0.5">
                           {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
