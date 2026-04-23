@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
+
+const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/components/AppLayout'
 import Landing from '@/pages/Landing'
@@ -19,7 +22,7 @@ import SeedData from '@/pages/SeedData'
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <SentryRoutes>
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -42,7 +45,7 @@ export default function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </SentryRoutes>
     </BrowserRouter>
   )
 }
