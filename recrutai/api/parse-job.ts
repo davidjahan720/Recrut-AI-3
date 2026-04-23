@@ -38,6 +38,7 @@ Format imposé :
   "contract_type": "<un parmi exactement : CDI, CDD, Alternance, Stage, Freelance>",
   "description": "<missions et profil recherché en 300 mots max>",
   "score_threshold": <entier entre 60 et 85>,
+  "sector": "<secteur d'activité de l'entreprise, ex: Industrie, Tech, BTP, Santé, Finance, Retail — sinon null>",
   "contact_name": "<prénom et nom du contact RH ou manager mentionné, sinon null>",
   "contact_email": "<adresse email du contact si présente, sinon null>",
   "notification_email": "<adresse email pour les notifications de candidatures si différente du contact, sinon null>"

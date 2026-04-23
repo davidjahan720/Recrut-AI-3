@@ -111,9 +111,24 @@ export default function Jobs() {
       let clientId = form.client_id
       if (!clientId && form.company_name.trim()) {
         const name = form.company_name.trim()
-        const { data: existing } = await supabase.from('clients').select('id').ilike('name', name).maybeSingle()
+        const { data: existing } = await supabase.from('clients').select('id, contact_name, contact_email, notification_email, sector').ilike('name', name).maybeSingle()
         if (existing) {
           clientId = existing.id
+          if (clientForm.sector.trim()) {
+            await fetch('/api/upsert-client', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                p_id: existing.id,
+                p_name: name,
+                p_contact_name: clientForm.contact_name || (existing as { contact_name?: string }).contact_name || '',
+                p_contact_email: clientForm.contact_email || (existing as { contact_email?: string }).contact_email || '',
+                p_notification_email: clientForm.notification_email || clientForm.contact_email || (existing as { notification_email?: string }).notification_email || '',
+                p_sector: clientForm.sector,
+              }),
+            })
+            await load()
+          }
         } else {
           const res = await fetch('/api/upsert-client', {
             method: 'POST',
