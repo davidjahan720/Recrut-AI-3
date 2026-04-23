@@ -15,10 +15,10 @@ interface RecruiterData {
 }
 
 const RECRUITERS: RecruiterData[] = [
-  { name: 'Sophie',  password: '0', color: 'from-violet-500 to-violet-700', initials: 'SO', clients: ['Nexeo', 'BTP Pro', 'Inovev'],     offresActives: 0, cvSemaine: 93,  cvMois: 400, qualifies: 72, taux: 18 },
-  { name: 'Karim',   password: '0', color: 'from-blue-500 to-blue-700',     initials: 'KA', clients: ['Solvay', 'Altair RH'],             offresActives: 0, cvSemaine: 81,  cvMois: 350, qualifies: 63, taux: 18 },
+  { name: 'Sophie',  password: '0', color: 'from-violet-500 to-violet-700',   initials: 'SO', clients: ['Nexeo', 'BTP Pro', 'Inovev'],     offresActives: 0, cvSemaine: 93,  cvMois: 400, qualifies: 72, taux: 18 },
+  { name: 'Karim',   password: '0', color: 'from-blue-500 to-blue-700',       initials: 'KA', clients: ['Solvay', 'Altair RH'],             offresActives: 0, cvSemaine: 81,  cvMois: 350, qualifies: 63, taux: 18 },
   { name: 'Alix',    password: '0', color: 'from-emerald-500 to-emerald-700', initials: 'AL', clients: ['Terralys', 'Vinci RH', 'Kalexia'], offresActives: 0, cvSemaine: 105, cvMois: 450, qualifies: 81, taux: 18 },
-  { name: 'Nicolas', password: '0', color: 'from-orange-500 to-orange-700', initials: 'NI', clients: ['Elexia', 'Groupe Avena'],          offresActives: 0, cvSemaine: 47,  cvMois: 200, qualifies: 36, taux: 18 },
+  { name: 'Nicolas', password: '0', color: 'from-orange-500 to-orange-700',   initials: 'NI', clients: ['Elexia', 'Groupe Avena'],          offresActives: 0, cvSemaine: 47,  cvMois: 200, qualifies: 36, taux: 18 },
 ]
 
 function getWeekLabel() {
@@ -35,7 +35,6 @@ function getMonthLabel() {
 
 const SESSION_KEY = 'recruiter_session'
 
-
 function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin: (r: RecruiterData) => void }) {
   const selected = RECRUITERS.find(r => r.name === preselect) ?? null
   const [pwd, setPwd] = useState('')
@@ -44,10 +43,10 @@ function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (selected && pwd === selected.password) {
-      sessionStorage.removeItem('am_session')
-      sessionStorage.removeItem('manager_session')
-      sessionStorage.removeItem('manager_auth')
-      sessionStorage.setItem(SESSION_KEY, selected.name)
+      localStorage.removeItem('am_session')
+      localStorage.removeItem('manager_session')
+      localStorage.removeItem('manager_auth')
+      localStorage.setItem(SESSION_KEY, selected.name)
       window.dispatchEvent(new Event('role-login'))
       onLogin(selected)
     } else {
@@ -91,17 +90,14 @@ function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin
 function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
   const r = recruiter
 
-
   const kpis = [
-    { label: 'CV reçus — semaine', value: r.cvSemaine,     note: getWeekLabel(),      bg: 'from-blue-500 to-blue-700',       icon: '📄' },
-    { label: 'CV reçus — mois',    value: r.cvMois,        note: getMonthLabel(),     bg: 'from-cyan-500 to-cyan-700',       icon: '📅' },
-    { label: 'Qualifiés',          value: r.qualifies,     note: 'Ce mois-ci',        bg: 'from-violet-500 to-violet-700',   icon: '✅' },
+    { label: 'CV reçus — semaine', value: r.cvSemaine, note: getWeekLabel(),  bg: 'from-blue-500 to-blue-700',     icon: '📄' },
+    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-cyan-500 to-cyan-700',     icon: '📅' },
+    { label: 'Qualifiés',          value: r.qualifies, note: 'Ce mois-ci',    bg: 'from-violet-500 to-violet-700', icon: '✅' },
   ]
 
   return (
     <div className="p-5 flex flex-col gap-4 overflow-auto">
-
-
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${r.color} flex items-center justify-center text-white font-bold text-sm`}>{r.initials}</div>
         <div>
@@ -110,7 +106,6 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
         </div>
       </div>
 
-      {/* Recrutement KPIs */}
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</p>
         <div className="grid grid-cols-4 gap-3">
@@ -126,7 +121,6 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
           ))}
         </div>
       </div>
-
     </div>
   )
 }
@@ -135,7 +129,7 @@ export default function RecruiterDashboard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const preselect = searchParams.get('name')
-  const savedName = sessionStorage.getItem(SESSION_KEY)
+  const savedName = localStorage.getItem(SESSION_KEY)
   const savedRecruiter = savedName && (!preselect || savedName === preselect)
     ? RECRUITERS.find(r => r.name === savedName) ?? null
     : null

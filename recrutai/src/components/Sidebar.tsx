@@ -81,9 +81,9 @@ export function Sidebar() {
 
   // Computed fresh on every render — location is read so any navigation re-evaluates this
   void location
-  const role = sessionStorage.getItem('recruiter_session') ? 'recruiter'
-             : sessionStorage.getItem('am_session') ? 'am'
-             : sessionStorage.getItem('manager_session') ? 'manager'
+  const role = localStorage.getItem('recruiter_session') ? 'recruiter'
+             : localStorage.getItem('am_session') ? 'am'
+             : localStorage.getItem('manager_session') ? 'manager'
              : null
 
   const links: { to: string; label: string; icon: string }[] = []
@@ -95,8 +95,6 @@ export function Sidebar() {
     }
     if (role !== 'recruiter')  links.push({ to: '/clients',        label: 'Clients',      icon: '🏢' })
     links.push(                            { to: '/jobs',           label: 'Offres',       icon: '📋' })
-    const showCandidatures = role === 'recruiter' || (role === 'manager' && sessionStorage.getItem('manager_session') === 'Pierre')
-    if (showCandidatures)      links.push({ to: '/applications',   label: 'Candidatures', icon: '📩' })
   }
 
   return (

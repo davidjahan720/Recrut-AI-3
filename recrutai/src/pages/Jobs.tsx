@@ -137,7 +137,7 @@ export default function Jobs() {
         if (error) throw new Error(error.message)
         setOpen(false); load()
       } else {
-        const postedBy = sessionStorage.getItem('am_session') || sessionStorage.getItem('manager_session') || sessionStorage.getItem('recruiter_session')
+        const postedBy = localStorage.getItem('am_session') || localStorage.getItem('manager_session') || localStorage.getItem('recruiter_session')
         const { data: newJob, error } = await supabase.from('jobs').insert({ ...jobPayload, ref_code: generateRefCode(), posted_by: postedBy }).select('id').single()
         if (error) throw new Error(error.message)
         addAmClientId(clientId)
@@ -205,7 +205,7 @@ export default function Jobs() {
   const amSession = getAmSession()
   const amBaseNames = getAmBaseClientNames()
   const amExtraIds = getAmExtraClientIds()
-  const recruiterSession = sessionStorage.getItem('recruiter_session')
+  const recruiterSession = localStorage.getItem('recruiter_session')
 
   const myJobs = (() => {
     if (amSession) {

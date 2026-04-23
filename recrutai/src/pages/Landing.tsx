@@ -92,7 +92,7 @@ export default function Landing() {
               onClick={() => navigate('/login')}
               className="text-base text-slate-700 hover:text-slate-900 font-medium transition-colors px-3 py-1.5"
             >
-              Se connecter
+              Accéder à l'app
             </button>
           </div>
         </div>
@@ -242,7 +242,7 @@ export default function Landing() {
           </div>
           <p className="text-sm text-slate-400">© {new Date().getFullYear()} RecrutAI — Propulsé par Claude AI (Anthropic)</p>
           <button onClick={() => navigate('/login')} className="text-sm text-violet-400 hover:text-violet-300 font-medium transition-colors">
-            Se connecter →
+            Accéder à l'app →
           </button>
         </div>
       </footer>

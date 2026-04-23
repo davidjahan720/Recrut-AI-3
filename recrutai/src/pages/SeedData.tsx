@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 type CandidateSeed = {
   name: string; email: string; score: number
-  status: 'qualified' | 'pending_approval' | 'rejected'
+  status: 'qualified' | 'rejected'
   justification: string; positivePoints: string[]; negativePoints: string[]
 }
 type JobSeed = {
@@ -29,7 +29,7 @@ const SEED: ClientSeed[] = [
           justification: 'Profil senior avec 8 ans d\'expérience en gestion de comptes stratégiques. Maîtrise des cycles de vente complexes et excellente culture client.',
           positivePoints: ['8 ans en gestion grands comptes', 'Maîtrise des cycles de vente B2B', 'Très bonnes compétences relationnelles'],
           negativePoints: ['Secteur conseil peu représenté dans son parcours'] },
-        { name: 'BERNARD Julien', email: 'j.bernard@mail.fr', score: 71, status: 'pending_approval',
+        { name: 'BERNARD Julien', email: 'j.bernard@mail.fr', score: 71, status: 'qualified',
           justification: 'Candidat avec un bon potentiel commercial. Expérience de 5 ans en développement commercial, mais secteur conseil à confirmer.',
           positivePoints: ['Fort potentiel commercial', 'Bonne énergie et motivation', '5 ans d\'expérience'],
           negativePoints: ['Peu d\'expérience spécifique en conseil', 'Taille des comptes gérés inférieure'] },
@@ -55,7 +55,7 @@ const SEED: ClientSeed[] = [
           justification: 'Conducteur de travaux expérimenté avec 10 ans sur chantiers TCE. Références solides sur projets de 2-5M€.',
           positivePoints: ['10 ans d\'expérience TCE', 'Gestion de chantiers jusqu\'à 5M€', 'Solide réseau sous-traitants'],
           negativePoints: ['Mobilité géographique limitée à Lyon'] },
-        { name: 'PETIT Arnaud', email: 'a.petit@mail.fr', score: 67, status: 'pending_approval',
+        { name: 'PETIT Arnaud', email: 'a.petit@mail.fr', score: 67, status: 'qualified',
           justification: 'Bon profil technique avec expérience variée en gros œuvre et second œuvre. Peut progresser rapidement.',
           positivePoints: ['Bonne maîtrise technique', 'Expérience gros œuvre et second œuvre', 'Permis B + véhicule'],
           negativePoints: ['Chantiers gérés de taille modeste', 'Management équipe à renforcer'] },
@@ -81,7 +81,7 @@ const SEED: ClientSeed[] = [
           justification: 'Ingénieur mécanique de haut niveau avec expertise en CAO et simulation numérique. Plusieurs brevets déposés, profil R&D idéal.',
           positivePoints: ['Expert CAO/SolidWorks', '3 brevets déposés', 'Expérience en mécanique de précision', 'Anglais courant'],
           negativePoints: ['Prétentions salariales élevées'] },
-        { name: 'MICHEL Elise', email: 'e.michel@mail.fr', score: 73, status: 'pending_approval',
+        { name: 'MICHEL Elise', email: 'e.michel@mail.fr', score: 73, status: 'qualified',
           justification: 'Ingénieure compétente avec une bonne base en conception mécanique. Manque d\'expérience en R&D pure mais forte capacité d\'apprentissage.',
           positivePoints: ['Bonne maîtrise des outils de simulation', 'Profil analytique', 'Docteure en mécanique'],
           negativePoints: ['Peu d\'expérience industrielle', 'Pas de brevet', 'Secteur de précision à découvrir'] },
@@ -109,7 +109,7 @@ const SEED: ClientSeed[] = [
           justification: 'Ingénieur chimiste avec 7 ans d\'expérience en procédés chimiques. Expertise en optimisation de réacteurs et sécurité industrielle.',
           positivePoints: ['7 ans d\'expérience process chimie', 'Expert en réacteurs chimiques', 'Formation HSE solide', 'Anglais professionnel'],
           negativePoints: ['Secteur pétrochimique, transition chimie fine à valider'] },
-        { name: 'LEROY Julie', email: 'j.leroy@mail.fr', score: 72, status: 'pending_approval',
+        { name: 'LEROY Julie', email: 'j.leroy@mail.fr', score: 72, status: 'qualified',
           justification: 'Ingénieure chimiste avec bonne formation et stages significatifs. Profil junior prometteur avec potentiel de développement.',
           positivePoints: ['Formation Chimie ParisTech', 'Stage en procédés industriels', 'Très bons résultats académiques'],
           negativePoints: ['Seulement 3 ans d\'expérience', 'Pas de gestion de projets d\'ampleur'] },
@@ -135,7 +135,7 @@ const SEED: ClientSeed[] = [
           justification: 'Consultante RH senior avec 6 ans en cabinet de recrutement. Expertise sur profils ingénierie et industrie, excellent réseau.',
           positivePoints: ['6 ans en cabinet recrutement', 'Spécialisation ingénierie/industrie', 'Excellent réseau candidats', 'KPIs au-dessus de la moyenne'],
           negativePoints: ['Souhaite une évolution managériale à terme'] },
-        { name: 'RICHARD Kevin', email: 'k.richard@mail.fr', score: 65, status: 'pending_approval',
+        { name: 'RICHARD Kevin', email: 'k.richard@mail.fr', score: 65, status: 'qualified',
           justification: 'Consultant avec bonne maîtrise du sourcing digital. Chiffre d\'affaires en progression mais portefeuille à consolider.',
           positivePoints: ['Maîtrise LinkedIn Recruiter', 'Bonne capacité de closing', 'CA en progression'],
           negativePoints: ['Spécialisation sectorielle limitée', 'Réseau à développer sur l\'industrie'] },
@@ -163,7 +163,7 @@ const SEED: ClientSeed[] = [
           justification: 'Ingénieure agronome avec expertise en agriculture durable et bon relationnel agriculteurs. Expérience terrain significative.',
           positivePoints: ['Formation AgroParisTech', '5 ans en coopérative agricole', 'Expertise agriculture durable', 'Très bon contact terrain'],
           negativePoints: ['Connaissance des céréales à approfondir'] },
-        { name: 'DUPUIS François', email: 'f.dupuis@mail.fr', score: 68, status: 'pending_approval',
+        { name: 'DUPUIS François', email: 'f.dupuis@mail.fr', score: 68, status: 'qualified',
           justification: 'Agronome avec bonne base technique et expérience en conseil agricole. Profil solide qui peut s\'adapter rapidement.',
           positivePoints: ['Solide formation agronomique', 'Expérience conseil agricole', 'Permis et mobilité'],
           negativePoints: ['Peu d\'expérience en coopérative', 'Connaissance des outils numériques agricoles limitée'] },
@@ -189,7 +189,7 @@ const SEED: ClientSeed[] = [
           justification: 'Chargée RH polyvalente avec expérience en cabinet conseil. Maîtrise des outils RH et bonne capacité relationnelle client.',
           positivePoints: ['Expérience conseil RH en PME', 'Maîtrise GPEC et formation', 'Bonne relation client', 'SIRH maîtrisé'],
           negativePoints: ['Expérience recrutement à approfondir'] },
-        { name: 'CHAPUIS Romain', email: 'r.chapuis@mail.fr', score: 63, status: 'pending_approval',
+        { name: 'CHAPUIS Romain', email: 'r.chapuis@mail.fr', score: 63, status: 'qualified',
           justification: 'Profil dynamique avec bonne formation et première expérience réussie. À former sur certains aspects mais potentiel évident.',
           positivePoints: ['Master RH', 'Première expérience réussie', 'Très motivé par le conseil'],
           negativePoints: ['3 ans d\'expérience seulement', 'Peu d\'autonomie démontrée', 'Pas de gestion de projet complexe'] },
@@ -215,7 +215,7 @@ const SEED: ClientSeed[] = [
           justification: 'Data Analyst expert avec maîtrise de Python, SQL et des outils de BI. Expérience marketing digital appréciable et sens business développé.',
           positivePoints: ['Expert Python/SQL/Tableau', '4 ans en data marketing', 'Expérience e-commerce', 'Anglais courant'],
           negativePoints: ['Prétentions légèrement au-dessus de la fourchette'] },
-        { name: 'BAUDRY Chloé', email: 'c.baudry@mail.fr', score: 70, status: 'pending_approval',
+        { name: 'BAUDRY Chloé', email: 'c.baudry@mail.fr', score: 70, status: 'qualified',
           justification: 'Analyste avec bonne maîtrise des outils et première expérience en marketing. Profil analytique solide, à confirmer sur les sujets business.',
           positivePoints: ['Bonne maîtrise SQL et Excel avancé', 'Formation data science', 'Curiosité et dynamisme'],
           negativePoints: ['Peu d\'expérience marketing business', 'Python à approfondir', 'Pas de management de dashboards'] },
@@ -243,7 +243,7 @@ const SEED: ClientSeed[] = [
           justification: 'Technicien électrotechnicien avec 6 ans d\'expérience en milieu industriel. Habilitations électriques à jour, autonome et réactif.',
           positivePoints: ['6 ans d\'expérience industrie', 'Habilitations B2V, BR, BC', 'Maîtrise armoires électriques', 'Disponible rapidement'],
           negativePoints: ['Conduite de chantier à renforcer'] },
-        { name: 'LEBRUN Alexis', email: 'a.lebrun@mail.fr', score: 62, status: 'pending_approval',
+        { name: 'LEBRUN Alexis', email: 'a.lebrun@mail.fr', score: 62, status: 'qualified',
           justification: 'Bon technicien avec habilitations en cours de renouvellement. Profil sérieux avec bonnes bases en électrotechnique industrielle.',
           positivePoints: ['BTS Électrotechnique', 'Expérience maintenance industrielle', 'Bon relationnel'],
           negativePoints: ['Habilitations à renouveler', 'Peu d\'expérience en installation neuf', 'Mobilité limitée'] },
@@ -269,7 +269,7 @@ const SEED: ClientSeed[] = [
           justification: 'Chef de projet agro-alimentaire confirmé avec expertise en amélioration continue et gestion de projets industriels. Très bon profil.',
           positivePoints: ['5 ans en gestion de projets agro', 'Certification Lean Six Sigma', 'Expérience en industrie céréalière', 'Leadership reconnu'],
           negativePoints: ['Demande une évolution rapide'] },
-        { name: 'VASSEUR Ethan', email: 'e.vasseur@mail.fr', score: 66, status: 'pending_approval',
+        { name: 'VASSEUR Ethan', email: 'e.vasseur@mail.fr', score: 66, status: 'qualified',
           justification: 'Ingénieur agroalimentaire avec de bonnes bases en gestion de projet. Profil qui peut évoluer vers un rôle senior avec accompagnement.',
           positivePoints: ['Ingénieur ENSIA', 'Expérience en production agro', 'Maîtrise MS Project'],
           negativePoints: ['Peu d\'expérience en pilotage de projets transverses', 'Management d\'équipe à développer'] },
@@ -290,11 +290,11 @@ export default function SeedData() {
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
   const [log, setLog] = useState<string[]>([])
-  const [error, setError] = useState('')
+  const [, setError] = useState('')
 
   const [dedupRunning, setDedupRunning] = useState(false)
   const [dedupLog, setDedupLog] = useState<string[]>([])
-  const [dedupError, setDedupError] = useState('')
+  const [, setDedupError] = useState('')
 
   function addLog(msg: string) {
     setLog(prev => [...prev, msg])
@@ -475,7 +475,6 @@ export default function SeedData() {
       >
         {running ? 'Seeding en cours...' : done ? '✅ Terminé' : '▶ Lancer le seed'}
       </button>
-      {error && <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
       {log.length > 0 && (
         <div className="mt-6 bg-card border border-border rounded-lg p-4 font-mono text-xs text-foreground space-y-0.5 max-h-96 overflow-auto">
           {log.map((line, i) => <p key={i}>{line}</p>)}
@@ -496,7 +495,6 @@ export default function SeedData() {
       >
         {dedupRunning ? 'Analyse en cours...' : '🧹 Lancer la déduplication'}
       </button>
-      {dedupError && <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{dedupError}</p>}
       {dedupLog.length > 0 && (
         <div className="mt-6 bg-card border border-border rounded-lg p-4 font-mono text-xs text-foreground space-y-0.5 max-h-96 overflow-auto">
           {dedupLog.map((line, i) => <p key={i}>{line}</p>)}

@@ -55,38 +55,39 @@ function CompareModal({
   const cols = candidates.length === 2 ? 'grid-cols-2' : candidates.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl w-full overflow-y-auto" style={{ maxHeight: '90vh' }}>
+      <DialogContent className="!max-w-none !w-screen !h-screen !top-0 !left-0 !translate-x-0 !translate-y-0 !rounded-none overflow-y-auto p-6" style={{}}>
+
         <DialogHeader>
           <DialogTitle>Comparaison — {candidates.length} candidats</DialogTitle>
         </DialogHeader>
-        <div className={`grid ${cols} gap-4 mt-2`}>
+        <div className={`grid ${cols} gap-5 mt-2`}>
           {candidates.map(a => {
             const positives: string[] = a.positive_points ? JSON.parse(a.positive_points) : []
             const negatives: string[] = a.negative_points ? JSON.parse(a.negative_points) : []
             return (
-              <div key={a.id} className="border border-border rounded-xl p-4 flex flex-col gap-3 bg-card">
+              <div key={a.id} className="border border-border rounded-xl p-5 flex flex-col gap-3 bg-card">
                 <div className="flex flex-col gap-1">
-                  <p className="font-semibold text-foreground text-sm leading-tight">{formatName(a.candidate_name) ?? <span className="italic text-muted-foreground">Inconnu</span>}</p>
-                  <p className="text-xs text-muted-foreground truncate">{a.candidate_email ?? '—'}</p>
+                  <p className="font-semibold text-foreground text-base leading-tight">{formatName(a.candidate_name) ?? <span className="italic text-muted-foreground">Inconnu</span>}</p>
+                  <p className="text-sm text-muted-foreground truncate">{a.candidate_email ?? '—'}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <ScoreBadge score={a.score} threshold={job.score_threshold} />
                   <StatusBadge status={a.status} />
                 </div>
                 {a.justification && (
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-snug border-t border-border pt-2">{a.justification}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed border-t border-border pt-2">{a.justification}</p>
                 )}
                 {positives.length > 0 && (
                   <div className="space-y-1">
-                    {positives.map((p, i) => (
-                      <p key={i} className="text-xs font-medium text-green-800 leading-snug">✅ {p}</p>
+                    {positives.slice(0, 2).map((p, i) => (
+                      <p key={i} className="text-sm font-medium text-green-800 leading-snug">{p}</p>
                     ))}
                   </div>
                 )}
                 {negatives.length > 0 && (
                   <div className="space-y-1">
-                    {negatives.map((p, i) => (
-                      <p key={i} className="text-xs font-medium text-red-700 leading-snug">⚠️ {p}</p>
+                    {negatives.slice(0, 2).map((p, i) => (
+                      <p key={i} className="text-sm font-medium text-red-700 leading-snug">{p}</p>
                     ))}
                   </div>
                 )}
@@ -114,7 +115,7 @@ export default function JobDetail() {
   const [compareOpen, setCompareOpen] = useState(false)
   const [cvUploadOpen, setCvUploadOpen] = useState(false)
 
-  const isRecruiter = !!sessionStorage.getItem('recruiter_session')
+  const isRecruiter = !!localStorage.getItem('recruiter_session')
 
   async function loadJob() {
     const { data } = await supabase.from('jobs').select('*, clients(name, contact_email)').eq('id', id!).single()
@@ -464,11 +465,8 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
-                        <Button size="sm" variant="ghost" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>
-                          Voir
-                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)}>
-                          PDF
+                          CV PDF
                         </Button>
                         <Button size="sm" variant="outline" className="text-violet-600 border-violet-300 hover:bg-violet-50" onClick={() => exportFiche(a)}>
                           Fiche

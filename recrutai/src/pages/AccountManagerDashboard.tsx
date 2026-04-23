@@ -32,9 +32,8 @@ interface AMData {
 
 const ACCOUNT_MANAGERS: AMData[] = [
   { name: 'Laura',  password: '0', color: 'from-pink-500 to-pink-700', initials: 'LA', clients: ['Nexeo', 'Solvay', 'BTP Pro'], offresActives: 0, cvSemaine: 430, cvMois: 850, qualifies: 153, taux: 18, caMensuel: 55000, caTrimestriel: 165000, avgHon: 8000, tauxTransfo: 25, nouveaux: 2, fidelisation: 73, targetNouveauxClientsMois: 3, targetCaMensuel: 58000, targetCaTrimestriel: 174000, ytdCa: 215000, ytdNouveauxClients: 8, targetYtdCa: 232000, targetYtdNouveauxClients: 12, targetAvgHon: 10000 },
-  { name: 'Julien', password: '0', color: 'from-sky-500 to-sky-700',  initials: 'JU', clients: ['Inovev', 'Altair RH'],        offresActives: 0, cvSemaine: 320, cvMois: 550, qualifies: 99, taux: 18, caMensuel: 41000, caTrimestriel: 123000, avgHon: 8000, tauxTransfo: 18, nouveaux: 1, fidelisation: 65, targetNouveauxClientsMois: 2, targetCaMensuel: 46000, targetCaTrimestriel: 138000, ytdCa: 162000, ytdNouveauxClients: 5, targetYtdCa: 184000, targetYtdNouveauxClients: 8, targetAvgHon: 10000 },
+  { name: 'Julien', password: '0', color: 'from-sky-500 to-sky-700',  initials: 'JU', clients: ['Inovev', 'Altair RH'],        offresActives: 0, cvSemaine: 320, cvMois: 550, qualifies: 99,  taux: 18, caMensuel: 41000, caTrimestriel: 123000, avgHon: 8000, tauxTransfo: 18, nouveaux: 1, fidelisation: 65, targetNouveauxClientsMois: 2, targetCaMensuel: 46000, targetCaTrimestriel: 138000, ytdCa: 162000, ytdNouveauxClients: 5, targetYtdCa: 184000, targetYtdNouveauxClients: 8,  targetAvgHon: 10000 },
 ]
-
 
 const SESSION_KEY = 'am_session'
 
@@ -46,15 +45,15 @@ function fmtEur(n: number) {
 function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin: (r: AMData) => void }) {
   const selected = ACCOUNT_MANAGERS.find(r => r.name === preselect) ?? null
   const [pwd, setPwd] = useState('')
-  const [error, setError] = useState(false)
+  const [, setError] = useState(false)
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (selected && pwd === selected.password) {
-      sessionStorage.removeItem('recruiter_session')
-      sessionStorage.removeItem('manager_session')
-      sessionStorage.removeItem('manager_auth')
-      sessionStorage.setItem(SESSION_KEY, selected.name)
+      localStorage.removeItem('recruiter_session')
+      localStorage.removeItem('manager_session')
+      localStorage.removeItem('manager_auth')
+      localStorage.setItem(SESSION_KEY, selected.name)
       window.dispatchEvent(new Event('role-login'))
       onLogin(selected)
     } else {
@@ -86,7 +85,6 @@ function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin
             placeholder="Mot de passe"
             className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
           />
-          {error && <p className="text-xs text-red-200 text-center">Mot de passe incorrect</p>}
           <button type="submit" className="w-full bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors border border-white/30">
             Accéder à mon espace
           </button>
@@ -97,7 +95,6 @@ function LoginScreen({ preselect, onLogin }: { preselect: string | null; onLogin
 }
 
 function PersonalDashboard({ am }: { am: AMData }) {
-  const navigate = useNavigate()
   const baseClientNames = getAmBaseClientNames()
 
   const [activeCount, setActiveCount] = useState(0)
@@ -139,23 +136,13 @@ function PersonalDashboard({ am }: { am: AMData }) {
   const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
   const kpis = [
-    { label: 'Offres actives', value: activeCount,            note: 'En cours',            bg: 'from-emerald-500 to-emerald-700', icon: '📋' },
-    { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`, note: 'Prospects → clients', bg: 'from-rose-500 to-rose-700',     icon: '🤝' },
-    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-500 to-lime-700',     icon: '♻' },
+    { label: 'Offres actives', value: activeCount,             note: 'En cours',            bg: 'from-emerald-500 to-emerald-700', icon: '📋' },
+    { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`,  note: 'Prospects → clients', bg: 'from-rose-500 to-rose-700',       icon: '🤝' },
+    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-500 to-lime-700',       icon: '♻' },
   ]
 
   return (
     <div className="p-5 flex flex-col gap-4 overflow-auto">
-
-      {/* Bouton Nouvelle offre */}
-      <button
-        onClick={() => navigate('/jobs?new=1')}
-        className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold text-sm shadow-sm transition-opacity bg-gradient-to-br ${am.color} hover:opacity-90`}
-      >
-        <span className="text-lg">＋</span> Nouvelle offre
-      </button>
-
-
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${am.color} flex items-center justify-center text-white font-bold text-sm`}>{am.initials}</div>
         <div>
@@ -178,7 +165,7 @@ function PersonalDashboard({ am }: { am: AMData }) {
 
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {kpis.map(k => (
             <div key={k.label} className={`bg-gradient-to-br ${k.bg} rounded-xl p-4 text-white shadow-sm`}>
               <div className="flex items-center justify-between mb-2">
@@ -192,15 +179,14 @@ function PersonalDashboard({ am }: { am: AMData }) {
         </div>
       </div>
 
-      {/* Objectifs */}
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Objectifs</p>
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: 'CA mensuel', value: am.caMensuel, target: am.targetCaMensuel, fmt: fmtEur, color: 'bg-teal-500', icon: '💰' },
-            { label: 'CA trimestriel', value: am.caTrimestriel, target: am.targetCaTrimestriel, fmt: fmtEur, color: 'bg-cyan-500', icon: '📆' },
-            { label: 'Nouveaux clients / mois', value: am.nouveaux, target: am.targetNouveauxClientsMois, fmt: (n: number) => `${n}`, color: 'bg-amber-500', icon: '🆕' },
-            { label: 'Hono. moy.', value: am.avgHon, target: am.targetAvgHon, fmt: fmtEur, color: 'bg-indigo-500', icon: '📐' },
+            { label: 'CA mensuel',             value: am.caMensuel,   target: am.targetCaMensuel,           fmt: fmtEur,              color: 'bg-teal-500',   icon: '💰' },
+            { label: 'CA trimestriel',          value: am.caTrimestriel, target: am.targetCaTrimestriel,     fmt: fmtEur,              color: 'bg-cyan-500',   icon: '📆' },
+            { label: 'Nouveaux clients / mois', value: am.nouveaux,   target: am.targetNouveauxClientsMois, fmt: (n: number) => `${n}`, color: 'bg-amber-500', icon: '🆕' },
+            { label: 'Hono. moy.',              value: am.avgHon,     target: am.targetAvgHon,              fmt: fmtEur,              color: 'bg-indigo-500', icon: '📐' },
           ].map(obj => {
             const pct = Math.min(100, Math.round((obj.value / obj.target) * 100))
             return (
@@ -218,9 +204,9 @@ function PersonalDashboard({ am }: { am: AMData }) {
             )
           })}
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
+        <div className="grid grid-cols-4 gap-3 mt-3">
           {[
-            { label: 'CA YTD', value: am.ytdCa, target: am.targetYtdCa, fmt: fmtEur, color: 'bg-teal-500' },
+            { label: 'CA YTD',               value: am.ytdCa,            target: am.targetYtdCa,            fmt: fmtEur,              color: 'bg-teal-500' },
             { label: 'Nouveaux clients YTD', value: am.ytdNouveauxClients, target: am.targetYtdNouveauxClients, fmt: (n: number) => `${n}`, color: 'bg-amber-500' },
           ].map(obj => {
             const pct = Math.min(100, Math.round((obj.value / obj.target) * 100))
@@ -240,7 +226,6 @@ function PersonalDashboard({ am }: { am: AMData }) {
           })}
         </div>
       </div>
-
     </div>
   )
 }
@@ -249,7 +234,7 @@ export default function AccountManagerDashboard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const preselect = searchParams.get('name')
-  const savedName = sessionStorage.getItem(SESSION_KEY)
+  const savedName = localStorage.getItem(SESSION_KEY)
   const savedAM = savedName && (!preselect || savedName === preselect)
     ? ACCOUNT_MANAGERS.find(r => r.name === savedName) ?? null
     : null

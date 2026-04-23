@@ -21,13 +21,16 @@ CREATE POLICY "authenticated_all_clients" ON clients
 -- TABLE jobs
 CREATE TABLE IF NOT EXISTS jobs (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ref_code         TEXT UNIQUE,
+  posted_by        TEXT,
   client_id        UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
   title            TEXT NOT NULL,
   location         TEXT NOT NULL DEFAULT '',
   contract_type    TEXT NOT NULL DEFAULT 'CDI',
   description      TEXT NOT NULL DEFAULT '',
   score_threshold  INTEGER NOT NULL DEFAULT 60 CHECK (score_threshold >= 0 AND score_threshold <= 100),
-  status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed')),
+  status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'closed')),
+  honoraires       NUMERIC(10,2),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -46,6 +49,7 @@ CREATE TABLE IF NOT EXISTS applications (
   score            INTEGER CHECK (score >= 0 AND score <= 100),
   justification    TEXT,
   status           TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'qualified', 'rejected', 'error')),
+  uploaded_by      TEXT,
   email_sent_at    TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

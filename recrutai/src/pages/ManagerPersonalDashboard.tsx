@@ -18,7 +18,7 @@ const SESSION_KEY = 'manager_session'
 
 function LoginScreen({ preselect, onLogin }: { preselect: ManagerProfile | null; onLogin: (p: ManagerProfile) => void }) {
   const [pwd, setPwd] = useState('')
-  const [error, setError] = useState(false)
+  const [, setError] = useState(false)
 
   if (!preselect) return (
     <div className="flex items-center justify-center h-full">
@@ -29,10 +29,10 @@ function LoginScreen({ preselect, onLogin }: { preselect: ManagerProfile | null;
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (pwd === preselect!.password) {
-      sessionStorage.removeItem('recruiter_session')
-      sessionStorage.removeItem('am_session')
-      sessionStorage.setItem('manager_auth', '1')
-      sessionStorage.setItem(SESSION_KEY, preselect!.name)
+      localStorage.removeItem('recruiter_session')
+      localStorage.removeItem('am_session')
+      localStorage.setItem('manager_auth', '1')
+      localStorage.setItem(SESSION_KEY, preselect!.name)
       window.dispatchEvent(new Event('role-login'))
       onLogin(preselect!)
     } else {
@@ -58,7 +58,6 @@ function LoginScreen({ preselect, onLogin }: { preselect: ManagerProfile | null;
             placeholder="Mot de passe"
             className="w-full rounded-lg px-3 py-2 text-sm bg-white/20 placeholder-white/60 text-white focus:outline-none focus:ring-2 focus:ring-white/60 border border-white/30"
           />
-          {error && <p className="text-xs text-red-200 text-center">Mot de passe incorrect</p>}
           <button type="submit" className="w-full bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors border border-white/30">
             Accéder à mon espace
           </button>
@@ -72,17 +71,15 @@ export default function ManagerPersonalDashboard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const preselect = searchParams.get('name')
-  const savedName = sessionStorage.getItem(SESSION_KEY)
-  const isAuth = sessionStorage.getItem('manager_auth') === '1'
+  const savedName = localStorage.getItem(SESSION_KEY)
+  const isAuth = localStorage.getItem('manager_auth') === '1'
 
-  // If already authenticated and session matches, go straight to dashboard
   useEffect(() => {
     if (isAuth && savedName && (!preselect || savedName === preselect)) {
       navigate('/manager', { replace: true })
     }
   }, [])
 
-  // If a different manager is selected while logged in, reset session
   const [reset, setReset] = useState(false)
   useEffect(() => {
     if (preselect && savedName && preselect !== savedName) {

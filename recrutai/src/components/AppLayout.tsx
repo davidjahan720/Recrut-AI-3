@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react'
 import { Sidebar } from './Sidebar'
 
 function readUser() {
-  return sessionStorage.getItem('recruiter_session')
-      || sessionStorage.getItem('am_session')
-      || sessionStorage.getItem('manager_session')
+  return localStorage.getItem('recruiter_session')
+      || localStorage.getItem('am_session')
+      || localStorage.getItem('manager_session')
       || null
 }
 

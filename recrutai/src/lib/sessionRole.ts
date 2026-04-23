@@ -1,13 +1,6 @@
-const RECRUITER_CLIENTS: Record<string, string[]> = {
-  'Karim':   ['Solvay', 'Altair RH'],
-  'Alix':    ['Terralys', 'Vinci RH', 'Kalexia'],
-  'Nicolas': ['Elexia', 'Groupe Avena'],
-}
+const RECRUITER_CLIENTS: Record<string, string[]> = {}
 
-/** Lien chargé de recrutement → AM dont il/elle traite les offres */
-const RECRUITER_AM_LINK: Record<string, string> = {
-  'Sophie': 'Laura',
-}
+const RECRUITER_AM_LINK: Record<string, string> = {}
 
 const AM_BASE_NAMES: Record<string, string[]> = {
   'Laura': [
@@ -24,21 +17,21 @@ const AM_BASE_NAMES: Record<string, string[]> = {
 
 /** Filtre par noms de clients pour les chargés de recrutement (null = pas de filtre) */
 export function getClientFilter(): string[] | null {
-  const recruiter = sessionStorage.getItem('recruiter_session')
+  const recruiter = localStorage.getItem('recruiter_session')
   if (recruiter) return RECRUITER_CLIENTS[recruiter] ?? null
   return null
 }
 
 /** AM lié au chargé de recrutement connecté, ou null */
 export function getRecruiterAmLink(): string | null {
-  const recruiter = sessionStorage.getItem('recruiter_session')
+  const recruiter = localStorage.getItem('recruiter_session')
   if (!recruiter) return null
   return RECRUITER_AM_LINK[recruiter] ?? null
 }
 
 /** Chargé de recrutement assigné à l'AM connecté, ou null */
 export function getAmRecruiterAssignment(): string | null {
-  const am = sessionStorage.getItem('am_session')
+  const am = localStorage.getItem('am_session')
   if (!am) return null
   const entry = Object.entries(RECRUITER_AM_LINK).find(([, linkedAm]) => linkedAm === am)
   return entry ? entry[0] : null
@@ -59,19 +52,19 @@ export function getAmExtraClientIdsByAm(amName: string): string[] {
 }
 
 export function getAmSession(): string | null {
-  return sessionStorage.getItem('am_session')
+  return localStorage.getItem('am_session')
 }
 
 /** Noms de clients de base pour un AM (portefeuille initial) */
 export function getAmBaseClientNames(): string[] {
-  const am = sessionStorage.getItem('am_session')
+  const am = localStorage.getItem('am_session')
   if (!am) return []
   return AM_BASE_NAMES[am] ?? []
 }
 
 /** IDs de clients supplémentaires ajoutés dynamiquement par l'AM */
 export function getAmExtraClientIds(): string[] {
-  const am = sessionStorage.getItem('am_session')
+  const am = localStorage.getItem('am_session')
   if (!am) return []
   try {
     return JSON.parse(localStorage.getItem(`am_portfolio_${am}`) ?? '[]')
@@ -89,7 +82,7 @@ export function getRecruiterTodayClientNames(recruiterName: string): string[] {
 
 /** Enregistre un client_id dans le portefeuille persistant de l'AM connecté */
 export function addAmClientId(clientId: string): void {
-  const am = sessionStorage.getItem('am_session')
+  const am = localStorage.getItem('am_session')
   if (!am || !clientId) return
   const key = `am_portfolio_${am}`
   const existing: string[] = (() => {

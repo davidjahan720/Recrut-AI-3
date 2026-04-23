@@ -21,11 +21,10 @@ function ScoreRing({ score, threshold }: { score: number | null; threshold: numb
 
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
-    pending:          { label: 'En attente',  cls: 'bg-amber-100 text-amber-700' },
-    pending_approval: { label: 'À approuver', cls: 'bg-violet-600 text-white' },
-    qualified:        { label: 'Qualifié',    cls: 'bg-green-100 text-green-800' },
-    rejected:         { label: 'Rejeté',      cls: 'bg-slate-100 text-slate-600' },
-    error:            { label: 'Erreur',      cls: 'bg-red-100 text-red-700' },
+    pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-700' },
+    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-800' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-600' },
+    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
   return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{label}</span>
@@ -138,11 +137,8 @@ export default function CompareApplications() {
                   <div>
                     <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Points positifs</p>
                     <ul className="space-y-1">
-                      {positives.map((p, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-sm text-foreground">
-                          <span className="text-green-500 mt-0.5 shrink-0">✓</span>
-                          <span>{p}</span>
-                        </li>
+                      {positives.slice(0, 2).map((p, i) => (
+                        <li key={i} className="text-sm text-green-800">{p}</li>
                       ))}
                     </ul>
                   </div>
@@ -153,11 +149,8 @@ export default function CompareApplications() {
                   <div>
                     <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Points négatifs</p>
                     <ul className="space-y-1">
-                      {negatives.map((p, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-sm text-foreground">
-                          <span className="text-red-400 mt-0.5 shrink-0">✗</span>
-                          <span>{p}</span>
-                        </li>
+                      {negatives.slice(0, 2).map((p, i) => (
+                        <li key={i} className="text-sm text-red-700">{p}</li>
                       ))}
                     </ul>
                   </div>

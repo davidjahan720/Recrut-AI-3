@@ -3,7 +3,6 @@ import React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { getClientFilter, getRecruiterAmLink } from '@/lib/sessionRole'
 import type { Application } from '@/lib/types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,7 @@ type AppWithJob = Application & {
   jobs: { title: string; score_threshold: number; client_id: string; recruiter: string | null; clients: { name: string } }
 }
 
-type StatusFilter = 'all' | 'pending_approval' | 'qualified' | 'rejected' | 'pending' | 'error'
+type StatusFilter = 'all' | 'qualified' | 'rejected' | 'pending' | 'error'
 type SortKey = 'score' | 'created_at' | 'job' | 'name'
 
 function formatName(raw: string | null): { display: React.ReactNode; lastName: string } {
@@ -41,18 +40,15 @@ function ScoreBadge({ score, threshold }: { score: number | null; threshold: num
 
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
-    pending:          { label: 'En analyse',      cls: 'bg-amber-100 text-amber-700' },
-    pending_approval: { label: 'À approuver',     cls: 'bg-violet-600 text-white' },
-    qualified:        { label: 'Qualifié',         cls: 'bg-green-100 text-green-800' },
-    rejected:         { label: 'Rejeté',           cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
-    error:            { label: 'Erreur',           cls: 'bg-red-100 text-red-700' },
+    pending:   { label: 'En analyse', cls: 'bg-amber-100 text-amber-700' },
+    qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-800' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {(status === 'pending' || status === 'pending_approval') && (
-        <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${status === 'pending_approval' ? 'bg-red-400' : 'bg-amber-500'}`} />
-      )}
+      {status === 'pending' && <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-amber-500" />}
       {label}
     </span>
   )
@@ -66,7 +62,6 @@ export default function Applications() {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [viewUrl, setViewUrl] = useState<string | null>(null)
   const [viewName, setViewName] = useState<string>('')
-  const [sending, setSending] = useState<Set<string>>(new Set())
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
@@ -193,26 +188,6 @@ export default function Applications() {
     }
   }
 
-  async function handleApprove(id: string) {
-    setSending(prev => new Set(prev).add(id))
-    try {
-      const r = await fetch('/api/send-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ application_id: id }),
-      })
-      const json = await r.json()
-      if (json?.error) throw new Error(json.error)
-      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'qualified' as const, email_sent_at: new Date().toISOString() } : a))
-    } catch (e) {
-      alert('Erreur lors de l\'envoi : ' + String(e))
-    }
-    setSending(prev => { const s = new Set(prev); s.delete(id); return s })
-  }
-
-  async function handleReject(id: string) {
-    await supabase.from('applications').update({ status: 'rejected' }).eq('id', id)
-  }
 
   async function deleteCv(id: string, path: string) {
     if (!confirm('Supprimer ce candidat et son CV ?')) return
@@ -223,22 +198,7 @@ export default function Applications() {
     loadApplications()
   }
 
-  const clientFilter = getClientFilter()
-  const recruiterAmLink = getRecruiterAmLink()
-  const recruiterSession = sessionStorage.getItem('recruiter_session')
-
-  const myApplications = (() => {
-    if (recruiterAmLink && recruiterSession) {
-      return applications.filter(a => a.jobs?.recruiter === recruiterSession)
-    }
-    if (clientFilter) {
-      return applications.filter(a => {
-        const name = (a.jobs?.clients as { name: string } | undefined)?.name ?? ''
-        return clientFilter.some(c => c.toLowerCase() === name.toLowerCase())
-      })
-    }
-    return applications
-  })()
+  const myApplications = applications
 
   const filtered = myApplications
     .filter(a => statusFilter === 'all' || a.status === statusFilter)
@@ -251,7 +211,6 @@ export default function Applications() {
 
   const counts = {
     all: myApplications.length,
-    pending_approval: myApplications.filter(a => a.status === 'pending_approval').length,
     qualified: myApplications.filter(a => a.status === 'qualified').length,
     rejected: myApplications.filter(a => a.status === 'rejected').length,
     pending: myApplications.filter(a => a.status === 'pending').length,
@@ -267,7 +226,7 @@ export default function Applications() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Candidatures</h1>
-          <p className="text-muted-foreground text-base">{myApplications.length} candidature{myApplications.length !== 1 ? 's' : ''}{clientFilter ? ' (mes candidatures)' : ' au total'}</p>
+          <p className="text-muted-foreground text-base">{myApplications.length} candidature{myApplications.length !== 1 ? 's' : ''}{' au total'}</p>
         </div>
         <div className="flex items-center gap-2">
           {compareIds.size >= 2 && compareIds.size <= 3 && (
@@ -299,13 +258,12 @@ export default function Applications() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {(['all', 'pending_approval', 'qualified', 'rejected', 'pending', 'error'] as StatusFilter[]).map(f => (
+        {(['all', 'qualified', 'rejected', 'pending', 'error'] as StatusFilter[]).map(f => (
           <button key={f} onClick={() => setStatusFilter(f)} className={`${pillBase} ${statusFilter === f ? pillActive : pillInactive}`}>
-            {f === 'all'              ? `Toutes (${counts.all})` :
-             f === 'pending_approval' ? `À approuver (${counts.pending_approval})` :
-             f === 'qualified'        ? `Qualifiés (${counts.qualified})` :
-             f === 'rejected'         ? `Rejetés (${counts.rejected})` :
-             f === 'pending'          ? `En analyse (${counts.pending})` :
+            {f === 'all'       ? `Toutes (${counts.all})` :
+             f === 'qualified' ? `Qualifiés (${counts.qualified})` :
+             f === 'rejected'  ? `Rejetés (${counts.rejected})` :
+             f === 'pending'   ? `En analyse (${counts.pending})` :
              `Erreurs (${counts.error})`}
           </button>
         ))}
@@ -420,28 +378,6 @@ export default function Applications() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {a.status === 'pending_approval' && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="text-xs px-2 h-7 bg-green-600 hover:bg-green-700 text-white"
-                          disabled={sending.has(a.id)}
-                          onClick={() => handleApprove(a.id)}
-                          aria-label={`Approuver et envoyer le CV de ${a.candidate_name ?? 'ce candidat'}`}
-                        >
-                          {sending.has(a.id) ? '...' : '✓ Approuver'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-xs px-2 h-7 text-slate-500 hover:text-slate-700"
-                          onClick={() => handleReject(a.id)}
-                          aria-label={`Rejeter la candidature de ${a.candidate_name ?? 'ce candidat'}`}
-                        >
-                          Rejeter
-                        </Button>
-                      </>
-                    )}
                     <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => viewCv(a.cv_file_path, a.candidate_name)} aria-label={`Voir le CV de ${a.candidate_name ?? 'ce candidat'}`}>PDF</Button>
                     <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer la candidature de ${a.candidate_name ?? 'ce candidat'}`}>✕</Button>
                   </div>

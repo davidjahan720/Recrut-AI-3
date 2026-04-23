@@ -1,54 +1,51 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { findAppUser, setRoleSession } from '@/lib/users'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
-
-// [ACTION REQUISE] Créez votre clé sur https://dash.cloudflare.com → Turnstile
-// Ajoutez VITE_TURNSTILE_SITE_KEY=votre_clé dans .env.local
-// La clé ci-dessous est la clé de test Cloudflare (toujours valide, à remplacer en prod)
-const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'
-const IS_E2E = import.meta.env.VITE_E2E_TEST === 'true'
 
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [, setError] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(IS_E2E ? 'e2e-bypass' : null)
-  const turnstileRef = useRef<TurnstileInstance | null>(null)
-
-  const skipCaptcha = IS_E2E || email === 'jahandavid@gmail.com'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
-    if (!skipCaptcha && !captchaToken) {
-      setError('Veuillez valider le captcha.')
+    // Check role users first (local credentials)
+    const appUser = findAppUser(email.trim().toLowerCase(), password)
+    if (appUser) {
+      setRoleSession(appUser)
+      window.dispatchEvent(new Event('role-login'))
+      navigate(appUser.redirect, { replace: true })
+      setLoading(false)
       return
     }
 
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    // Admin → Supabase
+    const { error: supaErr } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
 
-    if (error) {
+    if (supaErr) {
       setError('Email ou mot de passe incorrect.')
-      turnstileRef.current?.reset()
-      setCaptchaToken(null)
     } else {
-      sessionStorage.removeItem('recruiter_session')
-      sessionStorage.removeItem('am_session')
-      sessionStorage.removeItem('manager_session')
-      sessionStorage.removeItem('manager_auth')
-      window.dispatchEvent(new Event('role-login'))
-      navigate('/dashboard')
+      clearRoleSession()
+      navigate('/dashboard', { replace: true })
     }
+  }
+
+  function clearRoleSession() {
+    localStorage.removeItem('recruiter_session')
+    localStorage.removeItem('am_session')
+    localStorage.removeItem('manager_session')
+    localStorage.removeItem('manager_auth')
   }
 
   return (
@@ -71,7 +68,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="vous@recrutai.fr"
+                placeholder="prenom@recrutai.fr"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="text-base h-11"
@@ -89,26 +86,13 @@ export default function Login() {
                 required
               />
             </div>
-
-            {/* Cloudflare Turnstile CAPTCHA — masqué en mode test E2E et pour jahandavid@gmail.com */}
-            {!skipCaptcha && <div className="flex justify-center py-1">
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={token => setCaptchaToken(token)}
-                onExpire={() => setCaptchaToken(null)}
-                onError={() => { setCaptchaToken(null); setError('Erreur captcha, veuillez réessayer.') }}
-                options={{ theme: 'light', language: 'fr' }}
-              />
-            </div>}
-
-
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold"
-              disabled={loading || (!skipCaptcha && !captchaToken)}
+              disabled={loading}
             >
-              {loading ? 'Connexion...' : 'Se connecter'}
+              {loading ? 'Connexion...' : 'Accéder à l\'app'}
             </Button>
           </form>
         </CardContent>

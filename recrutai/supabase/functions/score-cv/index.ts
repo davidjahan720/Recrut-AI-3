@@ -351,7 +351,7 @@ IMPORTANT : positive_points et negative_points sont limités à 3 éléments max
     if (typeof score !== 'number' || score < 0 || score > 100) throw new Error('Score invalide : ' + score)
 
     const qualified = is_relevant !== false && score >= job.score_threshold
-    const status = qualified ? 'pending_approval' : 'rejected'
+    const status = qualified ? 'qualified' : 'rejected'
 
     // 5. Mise à jour de la candidature
     const { error: updateError } = await supabase.from('applications').update({

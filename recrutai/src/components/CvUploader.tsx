@@ -49,7 +49,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
   const [progress, setProgress] = useState<Progress | null>(null)
   const noJob = !jobId
 
-  const uploaderName = sessionStorage.getItem('recruiter_session') || sessionStorage.getItem('am_session') || sessionStorage.getItem('manager_session')
+  const uploaderName = localStorage.getItem('recruiter_session') || localStorage.getItem('am_session') || localStorage.getItem('manager_session')
 
   async function processFiles(files: FileList | File[]) {
     const accepted = Array.from(files).filter(f =>
