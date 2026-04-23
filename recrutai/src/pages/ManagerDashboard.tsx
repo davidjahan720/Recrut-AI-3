@@ -26,6 +26,34 @@ interface BizKpis {
   tauxFidelisation: number
 }
 
+function getMonthRange() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  return `${fmt(start)} → ${fmt(end)} ${now.getFullYear()}`
+}
+
+function getQuarterRange() {
+  const now = new Date()
+  const q = Math.floor(now.getMonth() / 3)
+  const start = new Date(now.getFullYear(), q * 3, 1)
+  const end = new Date(now.getFullYear(), (q + 1) * 3, 0)
+  const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  return `${fmt(start)} → ${fmt(end)} ${now.getFullYear()}`
+}
+
+function getWeekRange() {
+  const now = new Date()
+  const day = now.getDay() === 0 ? 7 : now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (day - 1))
+  const friday = new Date(monday)
+  friday.setDate(monday.getDate() + 4)
+  const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  return `Semaine du ${fmt(monday)} au ${fmt(friday)}`
+}
+
 function fmtEur(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace('.0', '')}k €`
   return `${n} €`
@@ -55,34 +83,27 @@ const RECRUITERS = [
 ]
 
 const MONTHS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
-const LAURA_ACTUAL  = [50000, 53000, 57000, 55000, null, null, null, null, null, null, null, null]
-const JULIEN_ACTUAL = [38000, 40000, 43000, 41000, null, null, null, null, null, null, null, null]
+const LAURA_ACTUAL   = [50000, 58000, 62000, 55000, null, null, null, null, null, null, null, null]
+const JULIEN_ACTUAL  = [38000, 44000, 47000, 41000, null, null, null, null, null, null, null, null]
+// Objectifs non-linéaires : démarrage progressif, creux estival juil-aoû, pic Q4, ralentissement déc
+const LAURA_TARGET   = [52000, 56000, 60000, 62000, 61000, 59000, 47000, 44000, 58000, 64000, 66000, 59000]
+const JULIEN_TARGET  = [39000, 42000, 45000, 47000, 46000, 44000, 35000, 32000, 43000, 49000, 51000, 45000]
 
 const amChartData = MONTHS_LABELS.map((month, i) => ({
   month,
   'Laura (réel)':       LAURA_ACTUAL[i],
-  'Laura (objectif)':   58000,
+  'Laura (objectif)':   LAURA_TARGET[i],
   'Julien (réel)':      JULIEN_ACTUAL[i],
-  'Julien (objectif)':  46000,
+  'Julien (objectif)':  JULIEN_TARGET[i],
 }))
 
-const amCombinedChartData = MONTHS_LABELS.map((month, i) => ({
-  month,
-  'Réel':     LAURA_ACTUAL[i] != null && JULIEN_ACTUAL[i] != null ? (LAURA_ACTUAL[i] as number) + (JULIEN_ACTUAL[i] as number) : null,
-  'Objectif': 104000,
-}))
-
-const AM_PROFILES = [
-  { name: 'Laura',  color: '#ec4899', taux: 18, tauxObjectif: 22, caMensuel: 55000, caTrimestriel: 165000, targetCaMensuel: 58000, targetCaTrimestriel: 174000, nouveaux: 2, targetNouveauxClientsMois: 3, ytdCa: 215000, ytdNouveauxClients: 8, clients: ['Nexeo', 'Solvay', 'BTP Pro'] },
-  { name: 'Julien', color: '#0ea5e9', taux: 18, tauxObjectif: 22, caMensuel: 41000, caTrimestriel: 123000, targetCaMensuel: 46000, targetCaTrimestriel: 138000, nouveaux: 1, targetNouveauxClientsMois: 2, ytdCa: 162000, ytdNouveauxClients: 5, clients: ['Inovev', 'Altair RH'] },
-]
 
 const PWD_KEY = 'manager_auth'
 const CORRECT_PWD = '0'
 
 function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   const [value, setValue] = useState('')
-  const [error, setError] = useState(false)
+  const [, setError] = useState(false)
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -103,7 +124,6 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
             placeholder="Mot de passe"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
-          {error && <p className="text-xs text-red-500 text-center">Mot de passe incorrect</p>}
           <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors">
             Accéder
           </button>
@@ -113,91 +133,20 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   )
 }
 
-function AMConsolidatedView({ managerName }: { managerName: string }) {
-  const totCaMensuel       = AM_PROFILES.reduce((s, am) => s + am.caMensuel, 0)
-  const totTargetMensuel   = AM_PROFILES.reduce((s, am) => s + am.targetCaMensuel, 0)
-  const totCaTrimestriel   = AM_PROFILES.reduce((s, am) => s + am.caTrimestriel, 0)
-  const totTargetTrim      = AM_PROFILES.reduce((s, am) => s + am.targetCaTrimestriel, 0)
-  const totNouveaux        = AM_PROFILES.reduce((s, am) => s + am.nouveaux, 0)
-  const totTargetNouveaux  = AM_PROFILES.reduce((s, am) => s + am.targetNouveauxClientsMois, 0)
-  const totYtdCa           = AM_PROFILES.reduce((s, am) => s + am.ytdCa, 0)
-  const totYtdNouveaux     = AM_PROFILES.reduce((s, am) => s + am.ytdNouveauxClients, 0)
+const AM_PROFILES = [
+  { name: 'Laura',  color: '#ec4899', taux: 18, tauxObjectif: 22, caMensuel: 55000, caTrimestriel: 165000, targetCaMensuel: 58000, targetCaTrimestriel: 174000, nouveaux: 2, targetNouveauxClientsMois: 3, ytdCa: 215000, ytdNouveauxClients: 8, clients: ['Nexeo', 'Solvay', 'BTP Pro'] },
+  { name: 'Julien', color: '#0ea5e9', taux: 18, tauxObjectif: 22, caMensuel: 41000, caTrimestriel: 123000, targetCaMensuel: 46000, targetCaTrimestriel: 138000, nouveaux: 1, targetNouveauxClientsMois: 2, ytdCa: 162000, ytdNouveauxClients: 5, clients: ['Inovev', 'Altair RH'] },
+]
 
-  const objectives = [
-    { label: 'CA mensuel',       value: totCaMensuel,     target: totTargetMensuel,  fmt: fmtEur,                color: 'bg-teal-500',  icon: '💰' },
-    { label: 'CA trimestriel',   value: totCaTrimestriel, target: totTargetTrim,     fmt: fmtEur,                color: 'bg-cyan-500',  icon: '📆' },
-    { label: 'Nouveaux clients', value: totNouveaux,      target: totTargetNouveaux, fmt: (n: number) => `${n}`, color: 'bg-amber-500', icon: '🆕' },
-  ]
 
-  return (
-    <div className="p-5 flex flex-col gap-4 overflow-auto">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground leading-tight">Vue Manager — {managerName}</h1>
-        <p className="text-muted-foreground text-sm">Performance Account Managers — chiffres consolidés</p>
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Objectifs — Équipe AM</p>
-        <div className="grid grid-cols-3 gap-3">
-          {objectives.map(obj => {
-            const pct = Math.min(100, Math.round((obj.value / obj.target) * 100))
-            return (
-              <div key={obj.label} className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground">{obj.label}</p>
-                  <span>{obj.icon}</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{obj.fmt(obj.value)}</p>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div className={`h-full ${obj.color} rounded-full`} style={{ width: `${pct}%` }} />
-                </div>
-                <p className="text-xs text-muted-foreground">Objectif : {obj.fmt(obj.target)} — {pct}%</p>
-              </div>
-            )
-          })}
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-muted-foreground mb-1">CA YTD — Équipe</p>
-            <p className="text-2xl font-bold text-foreground">{fmtEur(totYtdCa)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Depuis le 1er janvier</p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Nouveaux clients YTD</p>
-            <p className="text-2xl font-bold text-foreground">{totYtdNouveaux}</p>
-            <p className="text-xs text-muted-foreground mt-1">Depuis le 1er janvier</p>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Évolution CA mensuel</p>
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={amCombinedChartData} margin={{ top: 8, right: 24, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => `${(Number(v) / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: unknown) => fmtEur(Number(v))} />
-              <Legend />
-              <Line type="monotone" dataKey="Réel"     stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Objectif" stroke="#8b5cf6" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function ManagerDashboard() {
   useChartColors()
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(PWD_KEY) === '1')
+  const [unlocked, setUnlocked] = useState(() => localStorage.getItem(PWD_KEY) === '1')
   const [loading, setLoading] = useState(true)
   const [, setJobStats] = useState<JobStat[]>([])
   const [kpis, setKpis] = useState({ activeJobs: 0, totalCv: 0, totalQualified: 0, rate: 0 })
   const [biz, setBiz] = useState<BizKpis>({ caMensuel: 0, caTrimestriel: 0, avgHonoraires: 0, tauxTransformation: 0, nouveauxClientsMois: 0, tauxFidelisation: 0 })
-  const [recruiterCounts, setRecruiterCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     async function load() {
@@ -215,7 +164,7 @@ export default function ManagerDashboard() {
       // Job stats
       const stats: JobStat[] = jobs.map(j => {
         const apps = (j.applications as { id: string; status: string; email_sent_at: string | null }[]) ?? []
-        const qualified = apps.filter(a => a.status === 'qualified' || a.status === 'pending_approval').length
+        const qualified = apps.filter(a => a.status === 'qualified').length
         const total = apps.length
         return {
           id: j.id,
@@ -278,11 +227,6 @@ export default function ManagerDashboard() {
         nouveauxClientsMois: nouveauxClientsMois || 3,
         tauxFidelisation:    tauxFidelisation    || 73,
       })
-      // Offres actives par chargé de recrutement : total / 4 (équirépartition)
-      const perRecruiter = Math.floor((jobs as unknown[]).length / 4)
-      const counts: Record<string, number> = {}
-      for (const rec of RECRUITERS) counts[rec.name] = perRecruiter
-      setRecruiterCounts(counts)
 
       setJobStats(stats)
       setLoading(false)
@@ -292,28 +236,26 @@ export default function ManagerDashboard() {
 
   const kpiCards = [
     { label: 'Offres actives',        value: kpis.activeJobs,    note: 'En cours' },
-    { label: 'CV reçus au total',      value: kpis.totalCv,       note: 'Toutes offres' },
-    { label: 'Candidats qualifiés',    value: kpis.totalQualified, note: 'Toutes offres' },
-    { label: 'Taux de qualification',  value: `${kpis.rate} %`,   note: 'Global' },
+    { label: 'CV reçus au total',      value: kpis.totalCv,        note: getWeekRange() },
+    { label: 'Candidats qualifiés',    value: kpis.totalQualified, note: getWeekRange() },
+    { label: 'Taux de qualification',  value: `${Math.round(AM_PROFILES.reduce((s, am) => s + am.taux, 0) / AM_PROFILES.length)} %`, note: 'Global' },
   ]
+
+  const TARGET_CA_MENSUEL = 104000
+  const TARGET_CA_TRIMESTRIEL = 312000
 
   const bizCards = [
-    { label: 'CA mensuel',               value: fmtEur(biz.caMensuel),         note: 'Mois en cours' },
-    { label: 'CA trimestriel',            value: fmtEur(biz.caTrimestriel),     note: 'Trimestre en cours' },
-    { label: 'Honoraires moy. / mission', value: fmtEur(biz.avgHonoraires),     note: 'Marge indicative' },
-    { label: 'Taux transformation',       value: `${biz.tauxTransformation} %`, note: 'Prospects → clients' },
-    { label: 'Nouveaux clients',          value: biz.nouveauxClientsMois,     note: 'Ce mois-ci' },
-    { label: 'Taux de fidélisation',      value: `${biz.tauxFidelisation} %`, note: 'Clients avec 2+ offres' },
+    { label: 'CA mensuel',               value: fmtEur(biz.caMensuel),         note: getMonthRange(),            rawValue: biz.caMensuel,           target: TARGET_CA_MENSUEL,  fmtTarget: fmtEur },
+    { label: 'CA trimestriel',            value: fmtEur(biz.caTrimestriel),     note: getQuarterRange(),          rawValue: biz.caTrimestriel,        target: TARGET_CA_TRIMESTRIEL, fmtTarget: fmtEur },
+    { label: 'Honoraires moy. / mission', value: fmtEur(biz.avgHonoraires),     note: 'Marge indicative',         rawValue: null, target: null,       fmtTarget: fmtEur },
+    { label: 'Taux transformation',       value: `${biz.tauxTransformation} %`, note: 'Prospects → clients',      rawValue: null, target: null,       fmtTarget: fmtEur },
+    { label: 'Nouveaux clients',          value: biz.nouveauxClientsMois,       note: getMonthRange(),            rawValue: biz.nouveauxClientsMois, target: AM_PROFILES.reduce((s, am) => s + am.targetNouveauxClientsMois, 0), fmtTarget: (n: number) => `${n}` },
+    { label: 'Taux de fidélisation',      value: `${biz.tauxFidelisation} %`,   note: 'Clients avec 2+ offres',   rawValue: null, target: null,       fmtTarget: fmtEur },
   ]
 
 
 
-  if (!unlocked) return <PasswordGate onUnlock={() => { sessionStorage.setItem(PWD_KEY, '1'); setUnlocked(true) }} />
-
-  const managerName = sessionStorage.getItem('manager_session')
-  if (managerName && managerName !== 'Pierre') {
-    return <AMConsolidatedView managerName={managerName} />
-  }
+  if (!unlocked) return <PasswordGate onUnlock={() => { localStorage.setItem(PWD_KEY, '1'); setUnlocked(true) }} />
 
   return (
     <div className="p-5 flex flex-col gap-4 overflow-auto">
@@ -326,11 +268,11 @@ export default function ManagerDashboard() {
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</p>
         {loading ? (
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-6 gap-3">
             {[0,1,2,3].map(i => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-6 gap-3">
             {kpiCards.map((kpi, i) => (
               <div key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
@@ -354,16 +296,29 @@ export default function ManagerDashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-6 gap-3">
-            {bizCards.map((kpi, i) => (
-              <div key={kpi.label} className={`bg-gradient-to-br ${BIZ_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm`}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-white leading-tight">{kpi.label}</p>
-                  <span className="text-xl">{BIZ_STYLES[i].icon}</span>
+            {bizCards.map((kpi, i) => {
+              const pct = kpi.target && kpi.rawValue != null
+                ? Math.min(100, Math.round((kpi.rawValue / kpi.target) * 100))
+                : null
+              return (
+                <div key={kpi.label} className={`bg-gradient-to-br ${BIZ_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm flex flex-col`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-white leading-tight">{kpi.label}</p>
+                    <span className="text-xl">{BIZ_STYLES[i].icon}</span>
+                  </div>
+                  <p className="text-3xl font-bold leading-tight">{kpi.value}</p>
+                  <p className="text-xs font-medium text-white/80 mt-1">{kpi.note}</p>
+                  {pct != null && kpi.target && (
+                    <>
+                      <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden mt-2">
+                        <div className="h-full bg-white/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="text-xs text-white/70 mt-1">Obj. {kpi.fmtTarget(kpi.target)} — {pct}%</p>
+                    </>
+                  )}
                 </div>
-                <p className="text-3xl font-bold leading-tight">{kpi.value}</p>
-                <p className="text-xs font-medium text-white/80 mt-1">{kpi.note}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -371,39 +326,27 @@ export default function ManagerDashboard() {
       {/* Tableau chargés de recrutement */}
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Performance par chargé de recrutement</p>
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-card border border-border rounded-xl overflow-hidden w-fit">
+          <table className="text-sm">
             <thead className="bg-muted/40 sticky top-0">
               <tr>
                 <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Chargé</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-muted-foreground">Clients</th>
-                {/* Recrutement */}
-                <th className="text-center px-3 py-2.5 text-xs font-semibold text-emerald-700">Offres actives</th>
-                <th className="text-center px-3 py-2.5 text-xs font-semibold text-blue-700">CV reçus</th>
-                <th className="text-center px-3 py-2.5 text-xs font-semibold text-violet-700">Qualifiés</th>
-                {/* Business */}
-                <th className="text-center px-3 py-2.5 text-xs font-semibold text-teal-700">CA mensuel</th>
-                <th className="text-center px-3 py-2.5 text-xs font-semibold text-cyan-700">CA mensuel obj.</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-blue-700">CV reçus</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-violet-700">Qualifiés</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-teal-700">CA mensuel</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-cyan-700">Objectif</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {RECRUITERS.map(r => (
                 <tr key={r.name} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-foreground">{r.name}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {r.clients.map(c => (
-                        <span key={c} className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{c}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-center font-semibold text-emerald-700">{recruiterCounts[r.name] ?? 0}</td>
-                  <td className="px-3 py-3 text-center font-semibold">{r.cv}</td>
-                  <td className="px-3 py-3 text-center">
+                  <td className="px-4 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.name}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold">{r.cv}</td>
+                  <td className="px-4 py-2.5 text-center">
                     <span className={`font-semibold ${r.qualifies > 0 ? 'text-green-700' : 'text-muted-foreground'}`}>{r.qualifies}</span>
                   </td>
-                  <td className="px-3 py-3 text-center font-semibold text-teal-700">{fmtEur(r.caMensuel)}</td>
-                  <td className="px-3 py-3 text-center font-semibold text-cyan-700">{fmtEur(r.targetCaMensuel)}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold text-teal-700 whitespace-nowrap">{fmtEur(r.caMensuel)}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold text-cyan-700 whitespace-nowrap">{fmtEur(r.targetCaMensuel)}</td>
                 </tr>
               ))}
             </tbody>
@@ -414,7 +357,7 @@ export default function ManagerDashboard() {
       {/* Taux de qualification AM */}
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Taux de qualification annuel — Account Managers</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           {AM_PROFILES.map(am => (
             <div key={am.name} className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center gap-4">
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: am.color }}>
@@ -460,10 +403,10 @@ export default function ManagerDashboard() {
               <YAxis tickFormatter={v => `${(Number(v) / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v: unknown) => fmtEur(Number(v))} />
               <Legend />
-              <Line type="monotone" dataKey="Laura (réel)"      stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Laura (objectif)"  stroke="#ec4899" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-              <Line type="monotone" dataKey="Julien (réel)"     stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Julien (objectif)" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
+              <Line type="monotone" dataKey="Laura (réel)"      stroke="#9d174d" strokeWidth={3} dot={{ r: 4, fill: '#9d174d' }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="Laura (objectif)"  stroke="#e11d48" strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
+              <Line type="monotone" dataKey="Julien (réel)"     stroke="#0c4a6e" strokeWidth={3} dot={{ r: 4, fill: '#0c4a6e' }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="Julien (objectif)" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
