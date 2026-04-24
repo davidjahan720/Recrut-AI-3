@@ -246,6 +246,16 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
   "candidate_email": "p.leblanc@mail.fr"
 }
 
+━━━ CHEVAUCHEMENT DE DATES ━━━
+
+Analyse soigneusement les dates de début et de fin de chaque poste dans l'expérience professionnelle.
+Si deux postes ou plus se chevauchent dans le temps (dates qui se superposent) sans indication de temps partiel ou de mission parallèle explicite :
+- C'est un signal négatif : incohérence du parcours, possible embellissement du CV
+- Déduire 10 points du score final
+- Ajouter obligatoirement dans "negative_points" : "-10 pts : dates de travail qui se chevauchent"
+
+Exemple de chevauchement : Poste A du 01/2020 au 06/2022, Poste B du 03/2021 au 12/2023 → chevauchement de 15 mois → malus -10 pts.
+
 ━━━ FORMAT DE RÉPONSE ━━━
 
 IMPORTANT : positive_points et negative_points sont limités à 3 éléments maximum chacun.
@@ -365,7 +375,38 @@ IMPORTANT : positive_points et negative_points sont limités à 3 éléments max
     }).eq('id', applicationId)
     if (updateError) throw new Error('Erreur mise à jour candidature : ' + updateError.message)
 
-    // 6. Déduplication : si même nom + même job + même email → garder le plus récent, supprimer les anciens
+    // 6. Envoyer l'email d'analyse si qualifié
+    if (qualified && applicationId) {
+      try {
+        const RESEND_KEY = Deno.env.get('RESEND_API_KEY')
+        if (RESEND_KEY) {
+          const pp = positive_points ?? []
+          const np = negative_points ?? []
+          const ppList = pp.map((p: string) => `<li style="margin:4px 0">✅ ${p}</li>`).join('')
+          const npList = np.map((p: string) => `<li style="margin:4px 0">⚠️ ${p}</li>`).join('')
+          const clientName = (job.clients as { name: string })?.name ?? ''
+          const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px"><div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);padding:20px 24px;border-radius:8px 8px 0 0"><h1 style="color:white;margin:0;font-size:20px">RecrutAI — Analyse du candidat</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:14px">${job.title} · ${clientName}</p></div><div style="background:#fff;border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px"><table style="width:100%;border-collapse:collapse;margin-bottom:20px"><tr><td style="padding:8px 0;color:#6b7280;font-size:14px;width:160px">Candidat</td><td style="padding:8px 0;font-size:14px;font-weight:600">${candidate_name ?? 'Non renseigné'}</td></tr><tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px">${candidate_email ?? 'Non renseigné'}</td></tr><tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Score</td><td style="padding:8px 0;font-size:14px"><strong>${score}/100</strong> (seuil : ${job.score_threshold})</td></tr><tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Statut</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#16a34a">Qualifié</td></tr></table><hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/><p style="color:#374151;font-size:14px;margin:0 0 8px"><strong>Synthèse :</strong></p><p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px">${justification ?? '—'}</p>${ppList ? `<p style="color:#374151;font-size:14px;margin:0 0 4px"><strong>Points positifs :</strong></p><ul style="margin:0 0 16px;padding-left:20px;font-size:14px;color:#374151">${ppList}</ul>` : ''}${npList ? `<p style="color:#374151;font-size:14px;margin:0 0 4px"><strong>Points à améliorer :</strong></p><ul style="margin:0;padding-left:20px;font-size:14px;color:#374151">${npList}</ul>` : ''}</div><p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:16px">Envoyé par RecrutAI</p></div>`
+          const resend = new Resend(RESEND_KEY)
+          const { error: emailErr } = await resend.emails.send({
+            from: 'RecrutAI <onboarding@resend.dev>',
+            to: 'jahandavid@gmail.com',
+            subject: `Analyse IA — ${candidate_name ?? 'Candidat'} — ${job.title}`,
+            html,
+          })
+          if (!emailErr) {
+            await supabase.from('applications').update({ email_sent_at: new Date().toISOString() }).eq('id', applicationId)
+          } else {
+            console.error('Resend error:', JSON.stringify(emailErr))
+          }
+        } else {
+          console.error('RESEND_API_KEY non configurée dans les secrets Supabase')
+        }
+      } catch (emailEx) {
+        console.error('Email send exception:', emailEx)
+      }
+    }
+
+    // 7. Déduplication : si même nom + même job + même email → garder le plus récent, supprimer les anciens
     if (candidate_name && candidate_email) {
       const { data: dupes } = await supabase
         .from('applications')

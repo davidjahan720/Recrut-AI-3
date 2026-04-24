@@ -191,7 +191,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
           {results.map((r, i) => (
             <div key={i} className="flex items-start justify-between gap-3 px-4 py-3">
               <span className="text-sm text-slate-700 truncate min-w-0 flex-1">{r.name}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${r.status === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${r.status === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-900'}`}>
                 {r.status === 'error' ? '⚠️ Erreur' : '✅ Reçu'}
               </span>
             </div>

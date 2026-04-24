@@ -60,19 +60,19 @@ function fmtEur(n: number) {
 }
 
 const KPI_STYLES = [
-  { bg: 'from-emerald-700 to-emerald-900', icon: '📋' },
+  { bg: 'from-emerald-800 to-emerald-950', icon: '📋' },
   { bg: 'from-blue-700 to-blue-900',       icon: '📄' },
   { bg: 'from-violet-700 to-violet-900',   icon: '✅' },
   { bg: 'from-orange-700 to-orange-900',   icon: '📊' },
 ]
 
 const BIZ_STYLES = [
-  { bg: 'from-teal-700 to-teal-900',       icon: '💰' },
-  { bg: 'from-cyan-700 to-cyan-900',       icon: '📆' },
+  { bg: 'from-teal-800 to-teal-950',       icon: '💰' },
+  { bg: 'from-cyan-800 to-cyan-950',       icon: '📆' },
   { bg: 'from-indigo-700 to-indigo-900',   icon: '📐' },
   { bg: 'from-rose-700 to-rose-900',       icon: '🤝' },
-  { bg: 'from-amber-700 to-amber-900',     icon: '🆕' },
-  { bg: 'from-lime-700 to-lime-900',       icon: '♻' },
+  { bg: 'from-amber-800 to-amber-950',     icon: '🆕' },
+  { bg: 'from-lime-800 to-lime-950',       icon: '♻' },
 ]
 
 const RECRUITERS = [
@@ -124,7 +124,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
             placeholder="Mot de passe"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
-          {error && <p className="text-sm text-red-500 text-center">Mot de passe incorrect</p>}
+          {error && <p className="text-sm text-red-700 text-center">Mot de passe incorrect</p>}
           <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg px-4 py-2 transition-colors">
             Accéder
           </button>
@@ -142,7 +142,7 @@ const AM_PROFILES = [
 
 
 export default function ManagerDashboard() {
-  useChartColors()
+  const { tick: tickColor } = useChartColors()
   const [unlocked, setUnlocked] = useState(() => localStorage.getItem(PWD_KEY) === '1')
   const [loading, setLoading] = useState(true)
   const [, setJobStats] = useState<JobStat[]>([])
@@ -160,7 +160,7 @@ export default function ManagerDashboard() {
         supabase.from('clients').select('id, type, signed_at, jobs(id)'),
       ])
 
-      if (!jobs) return
+      if (!jobs) { setLoading(false); return }
 
       // Job stats
       const stats: JobStat[] = jobs.map(j => {
@@ -331,23 +331,23 @@ export default function ManagerDashboard() {
           <table className="text-sm">
             <thead className="bg-muted/40 sticky top-0">
               <tr>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Chargé</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-blue-700">CV reçus</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-violet-700">Qualifiés</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-teal-700">CA mensuel</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-cyan-700">Objectif</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-foreground">Chargé</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">CV reçus</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">Qualifiés</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">CA mensuel</th>
+                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">Objectif</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {RECRUITERS.map(r => (
                 <tr key={r.name} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.name}</td>
-                  <td className="px-4 py-2.5 text-center font-semibold">{r.cv}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold text-foreground">{r.cv}</td>
                   <td className="px-4 py-2.5 text-center">
-                    <span className={`font-semibold ${r.qualifies > 0 ? 'text-green-700' : 'text-muted-foreground'}`}>{r.qualifies}</span>
+                    <span className="font-semibold text-foreground">{r.qualifies}</span>
                   </td>
-                  <td className="px-4 py-2.5 text-center font-semibold text-teal-700 whitespace-nowrap">{fmtEur(r.caMensuel)}</td>
-                  <td className="px-4 py-2.5 text-center font-semibold text-cyan-700 whitespace-nowrap">{fmtEur(r.targetCaMensuel)}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold text-foreground whitespace-nowrap">{fmtEur(r.caMensuel)}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold text-foreground whitespace-nowrap">{fmtEur(r.targetCaMensuel)}</td>
                 </tr>
               ))}
             </tbody>
@@ -400,14 +400,32 @@ export default function ManagerDashboard() {
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={amChartData} margin={{ top: 8, right: 24, left: 8, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => `${(Number(v) / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: tickColor }} />
+              <YAxis tickFormatter={v => `${(Number(v) / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: tickColor }} />
               <Tooltip formatter={(v: unknown) => fmtEur(Number(v))} />
-              <Legend />
-              <Line type="monotone" dataKey="Laura (réel)"      stroke="#9d174d" strokeWidth={3} dot={{ r: 4, fill: '#9d174d' }} activeDot={{ r: 5 }} />
-              <Line type="monotone" dataKey="Laura (objectif)"  stroke="#e11d48" strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
-              <Line type="monotone" dataKey="Julien (réel)"     stroke="#0c4a6e" strokeWidth={3} dot={{ r: 4, fill: '#0c4a6e' }} activeDot={{ r: 5 }} />
-              <Line type="monotone" dataKey="Julien (objectif)" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
+              <Legend content={(props: any) => (
+                <div className="flex flex-wrap gap-4 justify-center mt-2">
+                  {(props.payload ?? []).map((entry: any) => {
+                    const dashed = entry.payload?.strokeDasharray
+                    return (
+                      <div key={entry.dataKey} className="flex items-center gap-1.5">
+                        <svg width="28" height="10" style={{ display: 'block' }}>
+                          <line x1="0" y1="5" x2="28" y2="5"
+                            stroke={entry.color}
+                            strokeWidth={dashed ? 1.5 : 2.5}
+                            strokeDasharray={dashed ? '5 4' : undefined}
+                          />
+                        </svg>
+                        <span style={{ fontSize: 12, color: tickColor }}>{entry.value}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )} />
+              <Line type="monotone" dataKey="Laura (réel)"      stroke="#f43f5e" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+              <Line type="monotone" dataKey="Laura (objectif)"  stroke="#f43f5e" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} />
+              <Line type="monotone" dataKey="Julien (réel)"     stroke="#38bdf8" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+              <Line type="monotone" dataKey="Julien (objectif)" stroke="#38bdf8" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

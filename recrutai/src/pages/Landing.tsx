@@ -25,7 +25,7 @@ const FEATURES = [
   {
     icon: '📧',
     title: 'Alertes email automatiques',
-    desc: "Dès qu'un profil qualifié arrive, le client reçoit un email complet avec le rapport IA. Juste une approbation manuelle (1 clic) requise.",
+    desc: "Dès qu'un profil qualifié arrive, le client reçoit un email complet avec le rapport IA.",
   },
   {
     icon: '📊',

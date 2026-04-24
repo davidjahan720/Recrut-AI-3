@@ -13,26 +13,21 @@ function hasRoleSession(): boolean {
 }
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null | undefined>(undefined)
+  // Si une session rôle existe déjà en localStorage, on court-circuite l'async Supabase
+  // et on affiche les enfants immédiatement (pas de page blanche).
+  const [session, setSession] = useState<Session | null | undefined>(
+    hasRoleSession() ? null : undefined
+  )
 
   useEffect(() => {
     async function initSession() {
       const { data } = await supabase.auth.getSession()
-      let sess = data.session
-      // Les utilisateurs à session locale (AM, recruteur, manager) n'ont pas de session Supabase.
-      // On les connecte anonymement pour qu'ils aient le rôle "authenticated" côté RLS.
-      if (!sess && hasRoleSession()) {
-        try {
-          const { data: anonData } = await supabase.auth.signInAnonymously()
-          sess = anonData.session
-        } catch {
-          // signInAnonymously non activé sur ce projet — le RLS anon prend le relais
-        }
-      }
-      setSession(sess)
+      setSession(data.session)
     }
-    initSession()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+    if (!hasRoleSession()) initSession()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (!hasRoleSession()) setSession(s)
+    })
     return () => subscription.unsubscribe()
   }, [])
 

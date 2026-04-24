@@ -92,7 +92,7 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
 
   const kpis = [
     { label: 'CV reçus — semaine', value: r.cvSemaine, note: getWeekLabel(),  bg: 'from-blue-700 to-blue-900',     icon: '📄' },
-    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-cyan-700 to-cyan-900',     icon: '📅' },
+    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-cyan-800 to-cyan-950',     icon: '📅' },
     { label: 'Qualifiés',          value: r.qualifies, note: 'Ce mois-ci',    bg: 'from-violet-700 to-violet-900', icon: '✅' },
   ]
 

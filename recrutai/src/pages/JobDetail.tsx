@@ -219,10 +219,11 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
 
   async function deleteCv(appId: string, path: string) {
     if (!confirm('Supprimer ce candidat et son CV ?')) return
-    await Promise.all([
-      supabase.from('applications').delete().eq('id', appId),
-      supabase.storage.from('cvs').remove([path]),
-    ])
+    await fetch('/api/delete-application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [appId], paths: [path] }),
+    })
     setSelected(prev => { const n = new Set(prev); n.delete(appId); return n })
     loadApplications()
   }
@@ -260,10 +261,11 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
     const ids = [...selected]
     if (!confirm(`Supprimer ${ids.length} candidat(s) et leurs CV ?`)) return
     const paths = applications.filter(a => ids.includes(a.id)).map(a => a.cv_file_path)
-    await Promise.all([
-      supabase.from('applications').delete().in('id', ids),
-      supabase.storage.from('cvs').remove(paths),
-    ])
+    await fetch('/api/delete-application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, paths }),
+    })
     setSelected(new Set())
     loadApplications()
   }
@@ -491,7 +493,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                         <Button size="sm" variant="outline" className="text-violet-600 border-violet-300 hover:bg-violet-50" onClick={() => exportFiche(a)}>
                           Fiche
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => deleteCv(a.id, a.cv_file_path)}>
+                        <Button size="sm" variant="ghost" className="text-red-700 hover:text-red-900" onClick={() => deleteCv(a.id, a.cv_file_path)}>
                           Suppr.
                         </Button>
                       </div>

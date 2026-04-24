@@ -96,7 +96,7 @@ export default function Login() {
                 required
               />
             </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-red-700">{error}</p>}
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold"

@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (!client?.notification_email) throw new Error('Email client non configuré')
+    const recipientEmail = 'jahandavid@gmail.com'
 
     const positive: string[] = app.positive_points ? JSON.parse(app.positive_points) : []
     const negative: string[] = app.negative_points ? JSON.parse(app.negative_points) : []
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: 'RecrutAI <onboarding@resend.dev>',
-        to: client.notification_email,
+        to: recipientEmail,
         subject: `Analyse IA — ${app.candidate_name ?? 'Candidat'} — ${job.title}`,
         html,
       }),

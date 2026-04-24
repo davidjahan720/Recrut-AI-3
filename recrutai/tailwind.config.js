@@ -7,6 +7,12 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        xs: ['0.875rem', { lineHeight: '1.25rem' }], // 14px — taille minimale
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

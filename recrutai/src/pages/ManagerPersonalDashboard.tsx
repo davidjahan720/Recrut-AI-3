@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Navigate, useSearchParams, useNavigate } from 'react-router-dom'
 
 interface ManagerProfile {
   name: string
@@ -74,25 +74,16 @@ export default function ManagerPersonalDashboard() {
   const savedName = localStorage.getItem(SESSION_KEY)
   const isAuth = localStorage.getItem('manager_auth') === '1'
 
-  useEffect(() => {
-    if (isAuth && savedName && (!preselect || savedName === preselect)) {
-      navigate('/manager', { replace: true })
-    }
-  }, [])
-
-  const [reset, setReset] = useState(false)
-  useEffect(() => {
-    if (preselect && savedName && preselect !== savedName) {
-      setReset(true)
-    }
-  }, [preselect])
+  // Redirect immédiat sans passer par un useEffect (évite le flash du LoginScreen)
+  if (isAuth && savedName && (!preselect || savedName === preselect)) {
+    return <Navigate to="/manager" replace />
+  }
 
   function handleLogin() {
     navigate('/manager', { replace: true })
   }
 
-  const effectivePreselect = reset ? preselect : preselect
-  const preselectProfile = MANAGERS.find(m => m.name === effectivePreselect) ?? null
+  const preselectProfile = MANAGERS.find(m => m.name === preselect) ?? null
 
   return <LoginScreen preselect={preselectProfile} onLogin={handleLogin} />
 }

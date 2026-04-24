@@ -149,9 +149,9 @@ function PersonalDashboard({ am }: { am: AMData }) {
   const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
   const kpis = [
-    { label: 'Offres actives', value: activeCount,             note: 'En cours',            bg: 'from-emerald-700 to-emerald-900', icon: '📋' },
+    { label: 'Offres actives', value: activeCount,             note: 'En cours',            bg: 'from-emerald-800 to-emerald-950', icon: '📋' },
     { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`,  note: 'Prospects → clients', bg: 'from-rose-700 to-rose-900',       icon: '🤝' },
-    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-700 to-lime-900',       icon: '♻' },
+    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-800 to-lime-950',       icon: '♻' },
   ]
 
   return (

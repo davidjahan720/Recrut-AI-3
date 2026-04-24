@@ -14,7 +14,7 @@ function ScoreRing({ score, threshold }: { score: number | null; threshold: numb
   const ok = score >= threshold
   return (
     <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 ${ok ? 'border-green-500' : 'border-red-400'}`}>
-      <span className={`text-2xl font-bold ${ok ? 'text-green-600' : 'text-red-500'}`}>{score}</span>
+      <span className={`text-2xl font-bold ${ok ? 'text-green-800' : 'text-red-700'}`}>{score}</span>
     </div>
   )
 }
@@ -135,7 +135,7 @@ export default function CompareApplications() {
                 {/* Points positifs */}
                 {positives.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Points positifs</p>
+                    <p className="text-xs font-semibold text-green-900 uppercase tracking-wide mb-1">Points positifs</p>
                     <ul className="space-y-1">
                       {positives.slice(0, 2).map((p, i) => (
                         <li key={i} className="text-sm text-green-800">{p}</li>

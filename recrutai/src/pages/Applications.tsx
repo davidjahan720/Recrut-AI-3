@@ -361,7 +361,7 @@ export default function Applications() {
                   {a.positive_points && (
                     <div className="space-y-0.5 mt-0.5">
                       {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
-                        <p key={i} className="text-xs font-medium text-green-700 dark:text-green-400 line-clamp-1">✅ {p}</p>
+                        <p key={i} className="text-xs font-medium text-green-800 dark:text-green-400 line-clamp-1">✅ {p}</p>
                       ))}
                     </div>
                   )}
@@ -379,7 +379,7 @@ export default function Applications() {
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     <Button size="sm" variant="ghost" className="text-xs px-2 h-7" onClick={() => viewCv(a.cv_file_path, a.candidate_name)} aria-label={`Voir le CV de ${a.candidate_name ?? 'ce candidat'}`}>PDF</Button>
-                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer la candidature de ${a.candidate_name ?? 'ce candidat'}`}>✕</Button>
+                    <Button size="sm" variant="ghost" className="text-red-700 hover:text-red-900 text-xs px-2 h-7" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer la candidature de ${a.candidate_name ?? 'ce candidat'}`}>✕</Button>
                   </div>
                 </TableCell>
               </TableRow>
