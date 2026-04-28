@@ -92,9 +92,26 @@ export function CvUploader({ jobId, onUploaded }: Props) {
       const folder = jobId || 'inbox'
       const fileName = `${folder}/${Date.now()}-${safeName}`
 
-      const { error: uploadError } = await supabase.storage.from('cvs').upload(fileName, file)
-      if (uploadError) {
-        newResults.push({ name: file.name, score: null, status: 'error', errorMessage: uploadError.message })
+      let uploadErrorMsg: string | null = null
+      try {
+        const urlRes = await fetch('/api/get-upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: fileName }),
+        })
+        const urlJson = await urlRes.json()
+        if (!urlRes.ok || urlJson?.error) {
+          uploadErrorMsg = urlJson?.error ?? `HTTP ${urlRes.status}`
+        } else {
+          const { error: uploadError } = await supabase.storage.from('cvs')
+            .uploadToSignedUrl(urlJson.path, urlJson.token, file)
+          if (uploadError) uploadErrorMsg = uploadError.message
+        }
+      } catch (e) {
+        uploadErrorMsg = e instanceof Error ? e.message : String(e)
+      }
+      if (uploadErrorMsg) {
+        newResults.push({ name: file.name, score: null, status: 'error', errorMessage: uploadErrorMsg })
         durations.push(Date.now() - t0)
         continue
       }
@@ -189,11 +206,16 @@ export function CvUploader({ jobId, onUploaded }: Props) {
       {results.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
           {results.map((r, i) => (
-            <div key={i} className="flex items-start justify-between gap-3 px-4 py-3">
-              <span className="text-sm text-slate-700 truncate min-w-0 flex-1">{r.name}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${r.status === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-900'}`}>
-                {r.status === 'error' ? '⚠️ Erreur' : '✅ Reçu'}
-              </span>
+            <div key={i} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-sm text-slate-700 truncate min-w-0 flex-1">{r.name}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${r.status === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-900'}`}>
+                  {r.status === 'error' ? '⚠️ Erreur' : '✅ Reçu'}
+                </span>
+              </div>
+              {r.status === 'error' && r.errorMessage && (
+                <p className="text-xs text-red-600 mt-1 break-words">{r.errorMessage}</p>
+              )}
             </div>
           ))}
         </div>

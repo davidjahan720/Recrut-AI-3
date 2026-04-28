@@ -109,7 +109,6 @@ export default function Jobs() {
     setLoading(true)
     try {
       let clientId = form.client_id
-      let clientIsNew = false
       if (!clientId && form.company_name.trim()) {
         const name = form.company_name.trim()
         const { data: existing } = await supabase.from('clients').select('id, contact_name, contact_email, notification_email, sector').ilike('name', name).maybeSingle()
@@ -147,7 +146,6 @@ export default function Jobs() {
           const json = await res.json()
           if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
           clientId = json.data as string
-          clientIsNew = true
           await load()
         }
       }
@@ -175,12 +173,16 @@ export default function Jobs() {
         })
         const json = await res.json()
         if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
-        if (clientIsNew) addAmClientId(clientId)
+        addAmClientId(clientId)
         setOpen(false)
         navigate(`/jobs/${json.data.id}`)
       }
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e))
+      const raw = e instanceof Error ? e.message : String(e)
+      const friendly = raw.includes('Failed to fetch')
+        ? 'Connexion au serveur impossible. Vérifiez votre réseau puis réessayez.'
+        : raw
+      setSaveError(friendly)
     }
     setLoading(false)
   }
@@ -189,6 +191,9 @@ export default function Jobs() {
     setParsing(true)
     setParseError('')
     try {
+      if (file.size > 3_000_000) {
+        throw new Error(`PDF trop volumineux (${(file.size / 1_000_000).toFixed(1)} Mo, max 3 Mo). Compressez-le ou réduisez sa taille.`)
+      }
       const pdf_base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => resolve((reader.result as string).split(',')[1])
@@ -226,7 +231,11 @@ export default function Jobs() {
         setShowClientForm(true)
       }
     } catch (e) {
-      setParseError('Erreur : ' + String(e))
+      const raw = e instanceof Error ? e.message : String(e)
+      const friendly = raw.includes('Failed to fetch')
+        ? 'Connexion au serveur impossible. Vérifiez votre réseau ou essayez avec un PDF plus léger.'
+        : raw
+      setParseError('Erreur : ' + friendly)
     }
     setParsing(false)
   }

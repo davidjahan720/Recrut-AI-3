@@ -251,10 +251,9 @@ CV : Électricien industriel, 10 ans d'expérience en câblage et maintenance.
 Analyse soigneusement les dates de début et de fin de chaque poste dans l'expérience professionnelle.
 Si deux postes ou plus se chevauchent dans le temps (dates qui se superposent) sans indication de temps partiel ou de mission parallèle explicite :
 - C'est un signal négatif : incohérence du parcours, possible embellissement du CV
-- Déduire 10 points du score final
-- Ajouter obligatoirement dans "negative_points" : "-10 pts : dates de travail qui se chevauchent"
+- Ne pas déduire de points, mais ajouter dans "negative_points" : "Dates de travail qui se chevauchent"
 
-Exemple de chevauchement : Poste A du 01/2020 au 06/2022, Poste B du 03/2021 au 12/2023 → chevauchement de 15 mois → malus -10 pts.
+Exemple de chevauchement : Poste A du 01/2020 au 06/2022, Poste B du 03/2021 au 12/2023 → chevauchement de 15 mois → signaler dans negative_points.
 
 ━━━ FORMAT DE RÉPONSE ━━━
 
