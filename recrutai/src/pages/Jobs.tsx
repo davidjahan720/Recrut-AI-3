@@ -264,7 +264,7 @@ export default function Jobs() {
   const filtered = filter === 'all' ? myJobs : myJobs.filter(j => j.status === filter)
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Offres</h1>
@@ -291,8 +291,8 @@ export default function Jobs() {
         ))}
       </div>
 
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <Table>
+      <div className="bg-card rounded-lg border border-border">
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow>
               {!recruiterSession && (
@@ -303,15 +303,15 @@ export default function Jobs() {
                   )}
                 </TableHead>
               )}
-              <TableHead className="w-16">Réf.</TableHead>
-              <TableHead>Titre</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead className="w-28">Localisation</TableHead>
-              <TableHead className="w-16">Seuil</TableHead>
-              <TableHead className="w-52">Candidatures</TableHead>
-              <TableHead className="w-24">Statut</TableHead>
-              <TableHead className="w-40">Postée par</TableHead>
-              {!recruiterSession && <TableHead className="w-36"></TableHead>}
+              <TableHead className="w-12">Réf.</TableHead>
+              <TableHead className="w-44">Titre</TableHead>
+              <TableHead className="w-28">Client</TableHead>
+              <TableHead className="w-16">Loc.</TableHead>
+              <TableHead className="w-12">Seuil</TableHead>
+              <TableHead className="w-36">Candidatures</TableHead>
+              <TableHead className="w-20">Statut</TableHead>
+              <TableHead className="w-28">Postée par</TableHead>
+              {!recruiterSession && <TableHead className="w-24"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -331,10 +331,10 @@ export default function Jobs() {
                         className="w-4 h-4 accent-violet-600 cursor-pointer" />
                     </TableCell>
                   )}
-                  <TableCell className="font-mono text-xs font-semibold text-muted-foreground">{j.ref_code ?? '—'}</TableCell>
-                  <TableCell className="font-semibold text-foreground">{j.title}</TableCell>
-                  <TableCell className="text-muted-foreground font-medium">{(j.clients as { name: string } | undefined)?.name}</TableCell>
-                  <TableCell className="text-muted-foreground truncate max-w-[112px]">{j.location}</TableCell>
+                  <TableCell className="font-mono text-xs font-semibold text-muted-foreground truncate">{j.ref_code ?? '—'}</TableCell>
+                  <TableCell className="font-semibold text-foreground truncate" title={j.title}>{j.title}</TableCell>
+                  <TableCell className="text-muted-foreground font-medium truncate" title={(j.clients as { name: string } | undefined)?.name}>{(j.clients as { name: string } | undefined)?.name}</TableCell>
+                  <TableCell className="text-muted-foreground truncate" title={j.location}>{j.location}</TableCell>
                   <TableCell className="font-medium">{j.score_threshold}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -351,7 +351,11 @@ export default function Jobs() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={j.status === 'active' ? 'default' : j.status === 'inactive' ? 'outline' : 'secondary'}
-                      className={j.status === 'inactive' ? 'border-amber-400 text-amber-700 bg-amber-50' : ''}>
+                      className={
+                        j.status === 'active' ? 'bg-green-600 hover:bg-green-600 text-white border-transparent'
+                        : j.status === 'inactive' ? 'border-amber-400 text-amber-700 bg-amber-50'
+                        : ''
+                      }>
                       {j.status === 'active' ? 'Active' : j.status === 'inactive' ? 'En pause' : 'Clôturée'}
                     </Badge>
                   </TableCell>
@@ -443,7 +447,7 @@ export default function Jobs() {
               <Label>Titre du poste</Label>
               <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Localisation</Label>
                 <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
@@ -464,7 +468,7 @@ export default function Jobs() {
                 <Textarea rows={5} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Seuil de qualification (0–100)</Label>
                 <Input type="number" min={0} max={100} value={form.score_threshold} onChange={e => setForm(f => ({ ...f, score_threshold: Number(e.target.value) }))} />

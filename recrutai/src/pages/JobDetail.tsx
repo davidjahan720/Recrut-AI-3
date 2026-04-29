@@ -20,6 +20,19 @@ function formatName(raw: string | null): React.ReactNode {
   return <><span className="font-bold">{lastName}</span> {firstName}</>
 }
 
+function summarizeText(text: string | null | undefined, maxLen = 150): string {
+  if (!text) return '—'
+  const trimmed = text.trim()
+  if (trimmed.length <= maxLen) return trimmed
+  const truncated = trimmed.slice(0, maxLen)
+  const lastSpace = truncated.lastIndexOf(' ')
+  return (lastSpace > maxLen / 2 ? truncated.slice(0, lastSpace) : truncated).replace(/[,;:.\s]+$/, '') + '…'
+}
+
+function summarizeJustification(text: string | null | undefined): string {
+  return summarizeText(text, 150)
+}
+
 function ScoreBadge({ score, threshold }: { score: number | null; threshold: number }) {
   if (score === null) return <span className="text-muted-foreground text-sm">—</span>
   const qualified = score >= threshold
@@ -51,7 +64,9 @@ function CompareModal({
   onViewCv: (path: string, name: string | null) => void
 }) {
   if (!open) return null
-  const cols = candidates.length === 2 ? 'grid-cols-2' : candidates.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
+  const cols = candidates.length === 2 ? 'grid-cols-1 sm:grid-cols-2'
+             : candidates.length === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+             : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="!max-w-none !w-screen !h-screen !top-0 !left-0 !translate-x-0 !translate-y-0 !rounded-none overflow-y-auto p-6" style={{}}>
@@ -74,19 +89,19 @@ function CompareModal({
                   <StatusBadge status={a.status} />
                 </div>
                 {a.justification && (
-                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed border-t border-border pt-2">{a.justification}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed border-t border-border pt-2" title={a.justification}>{summarizeJustification(a.justification)}</p>
                 )}
                 {positives.length > 0 && (
                   <div className="space-y-1">
                     {positives.slice(0, 2).map((p, i) => (
-                      <p key={i} className="text-sm font-medium text-green-800 leading-snug">{p}</p>
+                      <p key={i} className="text-sm font-medium text-green-800 leading-snug" title={p}>{summarizeText(p, 70)}</p>
                     ))}
                   </div>
                 )}
                 {negatives.length > 0 && (
                   <div className="space-y-1">
                     {negatives.slice(0, 2).map((p, i) => (
-                      <p key={i} className="text-sm font-medium text-red-700 leading-snug">{p}</p>
+                      <p key={i} className="text-sm font-medium text-red-700 leading-snug" title={p}>{summarizeText(p, 70)}</p>
                     ))}
                   </div>
                 )}
@@ -114,6 +129,9 @@ export default function JobDetail() {
   const [compareOpen, setCompareOpen] = useState(false)
   const [cvUploadOpen, setCvUploadOpen] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  const [pointsOpen, setPointsOpen] = useState<Application | null>(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
 
   const isRecruiter = !!localStorage.getItem('recruiter_session')
 
@@ -134,6 +152,15 @@ export default function JobDetail() {
     loadApplications()
   }, [id])
 
+  useEffect(() => {
+    function handler(e: Event) {
+      const ev = e as CustomEvent<{ jobId: string }>
+      if (ev.detail?.jobId === id) loadApplications()
+    }
+    window.addEventListener('cv-upload-complete', handler)
+    return () => window.removeEventListener('cv-upload-complete', handler)
+  }, [id])
+
   async function setStatus(newStatus: string) {
     if (!job || toggling) return
     setToggling(true)
@@ -150,16 +177,6 @@ export default function JobDetail() {
     void name
     const { data } = await supabase.storage.from('cvs').createSignedUrl(path, 3600)
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
-  }
-
-  async function downloadCv(path: string, name: string | null) {
-    const { data } = await supabase.storage.from('cvs').createSignedUrl(path, 3600)
-    if (data?.signedUrl) {
-      const a = document.createElement('a')
-      a.href = data.signedUrl
-      a.download = name ? `CV_${name}.pdf` : 'CV.pdf'
-      a.click()
-    }
   }
 
   function exportFiche(a: Application) {
@@ -244,6 +261,13 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = (safePage - 1) * PAGE_SIZE
+  const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE)
+
+  useEffect(() => { setPage(1) }, [statusFilter, sort])
+
   const allFilteredIds = filtered.map(a => a.id)
   const allFilteredSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selected.has(id))
   const someFilteredSelected = allFilteredIds.some(id => selected.has(id))
@@ -271,15 +295,15 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
   }
 
   const selectedCandidates = applications.filter(a => selected.has(a.id))
-  const colSpan = 7
+  const colSpan = 6
 
   if (!job && loadError) return (
-    <div className="p-8 space-y-3">
+    <div className="p-4 md:p-8 space-y-3">
       <p className="text-destructive text-base font-medium">Impossible de charger cette offre.</p>
       <button onClick={() => navigate('/jobs')} className="text-sm text-muted-foreground underline hover:text-foreground">← Retour aux offres</button>
     </div>
   )
-  if (!job) return <div className="p-8 text-muted-foreground text-base">Chargement...</div>
+  if (!job) return <div className="p-4 md:p-8 text-muted-foreground text-base">Chargement...</div>
 
   const jobStatus = job.status as string
   const totalCv = applications.length
@@ -287,10 +311,10 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
   const daysSince = Math.max(1, Math.floor((Date.now() - new Date(job.created_at).getTime()) / 86_400_000))
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <button onClick={() => navigate(-1)} className="text-base font-medium text-muted-foreground hover:text-foreground mb-4">← Retour</button>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">{job.title}</h1>
           <p className="text-muted-foreground text-base mt-1 font-medium">
@@ -308,7 +332,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
             )}
           </div>
         </div>
-        <div className="flex items-start gap-6 shrink-0">
+        <div className="flex flex-wrap items-start gap-3 md:gap-6 md:shrink-0">
           {isRecruiter && (
             <Button
               onClick={() => jobStatus === 'active' && setCvUploadOpen(true)}
@@ -317,7 +341,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
               📄 Déposer CV
             </Button>
           )}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-row md:flex-col flex-wrap gap-2">
             <Button
               variant="outline"
               disabled={toggling}
@@ -418,11 +442,11 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <Table>
+        <div className="bg-card rounded-lg border border-border overflow-x-auto lg:overflow-x-hidden">
+          <Table className="lg:table-fixed lg:w-full">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-px whitespace-nowrap">
+                <TableHead className="w-44">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -434,60 +458,54 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     Candidat
                   </div>
                 </TableHead>
-                <TableHead className="w-px whitespace-nowrap">Score</TableHead>
+                <TableHead className="w-14">Score</TableHead>
                 <TableHead>Justification</TableHead>
-                <TableHead className="w-px whitespace-nowrap">Email</TableHead>
-                <TableHead className="w-px whitespace-nowrap">Statut</TableHead>
-                <TableHead className="w-px whitespace-nowrap">Ajouté par</TableHead>
-                <TableHead className="w-px whitespace-nowrap"></TableHead>
+                <TableHead className="w-24">Statut</TableHead>
+                <TableHead className="w-28">Ajouté par</TableHead>
+                <TableHead className="w-28"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
                 <TableRow><TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8 text-base">Aucune candidature</TableCell></TableRow>
               )}
-              {filtered.map(a => {
+              {paged.map(a => {
                 const isChecked = selected.has(a.id)
                 return (
                   <TableRow key={a.id} className={`hover:bg-muted/30 ${isChecked ? 'bg-violet-50 dark:bg-violet-950/20' : ''}`}>
                     <TableCell className="text-foreground">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleSelect(a.id)}
                           className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer flex-shrink-0"
                         />
-                        {formatName(a.candidate_name) ?? <span className="text-muted-foreground italic">Inconnu</span>}
+                        <span className="truncate" title={a.candidate_name ?? undefined}>
+                          {formatName(a.candidate_name) ?? <span className="text-muted-foreground italic">Inconnu</span>}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell><ScoreBadge score={a.score} threshold={job.score_threshold} /></TableCell>
-                    <TableCell>
-                      <p className="text-xs text-foreground leading-snug mb-1">{a.justification ?? '—'}</p>
-                      {a.positive_points && (
-                        <div className="space-y-0.5">
-                          {(JSON.parse(a.positive_points) as string[]).slice(0, 2).map((p, i) => (
-                            <p key={i} className="text-xs font-medium text-green-800">{p}</p>
-                          ))}
-                        </div>
-                      )}
-                      {a.negative_points && (
-                        <div className="space-y-0.5 mt-0.5">
-                          {(JSON.parse(a.negative_points) as string[]).slice(0, 2).map((p, i) => (
-                            <p key={i} className="text-xs font-medium text-red-700">{p}</p>
-                          ))}
-                        </div>
+                    <TableCell className="align-top">
+                      <p className="text-xs text-foreground leading-snug mb-1 overflow-hidden text-ellipsis line-clamp-2 break-words" title={a.justification ?? undefined}>{summarizeJustification(a.justification)}</p>
+                      {(a.positive_points || a.negative_points) && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setPointsOpen(a) }}
+                          className="text-xs font-medium text-violet-700 hover:text-violet-900 hover:underline"
+                        >
+                          Voir points + et −
+                        </button>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-700 text-xs whitespace-nowrap">{a.candidate_email ?? '—'}</TableCell>
                     <TableCell><StatusBadge status={a.status} /></TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">
-                      {a.uploaded_by && <p className="font-medium text-foreground">{a.uploaded_by}</p>}
-                      <p className="text-muted-foreground">{new Date(a.created_at).toLocaleDateString('fr-FR')} {new Date(a.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    <TableCell className="text-xs">
+                      {a.uploaded_by && <p className="font-medium text-foreground truncate">{a.uploaded_by}</p>}
+                      <p className="text-muted-foreground truncate">{new Date(a.created_at).toLocaleDateString('fr-FR')}</p>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1 flex-wrap">
-                        <Button size="sm" variant="ghost" onClick={() => downloadCv(a.cv_file_path, a.candidate_name)}>
+                      <div className="flex flex-col gap-1 items-stretch">
+                        <Button size="sm" variant="ghost" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>
                           CV PDF
                         </Button>
                         <Button size="sm" variant="outline" className="text-violet-600 border-violet-300 hover:bg-violet-50" onClick={() => exportFiche(a)}>
@@ -504,6 +522,23 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
             </TableBody>
           </Table>
         </div>
+
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between mt-3 px-1">
+            <p className="text-xs text-muted-foreground">
+              {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>
+                ← Précédent
+              </Button>
+              <span className="text-xs px-3 font-medium">{safePage} / {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)}>
+                Suivant →
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <CompareModal
@@ -520,6 +555,53 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
             <DialogTitle>Déposer des CV</DialogTitle>
           </DialogHeader>
           <CvUploader jobId={id!} onUploaded={() => { loadApplications(); setCvUploadOpen(false) }} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pointsOpen} onOpenChange={o => !o && setPointsOpen(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              Points + et − {pointsOpen?.candidate_name ? `— ${pointsOpen.candidate_name}` : ''}
+            </DialogTitle>
+          </DialogHeader>
+          {pointsOpen && (() => {
+            const positives: string[] = pointsOpen.positive_points ? JSON.parse(pointsOpen.positive_points) : []
+            const negatives: string[] = pointsOpen.negative_points ? JSON.parse(pointsOpen.negative_points) : []
+            return (
+              <div className="space-y-4">
+                {positives.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Points positifs</p>
+                    <ul className="space-y-1.5">
+                      {positives.map((p, i) => (
+                        <li key={i} className="text-sm text-foreground leading-relaxed flex gap-2">
+                          <span className="text-green-700 shrink-0">✓</span>
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {negatives.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Points négatifs</p>
+                    <ul className="space-y-1.5">
+                      {negatives.map((p, i) => (
+                        <li key={i} className="text-sm text-foreground leading-relaxed flex gap-2">
+                          <span className="text-red-700 shrink-0">✗</span>
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {positives.length === 0 && negatives.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Aucun point renseigné.</p>
+                )}
+              </div>
+            )
+          })()}
         </DialogContent>
       </Dialog>
 

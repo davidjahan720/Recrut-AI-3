@@ -144,7 +144,7 @@ export default function Clients() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Clients</h1>
@@ -161,7 +161,7 @@ export default function Clients() {
         </div>
       )}
 
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -237,7 +237,7 @@ export default function Clients() {
                 <Input value={(form[field] as string) ?? ''} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
               </div>
             ))}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-base">Statut</Label>
                 <select className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"

@@ -52,7 +52,7 @@ export default function CompareApplications() {
   }, [params, navigate])
 
   if (loading) return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
         <Skeleton className="h-9 w-24" />
         <div><Skeleton className="h-7 w-56 mb-1" /><Skeleton className="h-4 w-32" /></div>
@@ -74,7 +74,7 @@ export default function CompareApplications() {
   const colWidth = apps.length === 2 ? 'w-1/2' : 'w-1/3'
 
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-fade-in">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <Button variant="ghost" onClick={() => navigate('/applications')}>← Retour</Button>
         <div>

@@ -31,7 +31,7 @@ interface AMData {
 }
 
 const ACCOUNT_MANAGERS: AMData[] = [
-  { name: 'Laura',  password: '0', color: 'from-pink-700 to-pink-900', initials: 'LA', clients: ['Nexeo', 'Solvay', 'BTP Pro'], offresActives: 0, cvSemaine: 430, cvMois: 850, qualifies: 153, taux: 18, caMensuel: 55000, caTrimestriel: 165000, avgHon: 8000, tauxTransfo: 25, nouveaux: 2, fidelisation: 73, targetNouveauxClientsMois: 3, targetCaMensuel: 58000, targetCaTrimestriel: 174000, ytdCa: 215000, ytdNouveauxClients: 8, targetYtdCa: 232000, targetYtdNouveauxClients: 12, targetAvgHon: 10000 },
+  { name: 'Laura',  password: '0', color: 'from-violet-700 to-violet-900', initials: 'LA', clients: ['Nexeo', 'Solvay', 'BTP Pro'], offresActives: 0, cvSemaine: 430, cvMois: 850, qualifies: 153, taux: 18, caMensuel: 55000, caTrimestriel: 165000, avgHon: 8000, tauxTransfo: 25, nouveaux: 2, fidelisation: 73, targetNouveauxClientsMois: 3, targetCaMensuel: 58000, targetCaTrimestriel: 174000, ytdCa: 215000, ytdNouveauxClients: 8, targetYtdCa: 232000, targetYtdNouveauxClients: 12, targetAvgHon: 10000 },
   { name: 'Julien', password: '0', color: 'from-sky-700 to-sky-900',  initials: 'JU', clients: ['Inovev', 'Altair RH'],        offresActives: 0, cvSemaine: 320, cvMois: 550, qualifies: 99,  taux: 18, caMensuel: 41000, caTrimestriel: 123000, avgHon: 8000, tauxTransfo: 18, nouveaux: 1, fidelisation: 65, targetNouveauxClientsMois: 2, targetCaMensuel: 46000, targetCaTrimestriel: 138000, ytdCa: 162000, ytdNouveauxClients: 5, targetYtdCa: 184000, targetYtdNouveauxClients: 8,  targetAvgHon: 10000 },
 ]
 
@@ -150,8 +150,8 @@ function PersonalDashboard({ am }: { am: AMData }) {
 
   const kpis = [
     { label: 'Offres actives', value: activeCount,             note: 'En cours',            bg: 'from-emerald-800 to-emerald-950', icon: '📋' },
-    { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`,  note: 'Prospects → clients', bg: 'from-rose-700 to-rose-900',       icon: '🤝' },
-    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-lime-800 to-lime-950',       icon: '♻' },
+    { label: 'Taux transfo.',  value: `${am.tauxTransfo} %`,  note: 'Prospects → clients', bg: 'from-red-700 to-red-900',       icon: '🤝' },
+    { label: 'Fidélisation',   value: `${am.fidelisation} %`, note: 'Clients 2+ offres',   bg: 'from-green-700 to-green-900',       icon: '♻' },
   ]
 
   return (
@@ -201,8 +201,8 @@ function PersonalDashboard({ am }: { am: AMData }) {
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Objectifs</p>
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: 'CA mensuel',             value: am.caMensuel,   target: am.targetCaMensuel,           fmt: fmtEur,              color: 'bg-teal-500',   icon: '💰' },
-            { label: 'CA trimestriel',          value: am.caTrimestriel, target: am.targetCaTrimestriel,     fmt: fmtEur,              color: 'bg-cyan-500',   icon: '📆' },
+            { label: 'CA mensuel',             value: am.caMensuel,   target: am.targetCaMensuel,           fmt: fmtEur,              color: 'bg-blue-500',   icon: '💰' },
+            { label: 'CA trimestriel',          value: am.caTrimestriel, target: am.targetCaTrimestriel,     fmt: fmtEur,              color: 'bg-sky-500',   icon: '📆' },
             { label: 'Nouveaux clients / mois', value: am.nouveaux,   target: am.targetNouveauxClientsMois, fmt: (n: number) => `${n}`, color: 'bg-amber-500', icon: '🆕' },
             { label: 'Hono. moy.',              value: am.avgHon,     target: am.targetAvgHon,              fmt: fmtEur,              color: 'bg-indigo-500', icon: '📐' },
           ].map(obj => {
@@ -224,7 +224,7 @@ function PersonalDashboard({ am }: { am: AMData }) {
         </div>
         <div className="grid grid-cols-4 gap-3 mt-3">
           {[
-            { label: 'CA YTD',               value: am.ytdCa,            target: am.targetYtdCa,            fmt: fmtEur,              color: 'bg-teal-500' },
+            { label: 'CA YTD',               value: am.ytdCa,            target: am.targetYtdCa,            fmt: fmtEur,              color: 'bg-blue-500' },
             { label: 'Nouveaux clients YTD', value: am.ytdNouveauxClients, target: am.targetYtdNouveauxClients, fmt: (n: number) => `${n}`, color: 'bg-amber-500' },
           ].map(obj => {
             const pct = Math.min(100, Math.round((obj.value / obj.target) * 100))

@@ -47,6 +47,7 @@ export function Sidebar() {
   const [email, setEmail] = useState('')
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === '1')
   // Used only to force a re-render when role-login fires (logout case, no URL change)
   const [, forceUpdate] = useState(0)
   const navRef = useRef<HTMLElement>(null)
@@ -69,6 +70,10 @@ export function Sidebar() {
     document.documentElement.classList.toggle('dark', dark)
     localStorage.setItem('theme', dark ? 'dark' : 'light')
   }, [dark])
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0')
+  }, [collapsed])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -98,32 +103,54 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-60 h-screen bg-gradient-to-b from-violet-900 to-indigo-900 text-white flex flex-col overflow-hidden">
-      <div className="p-5 border-b border-white/15">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+    <aside className={`${collapsed ? 'w-16' : 'w-60'} h-screen bg-gradient-to-b from-violet-900 to-indigo-900 text-white flex flex-col overflow-hidden transition-[width] duration-200`}>
+      <div className={`${collapsed ? 'p-3' : 'p-5'} border-b border-white/15 flex items-center justify-between gap-2`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center shrink-0">
             <span className="text-white text-base font-bold">R</span>
           </div>
-          <span className="font-bold text-white text-lg">RecrutAI</span>
+          {!collapsed && <span className="font-bold text-white text-lg truncate">RecrutAI</span>}
         </div>
+        {!collapsed && (
+          <button
+            onClick={() => setCollapsed(true)}
+            aria-label="Réduire la barre latérale"
+            title="Réduire"
+            className="text-white/70 hover:text-white text-lg w-7 h-7 rounded hover:bg-white/15 flex items-center justify-center shrink-0"
+          >
+            «
+          </button>
+        )}
       </div>
+      {collapsed && (
+        <button
+          onClick={() => setCollapsed(false)}
+          aria-label="Étendre la barre latérale"
+          title="Étendre"
+          className="text-white/70 hover:text-white text-lg w-full py-2 hover:bg-white/15 flex items-center justify-center"
+        >
+          »
+        </button>
+      )}
 
       <nav ref={navRef} className="flex-1 p-3 space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {links.map(link => (
           <NavLink
             key={link.to}
             to={link.to}
+            title={collapsed ? link.label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
+              `flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-base font-medium transition-colors ${
                 isActive ? 'bg-white/25 text-white' : 'text-white hover:bg-white/15'
               }`
             }
           >
             <span className="text-xl">{link.icon}</span>
-            {link.label}
+            {!collapsed && link.label}
           </NavLink>
         ))}
 
+        {!collapsed && (<>
         {/* Chargés de recrutement */}
         <DropdownItem
           icon="👤" label="Chargés" whiteIcon
@@ -168,23 +195,28 @@ export function Sidebar() {
             }} />
           ))}
         </DropdownItem>
+        </>)}
       </nav>
-      <button onClick={scrollNav} className="flex items-center justify-center py-1.5 text-white/70 hover:text-white transition-colors text-xs shrink-0" aria-label="Défiler vers le bas">▼</button>
+      {!collapsed && (
+        <button onClick={scrollNav} className="flex items-center justify-center py-1.5 text-white/70 hover:text-white transition-colors text-xs shrink-0" aria-label="Défiler vers le bas">▼</button>
+      )}
 
-      <div className="p-3 border-t border-white/15 space-y-1">
+      <div className={`${collapsed ? 'p-2' : 'p-3'} border-t border-white/15 space-y-1`}>
         <button
           onClick={() => setDark(!dark)}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-base font-medium rounded-lg text-white hover:bg-white/15 transition-colors"
+          title={collapsed ? (dark ? 'Mode clair' : 'Mode sombre') : undefined}
+          className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 text-base font-medium rounded-lg text-white hover:bg-white/15 transition-colors`}
         >
           <span className="text-xl">{dark ? '☀️' : '🌙'}</span>
-          {dark ? 'Mode clair' : 'Mode sombre'}
+          {!collapsed && (dark ? 'Mode clair' : 'Mode sombre')}
         </button>
-        <p className="text-sm text-white font-medium truncate px-4 py-1">{email}</p>
+        {!collapsed && <p className="text-sm text-white font-medium truncate px-4 py-1">{email}</p>}
         <button
           onClick={handleLogout}
-          className="w-full text-left px-4 py-2.5 text-base font-medium rounded-lg text-white hover:bg-white/15 transition-colors"
+          title={collapsed ? 'Déconnexion' : undefined}
+          className={`w-full ${collapsed ? 'flex justify-center px-2' : 'text-left px-4'} py-2.5 text-base font-medium rounded-lg text-white hover:bg-white/15 transition-colors`}
         >
-          Déconnexion
+          {collapsed ? '⏏' : 'Déconnexion'}
         </button>
       </div>
     </aside>

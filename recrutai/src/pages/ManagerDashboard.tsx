@@ -63,16 +63,16 @@ const KPI_STYLES = [
   { bg: 'from-emerald-800 to-emerald-950', icon: '📋' },
   { bg: 'from-blue-700 to-blue-900',       icon: '📄' },
   { bg: 'from-violet-700 to-violet-900',   icon: '✅' },
-  { bg: 'from-orange-700 to-orange-900',   icon: '📊' },
+  { bg: 'from-amber-700 to-amber-900',   icon: '📊' },
 ]
 
 const BIZ_STYLES = [
-  { bg: 'from-teal-800 to-teal-950',       icon: '💰' },
-  { bg: 'from-cyan-800 to-cyan-950',       icon: '📆' },
+  { bg: 'from-blue-800 to-blue-950',       icon: '💰' },
+  { bg: 'from-indigo-700 to-indigo-900',       icon: '📆' },
   { bg: 'from-indigo-700 to-indigo-900',   icon: '📐' },
-  { bg: 'from-rose-700 to-rose-900',       icon: '🤝' },
+  { bg: 'from-red-700 to-red-900',       icon: '🤝' },
   { bg: 'from-amber-800 to-amber-950',     icon: '🆕' },
-  { bg: 'from-lime-800 to-lime-950',       icon: '♻' },
+  { bg: 'from-green-700 to-green-900',       icon: '♻' },
 ]
 
 const RECRUITERS = [
@@ -367,7 +367,7 @@ export default function ManagerDashboard() {
               <div className="flex-1 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">{am.name}</p>
-                  <span className="text-sm font-bold text-orange-600">{am.taux} %</span>
+                  <span className="text-sm font-bold text-amber-600">{am.taux} %</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-0.5">
@@ -375,7 +375,7 @@ export default function ManagerDashboard() {
                     <span>{am.taux} %</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-400 rounded-full" style={{ width: `${am.taux}%` }} />
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: `${am.taux}%` }} />
                   </div>
                 </div>
                 <div>
@@ -384,7 +384,7 @@ export default function ManagerDashboard() {
                     <span>{am.tauxObjectif} %</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-200 rounded-full border border-orange-400 border-dashed" style={{ width: `${am.tauxObjectif}%` }} />
+                    <div className="h-full bg-amber-200 rounded-full border border-amber-400 border-dashed" style={{ width: `${am.tauxObjectif}%` }} />
                   </div>
                 </div>
               </div>

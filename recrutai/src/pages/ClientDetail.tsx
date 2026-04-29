@@ -41,10 +41,10 @@ export default function ClientDetail() {
     setEditing(false)
   }
 
-  if (!client) return <div className="p-8 text-foreground">Chargement...</div>
+  if (!client) return <div className="p-4 md:p-8 text-foreground">Chargement...</div>
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 md:p-8 max-w-3xl">
       <button onClick={() => navigate(-1)} className="text-base font-medium text-foreground hover:text-primary mb-4 flex items-center gap-1">
         ← Retour
       </button>

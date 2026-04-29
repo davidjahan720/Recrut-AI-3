@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useUploads } from '@/contexts/UploadContext'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -17,43 +18,26 @@ async function invokeScoreCv(jobId: string, cvPath: string) {
   return json
 }
 
-
 interface Props {
   jobId: string
   onUploaded: () => void
 }
 
-interface Result {
-  name: string
-  score: number | null
-  status: string
-  errorMessage?: string | null
-}
-
-interface Progress {
-  current: number
-  total: number
-  remainingSec: number | null
-}
-
-function fmtSec(s: number) {
-  if (s < 60) return `~${s}s`
-  return `~${Math.ceil(s / 60)}min`
-}
-
 export function CvUploader({ jobId, onUploaded }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const [processing, setProcessing] = useState(false)
-  const [results, setResults] = useState<Result[]>([])
-  const [progress, setProgress] = useState<Progress | null>(null)
+  const [extracting, setExtracting] = useState(false)
   const noJob = !jobId
+
+  const { items, startUploads } = useUploads()
+  const jobItems = items.filter(i => i.jobId === jobId)
+  const activeCount = jobItems.filter(i => i.status === 'pending' || i.status === 'uploading' || i.status === 'scoring').length
 
   const isRecruiter = !!localStorage.getItem('recruiter_session')
   const uploaderName = localStorage.getItem('recruiter_session') || localStorage.getItem('am_session') || localStorage.getItem('manager_session')
 
-  async function processFiles(files: FileList | File[]) {
-    const accepted = Array.from(files).filter(f => {
+  function filterAccepted(files: FileList | File[]): File[] {
+    return Array.from(files).filter(f => {
       if (isRecruiter && (
         f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         f.name.endsWith('.docx') || f.name.endsWith('.doc')
@@ -67,85 +51,43 @@ export function CvUploader({ jobId, onUploaded }: Props) {
         f.type === 'text/html' || f.name.endsWith('.html') || f.name.endsWith('.htm')
       )
     })
-    if (accepted.length === 0) return
+  }
 
-    setProcessing(true)
-    setResults([])
-    setProgress({ current: 0, total: accepted.length, remainingSec: null })
-
-    const newResults: Result[] = []
-    const durations: number[] = []
-
-    for (let i = 0; i < accepted.length; i++) {
-      const file = accepted[i]
-      const t0 = Date.now()
-
-      const CV_ESTIMATED_S = 15
-      setProgress({ current: i + 1, total: accepted.length, remainingSec: durations.length > 0
-        ? Math.round((durations.reduce((a, b) => a + b) / durations.length) * (accepted.length - i) / 1000)
-        : CV_ESTIMATED_S * (accepted.length - i)
-      })
-
-      const safeName = file.name
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9._-]/g, '_')
-      const folder = jobId || 'inbox'
-      const fileName = `${folder}/${Date.now()}-${safeName}`
-
-      let uploadErrorMsg: string | null = null
-      try {
+  async function handleNoJobUpload(files: File[]) {
+    setExtracting(true)
+    try {
+      for (const file of files) {
+        const safeName = file.name
+          .normalize('NFD').replace(/[̀-ͯ]/g, '')
+          .replace(/[^a-zA-Z0-9._-]/g, '_')
+        const fileName = `inbox/${Date.now()}-${safeName}`
         const urlRes = await fetch('/api/get-upload-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: fileName }),
         })
         const urlJson = await urlRes.json()
-        if (!urlRes.ok || urlJson?.error) {
-          uploadErrorMsg = urlJson?.error ?? `HTTP ${urlRes.status}`
-        } else {
-          const { error: uploadError } = await supabase.storage.from('cvs')
-            .uploadToSignedUrl(urlJson.path, urlJson.token, file)
-          if (uploadError) uploadErrorMsg = uploadError.message
-        }
-      } catch (e) {
-        uploadErrorMsg = e instanceof Error ? e.message : String(e)
+        if (!urlRes.ok || urlJson?.error) continue
+        const { error: uploadError } = await supabase.storage.from('cvs')
+          .uploadToSignedUrl(urlJson.path, urlJson.token, file)
+        if (uploadError) continue
+        try { await invokeScoreCv('', fileName) } catch { /* noop */ }
       }
-      if (uploadErrorMsg) {
-        newResults.push({ name: file.name, score: null, status: 'error', errorMessage: uploadErrorMsg })
-        durations.push(Date.now() - t0)
-        continue
-      }
-
-      let errMsg: string | null = null
-      try {
-        await invokeScoreCv(jobId, fileName)
-      } catch (e) {
-        errMsg = String(e)
-      }
-
-      if (!errMsg && uploaderName) {
-        await fetch('/api/set-uploaded-by', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cv_file_path: fileName, job_id: jobId, uploaded_by: uploaderName }),
-        })
-      }
-
-      newResults.push({
-        name: file.name,
-        score: null,
-        status: errMsg ? 'error' : 'done',
-        errorMessage: errMsg,
-      })
-
-      durations.push(Date.now() - t0)
+      onUploaded()
+    } finally {
+      setExtracting(false)
     }
+  }
 
-    setResults(newResults)
-    setProgress(null)
-    setProcessing(false)
-    const hasError = newResults.some(r => r.status === 'error')
-    if (!hasError) onUploaded()
+  function processFiles(files: FileList | File[]) {
+    const accepted = filterAccepted(files)
+    if (accepted.length === 0) return
+    if (noJob) {
+      handleNoJobUpload(accepted)
+      return
+    }
+    startUploads(jobId, accepted, uploaderName)
+    onUploaded()
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -154,36 +96,27 @@ export function CvUploader({ jobId, onUploaded }: Props) {
     processFiles(e.dataTransfer.files)
   }
 
+  const showProgress = extracting || activeCount > 0
+
   return (
     <div className="space-y-3">
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        onClick={() => !processing && inputRef.current?.click()}
+        onClick={() => !showProgress && inputRef.current?.click()}
         className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors
-          ${processing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
+          ${showProgress ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
           ${dragging ? 'border-slate-600 bg-slate-100' : 'border-slate-300 hover:border-slate-400 bg-slate-50'}`}
       >
-        {processing ? (
+        {showProgress ? (
           <div className="flex flex-col items-center gap-2">
             <div className="w-6 h-6 border-2 border-slate-400 border-t-slate-800 rounded-full animate-spin" />
-            {progress && (
-              <p className="text-base font-semibold text-slate-700">
-                {progress.current}/{progress.total}
-              </p>
-            )}
             <p className="text-sm text-slate-900 font-medium">
-              {noJob ? 'Extraction en cours...' : 'Analyse en cours...'}
-              {progress?.remainingSec != null && ` · ${fmtSec(progress.remainingSec)} restantes`}
+              {noJob ? 'Extraction en cours…' : `${activeCount} CV en cours d'analyse`}
             </p>
-            {progress && progress.total > 1 && (
-              <div className="w-48 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-slate-600 rounded-full transition-all duration-300"
-                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                />
-              </div>
+            {!noJob && (
+              <p className="text-xs text-slate-600">L'analyse continue même si vous changez de page.</p>
             )}
           </div>
         ) : (
@@ -203,18 +136,26 @@ export function CvUploader({ jobId, onUploaded }: Props) {
         />
       </div>
 
-      {results.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
-          {results.map((r, i) => (
-            <div key={i} className="px-4 py-3">
+      {jobItems.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-64 overflow-y-auto">
+          {jobItems.map(it => (
+            <div key={it.id} className="px-4 py-3">
               <div className="flex items-start justify-between gap-3">
-                <span className="text-sm text-slate-700 truncate min-w-0 flex-1">{r.name}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${r.status === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-900'}`}>
-                  {r.status === 'error' ? '⚠️ Erreur' : '✅ Reçu'}
+                <span className="text-sm text-slate-700 truncate min-w-0 flex-1">{it.fileName}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                  it.status === 'error' ? 'bg-red-100 text-red-600'
+                  : it.status === 'done' ? 'bg-green-100 text-green-900'
+                  : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {it.status === 'pending' && '⏳ En attente'}
+                  {it.status === 'uploading' && '⬆️ Upload'}
+                  {it.status === 'scoring' && '🤖 Analyse'}
+                  {it.status === 'done' && '✅ Reçu'}
+                  {it.status === 'error' && '⚠️ Erreur'}
                 </span>
               </div>
-              {r.status === 'error' && r.errorMessage && (
-                <p className="text-xs text-red-600 mt-1 break-words">{r.errorMessage}</p>
+              {it.status === 'error' && it.errorMessage && (
+                <p className="text-xs text-red-600 mt-1 break-words">{it.errorMessage}</p>
               )}
             </div>
           ))}

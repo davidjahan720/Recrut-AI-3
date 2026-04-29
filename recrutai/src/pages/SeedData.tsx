@@ -463,7 +463,7 @@ export default function SeedData() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-4 md:p-8 max-w-2xl">
       <h1 className="text-2xl font-semibold text-foreground mb-2">Seed — Données fictives</h1>
       <p className="text-muted-foreground text-sm mb-6">
         Insère 10 offres et 40 candidats scorés par IA pour les 4 chargés de recrutement.

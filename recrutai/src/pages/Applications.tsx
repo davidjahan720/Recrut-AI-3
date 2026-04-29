@@ -222,7 +222,7 @@ export default function Applications() {
   const pillInactive = 'bg-card border border-border text-foreground hover:bg-muted'
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Candidatures</h1>
@@ -279,7 +279,7 @@ export default function Applications() {
         </select>
       </div>
 
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

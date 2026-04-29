@@ -18,7 +18,7 @@ const RECRUITERS: RecruiterData[] = [
   { name: 'Sophie',  password: '0', color: 'from-violet-700 to-violet-900',   initials: 'SO', clients: ['Nexeo', 'BTP Pro', 'Inovev'],     offresActives: 0, cvSemaine: 93,  cvMois: 400, qualifies: 72, taux: 18 },
   { name: 'Karim',   password: '0', color: 'from-blue-700 to-blue-900',       initials: 'KA', clients: ['Solvay', 'Altair RH'],             offresActives: 0, cvSemaine: 81,  cvMois: 350, qualifies: 63, taux: 18 },
   { name: 'Alix',    password: '0', color: 'from-emerald-700 to-emerald-900', initials: 'AL', clients: ['Terralys', 'Vinci RH', 'Kalexia'], offresActives: 0, cvSemaine: 105, cvMois: 450, qualifies: 81, taux: 18 },
-  { name: 'Nicolas', password: '0', color: 'from-orange-700 to-orange-900',   initials: 'NI', clients: ['Elexia', 'Groupe Avena'],          offresActives: 0, cvSemaine: 47,  cvMois: 200, qualifies: 36, taux: 18 },
+  { name: 'Nicolas', password: '0', color: 'from-amber-700 to-amber-900',   initials: 'NI', clients: ['Elexia', 'Groupe Avena'],          offresActives: 0, cvSemaine: 47,  cvMois: 200, qualifies: 36, taux: 18 },
 ]
 
 function getWeekLabel() {
@@ -92,7 +92,7 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
 
   const kpis = [
     { label: 'CV reçus — semaine', value: r.cvSemaine, note: getWeekLabel(),  bg: 'from-blue-700 to-blue-900',     icon: '📄' },
-    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-cyan-800 to-cyan-950',     icon: '📅' },
+    { label: 'CV reçus — mois',    value: r.cvMois,    note: getMonthLabel(), bg: 'from-indigo-700 to-indigo-900',     icon: '📅' },
     { label: 'Qualifiés',          value: r.qualifies, note: 'Ce mois-ci',    bg: 'from-violet-700 to-violet-900', icon: '✅' },
   ]
 
