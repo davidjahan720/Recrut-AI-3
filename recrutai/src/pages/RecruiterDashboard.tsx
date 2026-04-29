@@ -125,18 +125,51 @@ function PersonalDashboard({ recruiter }: { recruiter: RecruiterData }) {
   )
 }
 
+function hasAnyRoleSession(): boolean {
+  return !!(
+    localStorage.getItem('recruiter_session') ||
+    localStorage.getItem('am_session') ||
+    localStorage.getItem('manager_session') ||
+    localStorage.getItem('manager_auth')
+  )
+}
+
+function switchToRecruiter(r: RecruiterData) {
+  localStorage.removeItem('am_session')
+  localStorage.removeItem('manager_session')
+  localStorage.removeItem('manager_auth')
+  localStorage.setItem(SESSION_KEY, r.name)
+  window.dispatchEvent(new Event('role-login'))
+}
+
 export default function RecruiterDashboard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const preselect = searchParams.get('name')
   const savedName = localStorage.getItem(SESSION_KEY)
-  const savedRecruiter = savedName && (!preselect || savedName === preselect)
-    ? RECRUITERS.find(r => r.name === savedName) ?? null
-    : null
-  const [recruiter, setRecruiter] = useState<RecruiterData | null>(savedRecruiter)
+  const initial = (() => {
+    if (preselect) {
+      const requested = RECRUITERS.find(r => r.name === preselect)
+      if (requested && hasAnyRoleSession()) {
+        switchToRecruiter(requested)
+        return requested
+      }
+    }
+    return savedName && (!preselect || savedName === preselect)
+      ? RECRUITERS.find(r => r.name === savedName) ?? null
+      : null
+  })()
+  const [recruiter, setRecruiter] = useState<RecruiterData | null>(initial)
 
   useEffect(() => {
-    if (preselect && recruiter && preselect !== recruiter.name) {
+    if (!preselect) return
+    const requested = RECRUITERS.find(r => r.name === preselect)
+    if (!requested) return
+    if (recruiter && recruiter.name === requested.name) return
+    if (hasAnyRoleSession()) {
+      switchToRecruiter(requested)
+      setRecruiter(requested)
+    } else {
       setRecruiter(null)
     }
   }, [preselect])

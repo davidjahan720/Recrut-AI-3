@@ -67,6 +67,15 @@ function LoginScreen({ preselect, onLogin }: { preselect: ManagerProfile | null;
   )
 }
 
+function hasAnyRoleSession(): boolean {
+  return !!(
+    localStorage.getItem('recruiter_session') ||
+    localStorage.getItem('am_session') ||
+    localStorage.getItem('manager_session') ||
+    localStorage.getItem('manager_auth')
+  )
+}
+
 export default function ManagerPersonalDashboard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -79,11 +88,20 @@ export default function ManagerPersonalDashboard() {
     return <Navigate to="/manager" replace />
   }
 
+  // Switch direct sans mdp si une session role est déjà active
+  const preselectProfile = MANAGERS.find(m => m.name === preselect) ?? null
+  if (preselectProfile && hasAnyRoleSession()) {
+    localStorage.removeItem('recruiter_session')
+    localStorage.removeItem('am_session')
+    localStorage.setItem('manager_auth', '1')
+    localStorage.setItem(SESSION_KEY, preselectProfile.name)
+    window.dispatchEvent(new Event('role-login'))
+    return <Navigate to="/manager" replace />
+  }
+
   function handleLogin() {
     navigate('/manager', { replace: true })
   }
-
-  const preselectProfile = MANAGERS.find(m => m.name === preselect) ?? null
 
   return <LoginScreen preselect={preselectProfile} onLogin={handleLogin} />
 }

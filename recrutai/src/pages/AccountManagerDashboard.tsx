@@ -248,18 +248,51 @@ function PersonalDashboard({ am }: { am: AMData }) {
   )
 }
 
+function hasAnyRoleSession(): boolean {
+  return !!(
+    localStorage.getItem('recruiter_session') ||
+    localStorage.getItem('am_session') ||
+    localStorage.getItem('manager_session') ||
+    localStorage.getItem('manager_auth')
+  )
+}
+
+function switchToAm(a: AMData) {
+  localStorage.removeItem('recruiter_session')
+  localStorage.removeItem('manager_session')
+  localStorage.removeItem('manager_auth')
+  localStorage.setItem(SESSION_KEY, a.name)
+  window.dispatchEvent(new Event('role-login'))
+}
+
 export default function AccountManagerDashboard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const preselect = searchParams.get('name')
   const savedName = localStorage.getItem(SESSION_KEY)
-  const savedAM = savedName && (!preselect || savedName === preselect)
-    ? ACCOUNT_MANAGERS.find(r => r.name === savedName) ?? null
-    : null
-  const [am, setAm] = useState<AMData | null>(savedAM)
+  const initial = (() => {
+    if (preselect) {
+      const requested = ACCOUNT_MANAGERS.find(r => r.name === preselect)
+      if (requested && hasAnyRoleSession()) {
+        switchToAm(requested)
+        return requested
+      }
+    }
+    return savedName && (!preselect || savedName === preselect)
+      ? ACCOUNT_MANAGERS.find(r => r.name === savedName) ?? null
+      : null
+  })()
+  const [am, setAm] = useState<AMData | null>(initial)
 
   useEffect(() => {
-    if (preselect && am && preselect !== am.name) {
+    if (!preselect) return
+    const requested = ACCOUNT_MANAGERS.find(r => r.name === preselect)
+    if (!requested) return
+    if (am && am.name === requested.name) return
+    if (hasAnyRoleSession()) {
+      switchToAm(requested)
+      setAm(requested)
+    } else {
       setAm(null)
     }
   }, [preselect])
