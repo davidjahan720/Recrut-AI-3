@@ -34,6 +34,19 @@ dist-ssr
 *.sw?
 
 .vercel
-
-.vercel
 .env*.local
+
+# Claude Code (sessions, settings locaux, worktrees)
+.claude/settings.local.json
+.claude/worktrees/
+
+# Supabase CLI cache
+**/supabase/.temp/
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# OS
+Thumbs.db
+desktop.ini
