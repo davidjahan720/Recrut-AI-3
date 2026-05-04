@@ -69,7 +69,7 @@ Exemples concrets sur RecrutAI 2 :
    - conséquences probables ;
    - mesures prises ;
    - recommandations à la personne (changer mot de passe, surveiller compte, etc.).
-9. **Diffuser** : email transactionnel (Resend) à l'ensemble des personnes concernées. Si trop nombreux ou contact difficile : communication publique sur le site (page dédiée + bandeau d'information).
+9. **Diffuser** : email transactionnel (Brevo) à l'ensemble des personnes concernées. Si trop nombreux ou contact difficile : communication publique sur le site (page dédiée + bandeau d'information).
 
 ### Phase 4 — Post-incident : RETEX et registre
 
@@ -102,7 +102,7 @@ Exemples concrets sur RecrutAI 2 :
 - Remercier la personne et créer un canal sécurisé pour la transmission des détails.
 - Le délai 72 h court à partir du moment où l'équipe a pris connaissance, pas du moment de la découverte par le tiers.
 
-### Violation chez un sous-traitant (Mistral, Supabase, Vercel, Resend)
+### Violation chez un sous-traitant (Mistral, Supabase, Vercel, Brevo)
 
 - Le sous-traitant doit nous notifier sans délai (clause contractuelle DPA).
 - Notre délai 72 h court à partir de **notre** prise de connaissance.

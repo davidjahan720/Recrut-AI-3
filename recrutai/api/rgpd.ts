@@ -128,26 +128,19 @@ async function handleReviewRequest(req: any, res: any) {
   const sourceIp = (req.headers?.['x-forwarded-for'] ?? '').toString().split(',')[0]?.trim() || null
   const targetHash = hashEmail(cEmail)
 
-  // Notification au DPO via Resend (best effort).
+  // Notification au DPO via Brevo (best effort).
+  // Brevo (ex-Sendinblue) — société française, hébergement UE, conformité
+  // RGPD plus directe que Resend (US/UE sous DPF).
   // Le serveur retourne 200 même si l'email échoue : la trace est dans les logs.
   const dpoEmail = (process.env.DPO_EMAIL ?? 'contact@recrutai.fr').trim()
-  const resendKey = process.env.RESEND_API_KEY?.trim()
+  const brevoKey = process.env.BREVO_API_KEY?.trim()
+  const senderName = (process.env.BREVO_SENDER_NAME ?? 'RecrutAI').trim()
+  const senderEmail = (process.env.BREVO_SENDER_EMAIL ?? 'noreply@recrutai.fr').trim()
   let emailSent = false
 
-  if (resendKey) {
+  if (brevoKey) {
     try {
-      const r = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'RecrutAI <onboarding@resend.dev>',
-          to: dpoEmail,
-          reply_to: rEmail,
-          subject: `[RGPD art. 22.3] Demande d'examen humain — ${cName ?? cEmail}`,
-          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+      const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
             <h1 style="font-size:18px;color:#1f2937">Demande d'examen humain reçue</h1>
             <p style="font-size:14px;color:#374151">Conformément à l'art. 22.3 RGPD, un candidat (ou son représentant) demande qu'un être humain réexamine la décision automatisée prise sur sa candidature.</p>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
@@ -163,19 +156,32 @@ async function handleReviewRequest(req: any, res: any) {
             <p style="font-size:14px;line-height:1.6;color:#374151;white-space:pre-wrap">${escapeHtml(motiv)}</p>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
             <p style="font-size:13px;color:#6b7280">Procédure : voir <code>docs/how-to/traiter-demande-examen-humain.md</code>. Délai légal : réponse motivée sous 1 mois (RGPD art. 12.3).</p>
-          </div>`,
+          </div>`
+      const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoKey,
+          'accept': 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: dpoEmail }],
+          replyTo: { email: rEmail },
+          subject: `[RGPD art. 22.3] Demande d'examen humain — ${cName ?? cEmail}`,
+          htmlContent: html,
         }),
       })
       if (r.ok) {
         emailSent = true
       } else {
-        console.error(`Resend HTTP ${r.status}`)
+        console.error(`Brevo HTTP ${r.status}`)
       }
     } catch (err) {
-      console.error('Resend call failed:', err instanceof Error ? err.name : 'unknown')
+      console.error('Brevo call failed:', err instanceof Error ? err.name : 'unknown')
     }
   } else {
-    console.error('RESEND_API_KEY non configurée — DPO non notifié par email')
+    console.error('BREVO_API_KEY non configurée — DPO non notifié par email')
   }
 
   // Log RGPD structuré (sans PII) pour traçabilité

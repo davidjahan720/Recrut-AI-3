@@ -33,7 +33,7 @@ revue_prevue: 2027-05-04
 | Catégories de données | Identité (nom, prénom), contact (email), parcours professionnel (postes, dates, employeurs), formation, compétences, secteur métier. Tout autre élément volontairement présent dans le CV (photo, situation familiale, langues, hobbies). |
 | Données sensibles (art. 9) | Aucune collectée volontairement. Si présentes par hasard dans un CV (origine, santé, opinion), ne sont ni indexées ni utilisées dans le scoring. |
 | Destinataires | Utilisateurs internes habilités du cabinet (recruteurs, managers). Le client final ne reçoit que les candidats qualifiés affectés à son offre. |
-| Sous-traitants | **Mistral AI** (France, UE) — analyse IA et OCR ; **Supabase** (Ireland, UE) — stockage chiffré ; **Vercel** (UE) — hébergement applicatif ; **Resend** (UE/US sous DPF) — email transactionnel. |
+| Sous-traitants | **Mistral AI** (France, UE) — analyse IA et OCR ; **Supabase** (Ireland, UE) — stockage chiffré ; **Vercel** (UE) — hébergement applicatif ; **Brevo** (France, UE) — email transactionnel. |
 | Transferts hors UE | Non. Tous les sous-traitants sont en UE ou sous Data Privacy Framework. |
 | Durée de conservation | 2 ans après le dernier contact avec le candidat (recommandation CNIL recrutement). Suppression automatique au-delà. |
 | Mesures de sécurité | TLS 1.3, stockage chiffré (Supabase Storage privé + JWT), authentification utilisateurs internes, journal RGPD avec hash SHA-256 des emails, suppression effective sur demande (art. 17). |
@@ -84,9 +84,9 @@ revue_prevue: 2027-05-04
 | Catégories de données | Email destinataire, nom du candidat, score, justification IA, points positifs / négatifs, métadonnées de l'offre. |
 | Données sensibles | Aucune. |
 | Destinataires | Contact client renseigné dans `clients.notification_email`. |
-| Sous-traitants | **Resend** (UE / US sous DPF) — fournisseur SMTP transactionnel. |
-| Transferts hors UE | Possible vers les serveurs Resend US sous Data Privacy Framework. |
-| Durée de conservation | Email côté Resend : politique de rétention par défaut Resend (60-90 j). Trace en base : champ `email_sent_at` conservé tant que la candidature existe (T01). |
+| Sous-traitants | **Brevo** (ex-Sendinblue, société française) — fournisseur SMTP transactionnel, hébergement UE. |
+| Transferts hors UE | Aucun — Brevo opère depuis l'UE. |
+| Durée de conservation | Email côté Brevo : politique de rétention par défaut Brevo (90 j sur les logs). Trace en base : champ `email_sent_at` conservé tant que la candidature existe (T01). |
 | Mesures de sécurité | TLS 1.3, contenu HTML échappé contre l'injection, destinataire validé (l'email du client réel, plus jamais d'email personnel codé en dur). |
 | Profilage | Non. |
 | AIPD requise | Non (T01 couvre le profilage). |
@@ -115,7 +115,7 @@ revue_prevue: 2027-05-04
 | T01 | Qualification CV par IA | Intérêt légitime | Identité + parcours + score | 2 ans après dernier contact | **OUI** |
 | T02 | CRM clients | Contrat | Contacts pro + entreprise | Contrat + 5 ans | Non |
 | T03 | Auth utilisateurs | Intérêt légitime | Email + hash mdp | Pendant collaboration | Non |
-| T04 | Notifications email | Contrat | Email client + résumé candidat | Politique Resend + champ `email_sent_at` | Non |
+| T04 | Notifications email | Contrat | Email client + résumé candidat | Politique Brevo + champ `email_sent_at` | Non |
 | T05 | Journal RGPD | Obligation légale | Hash + acteur + action | 12 mois | Non |
 
 ## Procédures associées

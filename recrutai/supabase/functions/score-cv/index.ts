@@ -14,7 +14,6 @@
 //   Variable env : MISTRAL_API_KEY (ANTHROPIC_API_KEY est déprécié).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Resend } from 'https://esm.sh/resend@3.2.0'
 import mammoth from 'https://esm.sh/mammoth@1.6.0'
 
 const corsHeaders = {
@@ -380,35 +379,44 @@ Deno.serve(async (req) => {
     }).eq('id', applicationId)
     if (updateError) throw new Error('Erreur mise à jour candidature : ' + updateError.message)
 
-    // 5. Notification email au client si qualifié
-    //    RGPD : destinataire = email de notification du client (et non un email
-    //           personnel codé en dur). Plus de fuite vers une boîte tierce.
+    // 5. Notification email au client si qualifié — via Brevo (FR/UE).
+    //    RGPD : destinataire = email de notification du client (jamais un
+    //           email personnel codé en dur).
     const clientNotifEmail = (job.clients as { notification_email?: string | null })?.notification_email
     if (qualified && applicationId && clientNotifEmail) {
       try {
-        const RESEND_KEY = Deno.env.get('RESEND_API_KEY')
-        if (RESEND_KEY) {
+        const brevoKey = Deno.env.get('BREVO_API_KEY')
+        if (brevoKey) {
+          const senderName = Deno.env.get('BREVO_SENDER_NAME') ?? 'RecrutAI'
+          const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'noreply@recrutai.fr'
           const pp = positive_points ?? []
           const np = negative_points ?? []
           const ppList = pp.map((p: string) => `<li style="margin:4px 0">✅ ${escapeHtml(p)}</li>`).join('')
           const npList = np.map((p: string) => `<li style="margin:4px 0">⚠️ ${escapeHtml(p)}</li>`).join('')
           const clientName = (job.clients as { name: string })?.name ?? ''
-          const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px"><div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);padding:20px 24px;border-radius:8px 8px 0 0"><h1 style="color:white;margin:0;font-size:20px">RecrutAI — Analyse du candidat</h1><p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:14px">${escapeHtml(job.title)} · ${escapeHtml(clientName)}</p></div><div style="background:#fff;border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px"><table style="width:100%;border-collapse:collapse;margin-bottom:20px"><tr><td style="padding:8px 0;color:#374151;font-size:14px;width:160px">Candidat</td><td style="padding:8px 0;font-size:14px;font-weight:600">${escapeHtml(candidate_name ?? 'Non renseigné')}</td></tr><tr><td style="padding:8px 0;color:#374151;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px">${escapeHtml(candidate_email ?? 'Non renseigné')}</td></tr><tr><td style="padding:8px 0;color:#374151;font-size:14px">Score</td><td style="padding:8px 0;font-size:14px"><strong>${score}/100</strong> (seuil : ${job.score_threshold})</td></tr><tr><td style="padding:8px 0;color:#374151;font-size:14px">Statut</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#15803d">Qualifié</td></tr></table><hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/><p style="color:#1f2937;font-size:14px;margin:0 0 8px"><strong>Synthèse :</strong></p><p style="color:#1f2937;font-size:14px;line-height:1.6;margin:0 0 16px">${escapeHtml(justification ?? '—')}</p>${ppList ? `<p style="color:#1f2937;font-size:14px;margin:0 0 4px"><strong>Points positifs :</strong></p><ul style="margin:0 0 16px;padding-left:20px;font-size:14px;color:#1f2937">${ppList}</ul>` : ''}${npList ? `<p style="color:#1f2937;font-size:14px;margin:0 0 4px"><strong>Points à améliorer :</strong></p><ul style="margin:0;padding-left:20px;font-size:14px;color:#1f2937">${npList}</ul>` : ''}</div><div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:14px 16px;margin-top:16px;font-size:12px;color:#334155;line-height:1.5"><strong>Décision automatisée — RGPD art. 22</strong><br/>Ce score est issu d'une analyse IA (Mistral AI, France). Avant tout refus définitif, veillez à procéder à une revue humaine. Le candidat peut à tout moment demander un examen humain via <a href="https://recrutai2-app.vercel.app/contestation" style="color:#7c3aed">recrutai2-app.vercel.app/contestation</a>.</div><p style="text-align:center;color:#6b7280;font-size:12px;margin-top:16px">Envoyé par RecrutAI · <a href="https://recrutai2-app.vercel.app/privacy" style="color:#6b7280">Politique de confidentialité</a></p></div>`
-          const resend = new Resend(RESEND_KEY)
-          const { error: emailErr } = await resend.emails.send({
-            from: 'RecrutAI <onboarding@resend.dev>',
-            to: clientNotifEmail,
-            subject: `Analyse IA — ${candidate_name ?? 'Candidat'} — ${job.title}`,
-            html,
+          const htmlContent = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px"><div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);padding:20px 24px;border-radius:8px 8px 0 0"><h1 style="color:white;margin:0;font-size:20px">RecrutAI — Analyse du candidat</h1><p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:14px">${escapeHtml(job.title)} · ${escapeHtml(clientName)}</p></div><div style="background:#fff;border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px"><table style="width:100%;border-collapse:collapse;margin-bottom:20px"><tr><td style="padding:8px 0;color:#374151;font-size:14px;width:160px">Candidat</td><td style="padding:8px 0;font-size:14px;font-weight:600">${escapeHtml(candidate_name ?? 'Non renseigné')}</td></tr><tr><td style="padding:8px 0;color:#374151;font-size:14px">Email</td><td style="padding:8px 0;font-size:14px">${escapeHtml(candidate_email ?? 'Non renseigné')}</td></tr><tr><td style="padding:8px 0;color:#374151;font-size:14px">Score</td><td style="padding:8px 0;font-size:14px"><strong>${score}/100</strong> (seuil : ${job.score_threshold})</td></tr><tr><td style="padding:8px 0;color:#374151;font-size:14px">Statut</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#15803d">Qualifié</td></tr></table><hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/><p style="color:#1f2937;font-size:14px;margin:0 0 8px"><strong>Synthèse :</strong></p><p style="color:#1f2937;font-size:14px;line-height:1.6;margin:0 0 16px">${escapeHtml(justification ?? '—')}</p>${ppList ? `<p style="color:#1f2937;font-size:14px;margin:0 0 4px"><strong>Points positifs :</strong></p><ul style="margin:0 0 16px;padding-left:20px;font-size:14px;color:#1f2937">${ppList}</ul>` : ''}${npList ? `<p style="color:#1f2937;font-size:14px;margin:0 0 4px"><strong>Points à améliorer :</strong></p><ul style="margin:0;padding-left:20px;font-size:14px;color:#1f2937">${npList}</ul>` : ''}</div><div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:14px 16px;margin-top:16px;font-size:12px;color:#334155;line-height:1.5"><strong>Décision automatisée — RGPD art. 22</strong><br/>Ce score est issu d'une analyse IA (Mistral AI, France). Avant tout refus définitif, veillez à procéder à une revue humaine. Le candidat peut à tout moment demander un examen humain via <a href="https://recrutai2-app.vercel.app/contestation" style="color:#7c3aed">recrutai2-app.vercel.app/contestation</a>.</div><p style="text-align:center;color:#6b7280;font-size:12px;margin-top:16px">Envoyé par RecrutAI · <a href="https://recrutai2-app.vercel.app/privacy" style="color:#6b7280">Politique de confidentialité</a></p></div>`
+          const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+              'api-key': brevoKey,
+              'accept': 'application/json',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              sender: { name: senderName, email: senderEmail },
+              to: [{ email: clientNotifEmail }],
+              subject: `Analyse IA — ${candidate_name ?? 'Candidat'} — ${job.title}`,
+              htmlContent,
+            }),
           })
-          if (!emailErr) {
+          if (r.ok) {
             await supabase.from('applications').update({ email_sent_at: new Date().toISOString() }).eq('id', applicationId)
           } else {
-            // RGPD : on logge le code, pas le contenu
-            console.error('Resend error code:', (emailErr as { name?: string })?.name ?? 'unknown')
+            // RGPD : on logge le code HTTP, pas le contenu
+            console.error(`Brevo HTTP ${r.status}`)
           }
         } else {
-          console.error('RESEND_API_KEY non configurée')
+          console.error('BREVO_API_KEY non configurée')
         }
       } catch (emailEx) {
         console.error('Email send exception:', emailEx instanceof Error ? emailEx.name : 'unknown')

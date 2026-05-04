@@ -14,6 +14,7 @@
 | # | Date | Titre | Statut |
 |---|---|---|---|
 | [001](./001-anthropic-vers-mistral.md) | 2026-05-04 | Migration Anthropic Claude → Mistral AI (UE-hosted) | accepted |
+| [002](./002-resend-vers-brevo.md)      | 2026-05-04 | Migration Resend → Brevo (sous-traitant email FR/UE) | accepted |
 
 ## Quand écrire un ADR ?
 

@@ -32,7 +32,7 @@ version: 1.0
 | **Supabase** `vault.decrypted_secrets` | présence des secrets de purge | SQL |
 | **GitHub Actions** | pipeline conformité (lint, typecheck, tests, a11y, Lighthouse, secrets-scan) | <https://github.com/davidjahan720/Recrut-AI-3/actions> |
 | **Mistral Console** | quota, facturation, status | <https://console.mistral.ai>, <https://status.mistral.ai> |
-| **Resend** | délivrabilité email DPO + clients | Dashboard Resend |
+| **Brevo** | délivrabilité email DPO + clients | Dashboard Brevo |
 
 ## Alertes (à configurer)
 

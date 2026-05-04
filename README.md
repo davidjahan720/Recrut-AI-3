@@ -20,7 +20,7 @@
 | Base de données | Supabase Postgres (région UE — Ireland) |
 | Stockage | Supabase Storage privé (bucket `cvs`) |
 | IA | **Mistral AI** (France, UE) — `mistral-large-latest` + `mistral-ocr-latest` |
-| Email | Resend (UE/US sous DPF) |
+| Email | Brevo (France, UE) |
 | Auth | Supabase Auth (admin) + sessions rôle (recruteurs) |
 | CI/CD | GitHub Actions, Vercel CLI, Supabase CLI |
 
@@ -64,7 +64,7 @@ Tout est dans [`docs/`](./docs/) (cadre Diátaxis étendu) :
 - **Frontend + Vercel Functions** : Vercel, region `iad1` mais alias `cdg1` pour les utilisateurs UE
 - **Base + Storage** : Supabase, region `eu-west-1` (Ireland)
 - **IA** : Mistral AI, France
-- **Email** : Resend, UE/US sous DPF
+- **Email** : Brevo, France/UE
 
 ## Production
 

@@ -91,7 +91,7 @@ const PRIVACY_SECTIONS: Section[] = [
           <li><strong>Supabase</strong> — base de données et stockage des CV, hébergement région UE (Ireland — eu-west-1).</li>
           <li><strong>Mistral AI</strong> — analyse et OCR des CV, société française, hébergement Union européenne.</li>
           <li><strong>Vercel</strong> — hébergement de l'application web et des fonctions serverless, région UE.</li>
-          <li><strong>Resend</strong> — envoi des notifications email aux clients, traitements UE/US sous DPF.</li>
+          <li><strong>Brevo</strong> (ex-Sendinblue) — envoi des notifications email aux clients, société française, hébergement UE.</li>
         </ul>
         <p>Aucun transfert vers un pays hors UE n'est effectué sans garanties contractuelles appropriées (Data Privacy Framework ou clauses contractuelles types signées).</p>
       </>

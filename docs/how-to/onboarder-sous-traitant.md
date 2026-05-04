@@ -16,7 +16,7 @@ prerequisites:
 
 ### 1. Vérifier que c'est bien un sous-traitant
 
-- **Sous-traitant** = traite des données personnelles **pour notre compte**, sur instruction (ex. Mistral, Supabase, Resend, Vercel).
+- **Sous-traitant** = traite des données personnelles **pour notre compte**, sur instruction (ex. Mistral, Supabase, Brevo, Vercel).
 - **Co-responsable** = définit conjointement les finalités (rare).
 - **Responsable distinct** = traite pour son propre compte (ex. fournisseur d'analytics qui collecte aussi pour lui — à éviter).
 
@@ -113,7 +113,7 @@ Créer (ou mettre à jour) `docs/contrats/<sous-traitant>/README.md` avec :
 | Mistral AI | Activé 2026-05-04 | T01 (analyse CV) | À signer ([Mistral DPA](https://mistral.ai/legal/data-processing-addendum)) |
 | Supabase | Activé | T01-T05 (DB + Storage + Auth) | DPA inclus dans les CGU Supabase |
 | Vercel | Activé | T01-T05 (hébergement) | DPA inclus dans les CGU Vercel |
-| Resend | Activé | T04 (emails) | DPA téléchargeable |
+| Brevo | Activé 2026-05-04 | T04 (emails) | DPA téléchargeable, hébergement UE (France) |
 | Anthropic | **Désactivé** 2026-05-04 | (ancien T01) | Migration → Mistral, supprimer la clé API |
 
 ## Décommissionnement d'un sous-traitant

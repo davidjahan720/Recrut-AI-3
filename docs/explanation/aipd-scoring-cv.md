@@ -177,7 +177,7 @@ Intérêt légitime (art. 6.1.f) : exécution de la mission contractuelle de rec
 **Mesures** :
 - ✅ Politique de confidentialité publique (`/privacy`) — section dédiée « Décision automatisée — droit à un examen humain (art. 22) » avec lien direct vers le formulaire.
 - ✅ Page publique `/contestation` permettant au candidat (ou son représentant) de soumettre une demande sans authentification.
-- ✅ Endpoint `/api/rgpd` action `request-review` qui notifie le DPO via Resend (best effort) et journalise sans PII.
+- ✅ Endpoint `/api/rgpd` action `request-review` qui notifie le DPO via Brevo (best effort) et journalise sans PII.
 - ✅ Bandeau dédié dans l'email envoyé au client final lors d'une qualification, rappelant que le candidat peut demander un examen humain.
 - ✅ Procédure documentée : `docs/how-to/traiter-demande-examen-humain.md`.
 - ✅ Lien dans le footer Landing.

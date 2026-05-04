@@ -16,7 +16,7 @@ prerequisites:
 
 Trois canaux possibles :
 
-1. **Formulaire en ligne** — `/contestation` envoie un email à l'adresse `DPO_EMAIL` via Resend. Sujet : `[RGPD art. 22.3] Demande d'examen humain — <candidat>`. C'est le canal nominal.
+1. **Formulaire en ligne** — `/contestation` envoie un email à l'adresse `DPO_EMAIL` via Brevo. Sujet : `[RGPD art. 22.3] Demande d'examen humain — <candidat>`. C'est le canal nominal.
 2. **Email direct** à `contact@recrutai.fr`.
 3. **Courrier postal** (rare).
 

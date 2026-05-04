@@ -6,11 +6,22 @@ respecte [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+### Modifié
+- **Sous-traitant email** Brevo (US/UE sous DPF) → **Brevo** (France, UE) — ADR 002.
+- `recrutai/api/rgpd.ts` action `request-review` : appel Brevo (POST `/v3/smtp/email`).
+- `supabase/functions/score-cv/index.ts` : email client de qualification via Brevo (fetch natif, plus de SDK).
+- Variable d'env : `RESEND_API_KEY` → `BREVO_API_KEY` (+ `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`).
+
+### Supprimé
+- Endpoint Vercel `/api/send-analysis` et son jumeau Edge Function `send-analysis` (obsolètes, jamais appelés depuis le frontend, libère 1 slot Vercel et corrige incidemment un bug RGPD `jahandavid@gmail.com` codé en dur dans cette fonction non utilisée).
+- Dépendance `resend` (esm.sh import) côté Edge Function.
+- `INSTALL.md` racine (doublon obsolète, le vrai est dans `recrutai/`).
+
 ### À venir
-- Configuration `RESEND_API_KEY` côté Vercel pour les emails DPO
-- ESLint cleanup des warnings legacy (~58)
-- Audit lecteur d'écran (NVDA/VoiceOver) sur le golden path
-- Branch protection GitHub + Vercel Git Integration
+- Configuration `BREVO_API_KEY` côté Vercel + Supabase pour rendre les emails opérationnels.
+- ESLint cleanup des warnings legacy (~58).
+- Audit lecteur d'écran (NVDA/VoiceOver) sur le golden path.
+- Branch protection GitHub + Vercel Git Integration.
 
 ---
 
@@ -22,7 +33,7 @@ respecte [Semantic Versioning](https://semver.org/lang/fr/).
 
 #### RGPD
 - Endpoints **art. 15-17** unifiés sous `/api/rgpd` : export (JSON portable + URLs CV signées 1 h), rectification, effacement avec confirmation. Auth par header `X-Actor`, journal anonymisé (hash SHA-256).
-- Endpoint **art. 22.3** (droit à un examen humain) : page publique `/contestation`, notification DPO via Resend (best effort), bandeau dédié dans l'email envoyé au client final lors d'une qualification.
+- Endpoint **art. 22.3** (droit à un examen humain) : page publique `/contestation`, notification DPO via Brevo (best effort), bandeau dédié dans l'email envoyé au client final lors d'une qualification.
 - **Purge automatique RGPD art. 5.1.e** : Edge Function `purge-expired` (Deno), déclenchement quotidien 03 h 00 UTC via `pg_cron` + `pg_net`, secret stocké dans Supabase Vault, exclusion des `seed/`, batches de 500.
 - **Registre des traitements** (art. 30) : 5 traitements documentés (T01 IA, T02 CRM, T03 auth, T04 emails, T05 journal) — `docs/reference/registre-traitements.md`.
 - **AIPD T01 scoring CV** (art. 35) : 6 risques R1–R6 identifiés, mesures couvertes — `docs/explanation/aipd-scoring-cv.md`.
@@ -56,7 +67,7 @@ respecte [Semantic Versioning](https://semver.org/lang/fr/).
 - `Legal.tsx` mutualise `/legal`, `/privacy`, `/accessibilite` (3 modes, ~7 sections chacun).
 - API de suppression consolidée : `/api/delete-{application,client,job}` → `/api/delete` avec champ `entity` (limite Vercel Hobby 12 fonctions).
 - `parseClaudeResponse.ts` renommé `parseAiResponse.ts` (agnostique du fournisseur).
-- Email Resend client : destinataire désormais `clients.notification_email` (réparation d'un bug RGPD : avant codé en dur sur un email personnel).
+- Email Brevo client : destinataire désormais `clients.notification_email` (réparation d'un bug RGPD : avant codé en dur sur un email personnel).
 - `lang="fr"` sur `<html>`, meta description, title explicite.
 
 ### Sécurité
