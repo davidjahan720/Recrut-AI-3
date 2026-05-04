@@ -28,6 +28,10 @@ Mettre en place un workflow GitHub Actions unique `.github/workflows/conformite.
 | `a11y` | Playwright + `@axe-core/playwright` | 0 violation `serious` ou `critical` sur les routes publiques |
 | `secrets-scan` | gitleaks | 0 secret détecté |
 
+### Job sur push uniquement (pas PR)
+
+- `lighthouse` — Web Vitals + scores Lighthouse bloquants sur push vers `master` ou `refonte-app`. Désactivé sur PR car nécessite une URL stable déployée (le job tape la prod Vercel).
+
 ### Job informatif
 
 - `deps-audit` (`npm audit`) — détecte les CVE high/critical mais ne bloque pas le merge tant qu'on n'a pas de politique de patching opérationnelle.
@@ -65,9 +69,30 @@ Ces règles relèvent de la **qualité TypeScript / React** et n'impactent ni l'
 
 Les règles **`jsx-a11y/*`** restent en `error`. Elles couvrent les violations RGAA détectables en analyse statique (label associé, alt sur images, role correct, click handler avec keyboard equivalent, etc.).
 
+## Lighthouse CI — seuils retenus (ajout 2026-05-04)
+
+Cible : preset `desktop`, 2 runs par URL pour stabiliser, sur les 5 routes
+publiques (`/`, `/login`, `/legal`, `/privacy`, `/accessibilite`).
+
+| Audit | Seuil | Justification |
+|---|---|---|
+| Performance | ≥ 0.85 | Compromis entre exigence et stabilité du runner GitHub |
+| Accessibility | ≥ 0.95 | Cohérent avec l'effort RGAA AA déjà investi |
+| Best practices | ≥ 0.90 | Standard sécurité / qualité front |
+| SEO | ≥ 0.90 | App SaaS — Landing doit rester indexable |
+| LCP | ≤ 2 500 ms | Web Core Vital « bon » |
+| CLS | ≤ 0.1 | Web Core Vital « bon » |
+| TBT | ≤ 300 ms | Proxy d'INP côté Lighthouse |
+
+Audits désactivés :
+- `csp-xss` : la CSP est gérée côté Vercel headers, pas au niveau de la page.
+- `is-on-https` : Vercel impose HTTPS, faux positif.
+- `redirects-http` : non applicable (Vercel redirige automatiquement).
+
 ## Alternatives écartées
 
-- **Lighthouse CI** : prévu en phase 2. Bonne couverture perfs + a11y mais complexe à stabiliser sur des PR (URL de preview Vercel disponible avec délai). Quand on aura Git Integration sur Vercel, on l'ajoutera.
+- **Lighthouse mobile** : preset desktop choisi pour la stabilité du runner.
+  Mobile sera ajouté quand on aura les budgets mobiles définis avec David.
 - **EcoIndex CLI** : intéressant mais demande d'héberger un service de mesure. Pour l'instant, le budget de bundle bash en CI suffit.
 - **Semgrep / CodeQL** : ajout possible plus tard, pour le moment `npm audit` + `gitleaks` couvrent l'essentiel.
 

@@ -116,6 +116,32 @@ jobs:
           path: recrutai/playwright-report
           retention-days: 7
 
+  lighthouse:
+    name: Lighthouse CI (Web Vitals)
+    runs-on: ubuntu-latest
+    # Tape la prod Vercel (baseURL configuré dans lighthouserc.json).
+    # Ne tourne que sur push sur les branches protégées et workflow_dispatch :
+    # un PR n'a pas de déploiement de preview disponible avec une URL stable.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: recrutai/package-lock.json
+      - run: npm ci
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: recrutai/.lighthouseci
+          retention-days: 7
+
   secrets-scan:
     name: Scan secrets (gitleaks)
     runs-on: ubuntu-latest
