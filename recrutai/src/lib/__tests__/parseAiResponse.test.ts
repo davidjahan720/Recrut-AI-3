@@ -3,9 +3,9 @@ import {
   parseRawJson,
   validateScoreResult,
   isQualified,
-  ClaudeParseError,
+  AiParseError,
   type ScoreResult,
-} from '../parseClaudeResponse'
+} from '../parseAiResponse'
 
 describe('parseRawJson', () => {
   it('parse un JSON propre', () => {
@@ -34,12 +34,12 @@ describe('parseRawJson', () => {
     expect(result.score).toBe(3)
   })
 
-  it('lève ClaudeParseError si aucun JSON trouvable', () => {
-    expect(() => parseRawJson('Désolé, je ne peux pas analyser ce document.')).toThrow(ClaudeParseError)
+  it('lève AiParseError si aucun JSON trouvable', () => {
+    expect(() => parseRawJson('Désolé, je ne peux pas analyser ce document.')).toThrow(AiParseError)
   })
 
-  it('lève ClaudeParseError si JSON malformé et pas de fallback valide', () => {
-    expect(() => parseRawJson('{score: 85, justification: manque les guillemets}')).toThrow(ClaudeParseError)
+  it('lève AiParseError si JSON malformé et pas de fallback valide', () => {
+    expect(() => parseRawJson('{score: 85, justification: manque les guillemets}')).toThrow(AiParseError)
   })
 
   it('parse les positive_points et negative_points', () => {
@@ -73,23 +73,23 @@ describe('validateScoreResult', () => {
   })
 
   it('lève une erreur si score négatif', () => {
-    expect(() => validateScoreResult({ ...base, score: -1 })).toThrow(ClaudeParseError)
+    expect(() => validateScoreResult({ ...base, score: -1 })).toThrow(AiParseError)
   })
 
   it('lève une erreur si score > 100', () => {
-    expect(() => validateScoreResult({ ...base, score: 101 })).toThrow(ClaudeParseError)
+    expect(() => validateScoreResult({ ...base, score: 101 })).toThrow(AiParseError)
   })
 
-  it('lève une erreur si score n\'est pas un nombre', () => {
-    expect(() => validateScoreResult({ ...base, score: 'haute' as unknown as number })).toThrow(ClaudeParseError)
+  it("lève une erreur si score n'est pas un nombre", () => {
+    expect(() => validateScoreResult({ ...base, score: 'haute' as unknown as number })).toThrow(AiParseError)
   })
 
   it('lève une erreur si justification vide', () => {
-    expect(() => validateScoreResult({ ...base, justification: '   ' })).toThrow(ClaudeParseError)
+    expect(() => validateScoreResult({ ...base, justification: '   ' })).toThrow(AiParseError)
   })
 
   it('lève une erreur si justification absente', () => {
-    expect(() => validateScoreResult({ ...base, justification: '' })).toThrow(ClaudeParseError)
+    expect(() => validateScoreResult({ ...base, justification: '' })).toThrow(AiParseError)
   })
 })
 

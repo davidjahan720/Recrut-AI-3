@@ -2,12 +2,12 @@
 
 ## Prérequis
 - Node.js 18+
-- Compte Supabase (projet créé)
-- Compte Resend
-- Clé API Anthropic
+- Compte Supabase (projet créé en région UE — Frankfurt ou Paris)
+- Compte Resend (pour les notifications email)
+- Clé API Mistral AI (https://console.mistral.ai)
 - Compte GitHub + Vercel
 
-## 1. Variables d'environnement
+## 1. Variables d'environnement (frontend)
 
 Créer `.env.local` à la racine du projet :
 
@@ -36,31 +36,45 @@ Puis exécuter les policies Storage depuis `supabase/schema.sql` (section Storag
 Dashboard Supabase → Authentication → Users → Add user :
 - Email + mot de passe de l'équipe RecrutAI
 
-## 5. Déploiement de l'Edge Function
+## 5. Déploiement des Edge Functions Supabase
 
 ```bash
 npx supabase login
 npx supabase link --project-ref <ref>
 npx supabase functions deploy score-cv
+npx supabase functions deploy parse-job
 ```
 
-Puis dans Dashboard Supabase → Edge Functions → score-cv → Secrets :
+Puis dans Dashboard Supabase → Edge Functions → secrets de chaque fonction :
+
 ```
-ANTHROPIC_API_KEY=sk-ant-...
-RESEND_API_KEY=re_...
-SYSTEM_PROMPT=Tu es un expert en recrutement. Analyse le CV fourni par rapport à la description du poste. Retourne UNIQUEMENT un objet JSON valide avec : {"score": <0-100>, "justification": "<2-3 phrases>", "candidate_name": "<nom ou null>", "candidate_email": "<email ou null>"}
+MISTRAL_API_KEY=...        # clé API Mistral (https://console.mistral.ai)
+RESEND_API_KEY=re_...      # clé API Resend (notifications email)
 ```
 
-## 6. Lancer en local
+> **Note de migration 2026-05** : `ANTHROPIC_API_KEY` n'est plus utilisée. Elle peut être supprimée des secrets Supabase et Vercel.
+
+## 6. Variables d'environnement Vercel (API serverless)
+
+Vercel → Settings → Environment Variables :
+
+```
+VITE_SUPABASE_URL          # URL projet Supabase
+VITE_SUPABASE_ANON_KEY     # clé publique anon
+SUPABASE_SERVICE_ROLE_KEY  # clé service-role (jamais côté client)
+MISTRAL_API_KEY            # clé Mistral pour /api/parse-job et /api/parse-client
+```
+
+## 7. Lancer en local
 
 ```bash
 npm install
 npm run dev
 ```
 
-## 7. Déploiement Vercel
+## 8. Déploiement Vercel
 
 1. Push sur GitHub
 2. Vercel → Import Project → sélectionner le repo
-3. Settings → Environment Variables → ajouter `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`
+3. Settings → Environment Variables (cf. étape 6)
 4. Redéployer
