@@ -269,6 +269,7 @@ export default function Landing() {
           <nav aria-label="Liens secondaires" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <button type="button" onClick={() => navigate('/legal')} className="text-slate-300 hover:text-white transition-colors">Mentions légales</button>
             <button type="button" onClick={() => navigate('/privacy')} className="text-slate-300 hover:text-white transition-colors">Politique de confidentialité</button>
+            <button type="button" onClick={() => navigate('/accessibilite')} className="text-slate-300 hover:text-white transition-colors">Accessibilité</button>
             <button type="button" onClick={() => navigate('/login')} className="text-violet-300 hover:text-violet-200 font-medium transition-colors">
               Accéder à l'app <span aria-hidden="true">→</span>
             </button>

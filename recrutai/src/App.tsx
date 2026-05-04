@@ -46,6 +46,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/legal" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
         <Route path="/privacy" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
+        <Route path="/accessibilite" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
 
         {/* Protected app (pathless layout wrapper) */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

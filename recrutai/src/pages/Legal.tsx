@@ -130,11 +130,117 @@ const PRIVACY_SECTIONS: Section[] = [
   },
 ]
 
+const A11Y_SECTIONS: Section[] = [
+  {
+    id: 'engagement',
+    title: 'Engagement',
+    body: (
+      <>
+        <p>RecrutAI s'engage à rendre son service accessible conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005, modifiée par la loi n° 2016-1321 du 7 octobre 2016 pour une République numérique.</p>
+        <p>Cette déclaration s'applique à <a href="https://recrutai2-app.vercel.app" className="underline underline-offset-2">recrutai2-app.vercel.app</a>.</p>
+      </>
+    ),
+  },
+  {
+    id: 'etat-conformite',
+    title: 'État de conformité',
+    body: (
+      <>
+        <p><strong>RecrutAI 2 est en conformité partielle avec le RGAA 4.1 niveau AA</strong>, en raison des non-conformités énumérées ci-dessous.</p>
+        <p>À la date de la dernière vérification, aucune violation de niveau « serious » ou « critical » n'est détectée par les outils automatisés sur les pages publiques.</p>
+      </>
+    ),
+  },
+  {
+    id: 'resultats-tests',
+    title: 'Résultats des tests',
+    body: (
+      <>
+        <p>L'audit a été conduit en interne et combine :</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>analyse statique en intégration continue avec ESLint et le plugin <code>jsx-a11y</code> ;</li>
+          <li>tests automatisés Playwright + axe-core sur les pages publiques (<code>/</code>, <code>/login</code>, <code>/legal</code>, <code>/privacy</code>) — couvre environ 30 % des critères RGAA ;</li>
+          <li>audit manuel ponctuel via l'extension axe DevTools.</li>
+        </ul>
+        <p>Les pages internes nécessitant authentification (espaces recruteur, manager, candidatures, RGPD) feront l'objet d'un audit complémentaire au prochain trimestre.</p>
+      </>
+    ),
+  },
+  {
+    id: 'non-conformites',
+    title: 'Contenus non accessibles',
+    body: (
+      <>
+        <p>Les non-conformités identifiées :</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Le graphique « Performance — CA mensuel » sur le tableau de bord Manager fournit un tableau de données équivalent en lecture d'écran, mais n'a pas été testé exhaustivement avec NVDA / VoiceOver.</li>
+          <li>Les composants tiers shadcn/ui (Dialog, Select) s'appuient sur Radix UI conforme WAI-ARIA, mais n'ont pas été audités pièce par pièce.</li>
+          <li>Quelques contrastes secondaires (badges « En pause », « Clôturée ») sont légèrement en-dessous de 4.5:1 sur fond clair.</li>
+          <li>L'accessibilité des pages internes authentifiées n'est pas encore couverte par les tests automatisés en CI.</li>
+        </ul>
+        <p>Aucune dérogation pour charge disproportionnée n'est appliquée à ce jour.</p>
+      </>
+    ),
+  },
+  {
+    id: 'contenus-tiers',
+    title: 'Contenus non soumis à l\'obligation',
+    body: (
+      <>
+        <p>Les CVs téléversés par les recruteurs (PDFs / Word / images) sont des contenus tiers ; nous ne maîtrisons pas leur accessibilité native. Une description textuelle est cependant générée par l'IA pour permettre la lecture par les technologies d'assistance.</p>
+      </>
+    ),
+  },
+  {
+    id: 'etablissement',
+    title: 'Établissement de cette déclaration',
+    body: (
+      <>
+        <p>Cette déclaration a été établie le 4 mai 2026.</p>
+        <p>Technologies utilisées : HTML5 sémantique, WAI-ARIA 1.2, CSS3 (Tailwind), TypeScript / React 19.</p>
+        <p>Outils d'évaluation : axe DevTools, <code>@axe-core/playwright</code>, ESLint plugin jsx-a11y.</p>
+      </>
+    ),
+  },
+  {
+    id: 'retour-information',
+    title: 'Retour d\'information et contact',
+    body: (
+      <>
+        <p>Si vous n'arrivez pas à accéder à un contenu ou à un service, vous pouvez contacter le responsable pour être orienté vers une alternative accessible : <a href="mailto:contact@recrutai.fr" className="underline underline-offset-2">contact@recrutai.fr</a>. Réponse sous 30 jours ouvrés.</p>
+      </>
+    ),
+  },
+  {
+    id: 'recours',
+    title: 'Voies de recours',
+    body: (
+      <>
+        <p>En l'absence de réponse satisfaisante, vous pouvez :</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Écrire au <a href="https://www.defenseurdesdroits.fr/nous-contacter" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Défenseur des droits</a> ;</li>
+          <li>Contacter le délégué du Défenseur des droits dans votre région : <a href="https://www.defenseurdesdroits.fr/saisir/delegues" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">defenseurdesdroits.fr/saisir/delegues</a> ;</li>
+          <li>Envoyer un courrier (gratuit, sans timbre) : Défenseur des droits — Libre réponse 71120 — 75342 Paris CEDEX 07.</li>
+        </ul>
+      </>
+    ),
+  },
+]
+
+type PageMode = 'legal' | 'privacy' | 'accessibility'
+
 export default function Legal() {
   const navigate = useNavigate()
-  const isPrivacy = useLocation().pathname.startsWith('/privacy')
-  const sections = isPrivacy ? PRIVACY_SECTIONS : LEGAL_SECTIONS
-  const title = isPrivacy ? 'Politique de confidentialité' : 'Mentions légales'
+  const path = useLocation().pathname
+  const mode: PageMode = path.startsWith('/accessibilite') ? 'accessibility'
+                       : path.startsWith('/privacy') ? 'privacy'
+                       : 'legal'
+  const sections = mode === 'accessibility' ? A11Y_SECTIONS
+                 : mode === 'privacy' ? PRIVACY_SECTIONS
+                 : LEGAL_SECTIONS
+  const title = mode === 'accessibility' ? 'Déclaration d\'accessibilité'
+              : mode === 'privacy' ? 'Politique de confidentialité'
+              : 'Mentions légales'
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -150,14 +256,16 @@ export default function Legal() {
             <span aria-hidden="true">←</span>
             <span className="font-bold">RecrutAI</span>
           </button>
-          <nav aria-label="Pages d'information">
-            <button
-              type="button"
-              onClick={() => navigate(isPrivacy ? '/legal' : '/privacy')}
-              className="text-sm text-slate-700 hover:text-slate-900 underline underline-offset-2"
-            >
-              {isPrivacy ? 'Mentions légales' : 'Politique de confidentialité'}
-            </button>
+          <nav aria-label="Pages d'information" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            {mode !== 'legal' && (
+              <button type="button" onClick={() => navigate('/legal')} className="text-slate-700 hover:text-slate-900 underline underline-offset-2">Mentions légales</button>
+            )}
+            {mode !== 'privacy' && (
+              <button type="button" onClick={() => navigate('/privacy')} className="text-slate-700 hover:text-slate-900 underline underline-offset-2">Politique de confidentialité</button>
+            )}
+            {mode !== 'accessibility' && (
+              <button type="button" onClick={() => navigate('/accessibilite')} className="text-slate-700 hover:text-slate-900 underline underline-offset-2">Accessibilité</button>
+            )}
           </nav>
         </div>
       </header>
