@@ -15,9 +15,10 @@ Chaque runbook donne :
 |---|---|---|
 | Mistral API | Erreurs `Mistral chat HTTP 401` ou `429` en masse | [mistral-api-en-erreur.md](./mistral-api-en-erreur.md) |
 | Edge Function `purge-expired` | Job pg_cron quotidien échoue ou la table grossit | [purge-bloquee.md](./purge-bloquee.md) |
-| `/api/rgpd` | 500 sur les actions export/erase/rectify | [api-rgpd-500.md](./api-rgpd-500.md) |
-| Vercel | Déploiement échoué ou rollback | [vercel-incident.md](./vercel-incident.md) |
-| Supabase | Indisponibilité Auth ou Storage | [supabase-down.md](./supabase-down.md) |
+| Brevo (notifications email) | DPO ou client ne reçoit pas l'email, `email_sent: false` dans les logs | [brevo-en-erreur.md](./brevo-en-erreur.md) |
+| `/api/rgpd` | 500 sur les actions export/erase/rectify | [api-rgpd-500.md](./api-rgpd-500.md) (à créer) |
+| Vercel | Déploiement échoué ou rollback | [vercel-incident.md](./vercel-incident.md) (à créer) |
+| Supabase | Indisponibilité Auth ou Storage | [supabase-down.md](./supabase-down.md) (à créer) |
 
 ## Convention
 

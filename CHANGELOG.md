@@ -7,21 +7,38 @@ respecte [Semantic Versioning](https://semver.org/lang/fr/).
 ## [Unreleased]
 
 ### Modifié
-- **Sous-traitant email** Brevo (US/UE sous DPF) → **Brevo** (France, UE) — ADR 002.
+- **Sous-traitant email** Resend (US/UE sous DPF) → **Brevo** (France, UE) — ADR 002.
 - `recrutai/api/rgpd.ts` action `request-review` : appel Brevo (POST `/v3/smtp/email`).
 - `supabase/functions/score-cv/index.ts` : email client de qualification via Brevo (fetch natif, plus de SDK).
 - Variable d'env : `RESEND_API_KEY` → `BREVO_API_KEY` (+ `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`).
+- **Vercel `rootDirectory`** : `.` → `recrutai` (via API REST) — débloque les builds Git Integration.
+- **Vercel Git Integration** activée pour `refonte-app` (auto-deploy Preview à chaque push, post-cleanup).
 
 ### Supprimé
 - Endpoint Vercel `/api/send-analysis` et son jumeau Edge Function `send-analysis` (obsolètes, jamais appelés depuis le frontend, libère 1 slot Vercel et corrige incidemment un bug RGPD `jahandavid@gmail.com` codé en dur dans cette fonction non utilisée).
 - Dépendance `resend` (esm.sh import) côté Edge Function.
 - `INSTALL.md` racine (doublon obsolète, le vrai est dans `recrutai/`).
+- **Copie morte du projet à la racine** (~30 fichiers : `src/`, `tests/`, `public/`, `package.json`, `package-lock.json`, configs Vite/ESLint/TS/Playwright/Tailwind/PostCSS, `index.html`, `components.json`, `vite.config.ts`). Voir post-mortem `docs/post-mortem/2026-05-04-vercel-rootdir-orphan-clone.md`.
 
-### À venir
-- Configuration `BREVO_API_KEY` côté Vercel + Supabase pour rendre les emails opérationnels.
+### Documentation ajoutée
+- `docs/post-mortem/2026-05-04-vercel-rootdir-orphan-clone.md` — analyse complète du bug Vercel rootDirectory.
+- `docs/runbook/brevo-en-erreur.md` — diagnostic + fix pour les erreurs HTTP 4xx/5xx Brevo.
+- `docs/adr/002-resend-vers-brevo.md` — ADR justifiant le choix Brevo.
+
+### Configurations runtime appliquées (côté ops)
+- `MISTRAL_API_KEY` posée Vercel + Supabase (clé courante valide 30 j).
+- `PURGE_TOKEN` posée Supabase + Vault Postgres (`recrutai_purge_token`).
+- `DPO_EMAIL=d.jahan@agoriade.fr` posée Vercel via API REST.
+- `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` posées Vercel (Dashboard) — clé courante invalide HTTP 401, **rotation requise**.
+- Cron Supabase `purge-expired-applications` actif quotidien 03:00 UTC.
+
+### À venir / actions manuelles
+- **Régénérer la clé Brevo** (la courante retourne HTTP 401, voir `docs/runbook/brevo-en-erreur.md`).
+- Valider le sender email côté Brevo (`Senders & IP → Senders → Confirm`).
+- Configurer DKIM + SPF DNS pour le domaine d'envoi.
 - ESLint cleanup des warnings legacy (~58).
 - Audit lecteur d'écran (NVDA/VoiceOver) sur le golden path.
-- Branch protection GitHub + Vercel Git Integration.
+- Branch protection GitHub (Pro / public / skip).
 
 ---
 

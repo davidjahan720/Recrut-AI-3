@@ -18,7 +18,7 @@ Repartir de [`_template.md`](./_template.md) à chaque post-mortem.
 
 | Date | Incident | Lien |
 |---|---|---|
-| _Aucun à ce jour._ | | |
+| 2026-05-04 | Builds Preview Vercel cassés à répétition — copie morte du projet à la racine | [post-mortem](./2026-05-04-vercel-rootdir-orphan-clone.md) |
 
 ## Quand écrire un post-mortem ?
 
