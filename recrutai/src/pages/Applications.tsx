@@ -29,10 +29,13 @@ function formatName(raw: string | null): { display: React.ReactNode; lastName: s
 }
 
 function ScoreBadge({ score, threshold }: { score: number | null; threshold: number }) {
-  if (score === null) return <span className="text-muted-foreground">—</span>
+  if (score === null) return <span className="text-muted-foreground" aria-label="Score non calculé">—</span>
   const ok = score >= threshold
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-700'}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-800'}`}
+      aria-label={`Score ${score} sur 100, ${ok ? 'au-dessus' : 'en-dessous'} du seuil de ${threshold}`}
+    >
       {score}
     </span>
   )
@@ -40,15 +43,15 @@ function ScoreBadge({ score, threshold }: { score: number | null; threshold: num
 
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
-    pending:   { label: 'En analyse', cls: 'bg-amber-100 text-amber-700' },
+    pending:   { label: 'En analyse', cls: 'bg-amber-100 text-amber-800' },
     qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-900' },
-    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' },
-    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200' },
+    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-800' },
   }
   const { label, cls } = map[status]
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {status === 'pending' && <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-amber-500" />}
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cls}`} aria-label={`Statut : ${label}`}>
+      {status === 'pending' && <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full animate-pulse bg-amber-500" />}
       {label}
     </span>
   )
@@ -258,25 +261,34 @@ export default function Applications() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {(['all', 'qualified', 'rejected', 'pending', 'error'] as StatusFilter[]).map(f => (
-          <button key={f} onClick={() => setStatusFilter(f)} className={`${pillBase} ${statusFilter === f ? pillActive : pillInactive}`}>
-            {f === 'all'       ? `Toutes (${counts.all})` :
-             f === 'qualified' ? `Qualifiés (${counts.qualified})` :
-             f === 'rejected'  ? `Rejetés (${counts.rejected})` :
-             f === 'pending'   ? `En analyse (${counts.pending})` :
-             `Erreurs (${counts.error})`}
-          </button>
-        ))}
-        <select
-          className="ml-auto text-sm font-medium border border-border rounded px-3 py-1.5 bg-card text-foreground"
-          value={sort}
-          onChange={e => setSort(e.target.value as SortKey)}
-        >
-          <option value="created_at">Trier par date</option>
-          <option value="score">Trier par score</option>
-          <option value="name">Trier par nom (A→Z)</option>
-          <option value="job">Trier par offre</option>
-        </select>
+        <div role="group" aria-label="Filtrer les candidatures par statut" className="flex flex-wrap gap-2">
+          {(['all', 'qualified', 'rejected', 'pending', 'error'] as StatusFilter[]).map(f => {
+            const label = f === 'all'       ? `Toutes (${counts.all})` :
+                          f === 'qualified' ? `Qualifiés (${counts.qualified})` :
+                          f === 'rejected'  ? `Rejetés (${counts.rejected})` :
+                          f === 'pending'   ? `En analyse (${counts.pending})` :
+                          `Erreurs (${counts.error})`
+            return (
+              <button key={f} type="button" onClick={() => setStatusFilter(f)} aria-pressed={statusFilter === f} className={`${pillBase} ${statusFilter === f ? pillActive : pillInactive}`}>
+                {label}
+              </button>
+            )
+          })}
+        </div>
+        <label className="ml-auto flex items-center gap-2 text-sm">
+          <span className="sr-only">Trier les candidatures</span>
+          <select
+            className="text-sm font-medium border border-border rounded px-3 py-1.5 bg-card text-foreground"
+            value={sort}
+            onChange={e => setSort(e.target.value as SortKey)}
+            aria-label="Trier les candidatures"
+          >
+            <option value="created_at">Trier par date</option>
+            <option value="score">Trier par score</option>
+            <option value="name">Trier par nom (A→Z)</option>
+            <option value="job">Trier par offre</option>
+          </select>
+        </label>
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-x-auto">

@@ -476,7 +476,7 @@ export default function SeedData() {
         {running ? 'Seeding en cours...' : done ? '✅ Terminé' : '▶ Lancer le seed'}
       </button>
       {log.length > 0 && (
-        <div className="mt-6 bg-card border border-border rounded-lg p-4 font-mono text-xs text-foreground space-y-0.5 max-h-96 overflow-auto">
+        <div role="log" aria-live="polite" aria-label="Journal du seed" className="mt-6 bg-card border border-border rounded-lg p-4 font-mono text-xs text-foreground space-y-0.5 max-h-96 overflow-auto">
           {log.map((line, i) => <p key={i}>{line}</p>)}
         </div>
       )}
@@ -496,7 +496,7 @@ export default function SeedData() {
         {dedupRunning ? 'Analyse en cours...' : '🧹 Lancer la déduplication'}
       </button>
       {dedupLog.length > 0 && (
-        <div className="mt-6 bg-card border border-border rounded-lg p-4 font-mono text-xs text-foreground space-y-0.5 max-h-96 overflow-auto">
+        <div role="log" aria-live="polite" aria-label="Journal de déduplication" className="mt-6 bg-card border border-border rounded-lg p-4 font-mono text-xs text-foreground space-y-0.5 max-h-96 overflow-auto">
           {dedupLog.map((line, i) => <p key={i}>{line}</p>)}
         </div>
       )}

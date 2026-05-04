@@ -34,7 +34,7 @@ export function CvUploader({ jobId, onUploaded }: Props) {
   const activeCount = jobItems.filter(i => i.status === 'pending' || i.status === 'uploading' || i.status === 'scoring').length
 
   const isRecruiter = !!localStorage.getItem('recruiter_session')
-  const uploaderName = localStorage.getItem('recruiter_session') || localStorage.getItem('am_session') || localStorage.getItem('manager_session')
+  const uploaderName = localStorage.getItem('recruiter_session')
 
   function filterAccepted(files: FileList | File[]): File[] {
     return Array.from(files).filter(f => {
@@ -101,29 +101,40 @@ export function CvUploader({ jobId, onUploaded }: Props) {
   return (
     <div className="space-y-3">
       <div
+        role="button"
+        tabIndex={showProgress ? -1 : 0}
+        aria-disabled={showProgress}
+        aria-label="Zone de dépôt de CV. Activez pour ouvrir le sélecteur de fichiers, ou déposez les fichiers ici."
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => !showProgress && inputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors
+        onKeyDown={e => {
+          if (showProgress) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            inputRef.current?.click()
+          }
+        }}
+        className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 focus-visible:outline-offset-2
           ${showProgress ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
-          ${dragging ? 'border-slate-600 bg-slate-100' : 'border-slate-300 hover:border-slate-400 bg-slate-50'}`}
+          ${dragging ? 'border-slate-700 bg-slate-100' : 'border-slate-400 hover:border-slate-600 bg-slate-50'}`}
       >
         {showProgress ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-6 h-6 border-2 border-slate-400 border-t-slate-800 rounded-full animate-spin" />
+          <div role="status" aria-live="polite" className="flex flex-col items-center gap-2">
+            <div aria-hidden="true" className="w-6 h-6 border-2 border-slate-400 border-t-slate-800 rounded-full animate-spin" />
             <p className="text-sm text-slate-900 font-medium">
               {noJob ? 'Extraction en cours…' : `${activeCount} CV en cours d'analyse`}
             </p>
             {!noJob && (
-              <p className="text-xs text-slate-600">L'analyse continue même si vous changez de page.</p>
+              <p className="text-xs text-slate-700">L'analyse continue même si vous changez de page.</p>
             )}
           </div>
         ) : (
           <>
-            <p className="text-2xl mb-2">📄</p>
-            <p className="font-medium text-slate-700 text-sm">Déposer des CV ici ou cliquer pour sélectionner</p>
-            <p className="text-xs text-slate-500 mt-1">{isRecruiter ? 'PDF, image (.png, .jpg, .webp) ou HTML — plusieurs fichiers acceptés' : 'PDF, Word, image (.png, .jpg) ou HTML — plusieurs fichiers acceptés'}</p>
+            <p aria-hidden="true" className="text-2xl mb-2">📄</p>
+            <p className="font-medium text-slate-800 text-sm">Déposer des CV ici ou cliquer pour sélectionner</p>
+            <p className="text-xs text-slate-700 mt-1">{isRecruiter ? 'PDF, image (.png, .jpg, .webp) ou HTML — plusieurs fichiers acceptés' : 'PDF, Word, image (.png, .jpg) ou HTML — plusieurs fichiers acceptés'}</p>
           </>
         )}
         <input
@@ -131,35 +142,47 @@ export function CvUploader({ jobId, onUploaded }: Props) {
           type="file"
           accept={isRecruiter ? '.pdf,.png,.jpg,.jpeg,.webp,.html,.htm' : '.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.html,.htm'}
           multiple
+          aria-label="Sélectionner des CV à téléverser"
           className="hidden"
           onChange={e => e.target.files && processFiles(e.target.files)}
         />
       </div>
 
       {jobItems.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-64 overflow-y-auto">
-          {jobItems.map(it => (
-            <div key={it.id} className="px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <span className="text-sm text-slate-700 truncate min-w-0 flex-1">{it.fileName}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                  it.status === 'error' ? 'bg-red-100 text-red-600'
-                  : it.status === 'done' ? 'bg-green-100 text-green-900'
-                  : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {it.status === 'pending' && '⏳ En attente'}
-                  {it.status === 'uploading' && '⬆️ Upload'}
-                  {it.status === 'scoring' && '🤖 Analyse'}
-                  {it.status === 'done' && '✅ Reçu'}
-                  {it.status === 'error' && '⚠️ Erreur'}
-                </span>
-              </div>
-              {it.status === 'error' && it.errorMessage && (
-                <p className="text-xs text-red-600 mt-1 break-words">{it.errorMessage}</p>
-              )}
-            </div>
-          ))}
-        </div>
+        <ul aria-live="polite" aria-label="Statut des CV téléversés" className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-64 overflow-y-auto list-none p-0">
+          {jobItems.map(it => {
+            const statusLabel = it.status === 'pending' ? 'En attente'
+              : it.status === 'uploading' ? 'Téléversement'
+              : it.status === 'scoring' ? 'Analyse en cours'
+              : it.status === 'done' ? 'Reçu'
+              : 'Erreur'
+            const statusIcon = it.status === 'pending' ? '⏳'
+              : it.status === 'uploading' ? '⬆️'
+              : it.status === 'scoring' ? '🤖'
+              : it.status === 'done' ? '✅'
+              : '⚠️'
+            return (
+              <li key={it.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-sm text-slate-800 truncate min-w-0 flex-1">{it.fileName}</span>
+                  <span
+                    aria-label={`${statusLabel} : ${it.fileName}`}
+                    className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                      it.status === 'error' ? 'bg-red-100 text-red-800'
+                      : it.status === 'done' ? 'bg-green-100 text-green-900'
+                      : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    <span aria-hidden="true">{statusIcon} </span>{statusLabel}
+                  </span>
+                </div>
+                {it.status === 'error' && it.errorMessage && (
+                  <p role="alert" className="text-xs text-red-700 mt-1 break-words">{it.errorMessage}</p>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )

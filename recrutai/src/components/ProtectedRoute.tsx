@@ -4,12 +4,13 @@ import { supabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
 function hasRoleSession(): boolean {
-  return !!(
-    localStorage.getItem('recruiter_session') ||
-    localStorage.getItem('am_session') ||
-    localStorage.getItem('manager_session') ||
-    localStorage.getItem('manager_auth')
-  )
+  // Nettoyage rétroactif : si une vieille session am/manager traîne, la supprimer
+  if (localStorage.getItem('am_session') || localStorage.getItem('manager_session') || localStorage.getItem('manager_auth')) {
+    localStorage.removeItem('am_session')
+    localStorage.removeItem('manager_session')
+    localStorage.removeItem('manager_auth')
+  }
+  return !!localStorage.getItem('recruiter_session')
 }
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {

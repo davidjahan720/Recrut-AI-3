@@ -10,24 +10,28 @@ type AppWithJob = Application & {
 }
 
 function ScoreRing({ score, threshold }: { score: number | null; threshold: number }) {
-  if (score === null) return <span className="text-4xl font-bold text-muted-foreground">—</span>
+  if (score === null) return <span className="text-4xl font-bold text-muted-foreground" aria-label="Score non calculé">—</span>
   const ok = score >= threshold
   return (
-    <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 ${ok ? 'border-green-500' : 'border-red-400'}`}>
-      <span className={`text-2xl font-bold ${ok ? 'text-green-800' : 'text-red-700'}`}>{score}</span>
+    <div
+      role="img"
+      aria-label={`Score ${score} sur 100, ${ok ? 'au-dessus' : 'en-dessous'} du seuil de ${threshold}`}
+      className={`w-20 h-20 rounded-full flex items-center justify-center border-4 ${ok ? 'border-green-600' : 'border-red-500'}`}
+    >
+      <span aria-hidden="true" className={`text-2xl font-bold ${ok ? 'text-green-900' : 'text-red-800'}`}>{score}</span>
     </div>
   )
 }
 
 function StatusBadge({ status }: { status: Application['status'] }) {
   const map: Record<Application['status'], { label: string; cls: string }> = {
-    pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-700' },
+    pending:   { label: 'En attente', cls: 'bg-amber-100 text-amber-800' },
     qualified: { label: 'Qualifié',   cls: 'bg-green-100 text-green-900' },
-    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-700' },
-    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-700' },
+    rejected:  { label: 'Rejeté',     cls: 'bg-slate-100 text-slate-800' },
+    error:     { label: 'Erreur',     cls: 'bg-red-100 text-red-800' },
   }
   const { label, cls } = map[status]
-  return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{label}</span>
+  return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${cls}`} aria-label={`Statut : ${label}`}>{label}</span>
 }
 
 export default function CompareApplications() {
@@ -75,29 +79,31 @@ export default function CompareApplications() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto animate-fade-in">
-      <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" onClick={() => navigate('/applications')}>← Retour</Button>
+      <header className="flex items-center gap-4 mb-8">
+        <Button variant="ghost" onClick={() => navigate('/applications')} aria-label="Retour à la liste des candidatures">
+          <span aria-hidden="true">←</span> Retour
+        </Button>
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Comparaison de candidats</h1>
           <p className="text-muted-foreground text-sm">{apps.length} candidats comparés</p>
         </div>
-      </div>
+      </header>
 
-      <div className="flex gap-4 items-stretch">
+      <ul className="flex gap-4 items-stretch list-none p-0 m-0">
         {apps.map(a => {
           const isBest = apps.length > 1 && a.id === best.id && (a.score ?? -1) >= 0
           const positives: string[] = a.positive_points ? JSON.parse(a.positive_points) : []
           const negatives: string[] = a.negative_points ? JSON.parse(a.negative_points) : []
 
           return (
-            <div
+            <li
               key={a.id}
-              className={`${colWidth} flex flex-col rounded-xl border-2 overflow-hidden ${isBest ? 'border-green-500 shadow-lg' : 'border-border'}`}
+              className={`${colWidth} flex flex-col rounded-xl border-2 overflow-hidden ${isBest ? 'border-green-600 shadow-lg' : 'border-border'}`}
             >
               {isBest && (
-                <div className="bg-green-500 text-white text-xs font-bold text-center py-1 tracking-wide uppercase">
+                <p className="bg-green-700 text-white text-xs font-bold text-center py-1 tracking-wide uppercase m-0">
                   Meilleur score
-                </div>
+                </p>
               )}
 
               <div className="bg-card p-5 flex flex-col gap-4 flex-1">
@@ -161,10 +167,10 @@ export default function CompareApplications() {
                   Déposé le {new Date(a.created_at).toLocaleDateString('fr-FR')}
                 </p>
               </div>
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ul>
     </div>
   )
 }

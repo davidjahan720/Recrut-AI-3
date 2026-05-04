@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import type { Client } from '@/lib/types'
-import { getAmSession, getAmBaseClientNames, getAmExtraClientIds, addAmClientId } from '@/lib/sessionRole'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -40,15 +39,7 @@ export default function Clients() {
     return remaining > 0 ? `⏳ ~${remaining}s restantes` : '⏳ Finalisation...'
   }
 
-  const amSession = getAmSession()
-  const amBaseNames = getAmBaseClientNames()
-  const amExtraIds = getAmExtraClientIds()
-  const displayedClients = amSession
-    ? clients.filter(c =>
-        amBaseNames.some(n => n.toLowerCase() === c.name.toLowerCase()) ||
-        amExtraIds.includes(c.id)
-      )
-    : clients
+  const displayedClients = clients
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -58,7 +49,7 @@ export default function Clients() {
   }
   async function handleDeleteSelected() {
     if (!confirm(`Supprimer les ${selectedIds.size} client${selectedIds.size > 1 ? 's' : ''} sélectionnés ?`)) return
-    await fetch('/api/delete-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [...selectedIds] }) })
+    await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity: 'client', ids: [...selectedIds] }) })
     setSelectedIds(new Set()); load()
   }
 
@@ -110,7 +101,7 @@ export default function Clients() {
     setLoading(true)
     try {
       const addedBy = !editId
-        ? (localStorage.getItem('am_session') || localStorage.getItem('manager_session') || null)
+        ? (localStorage.getItem('recruiter_session') || null)
         : undefined
       const res = await fetch('/api/upsert-client', {
         method: 'POST',
@@ -129,7 +120,6 @@ export default function Clients() {
       })
       const json = await res.json()
       if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`)
-      if (!editId && amSession) addAmClientId(json.data)
       setOpen(false); load()
     } catch (e) {
       setSaveError(String(e))
@@ -139,44 +129,52 @@ export default function Clients() {
 
   async function handleDelete(id: string) {
     if (!confirm('Supprimer ce client ?')) return
-    await fetch('/api/delete-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [id] }) })
+    await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity: 'client', ids: [id] }) })
     load()
   }
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
+      <header className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Clients</h1>
           <p className="text-muted-foreground text-base">{displayedClients.length} client{displayedClients.length !== 1 ? 's' : ''}</p>
         </div>
-        {!amSession && <Button onClick={openCreate}>+ Nouveau client</Button>}
-      </div>
+        <Button onClick={openCreate} aria-label="Créer un nouveau client">
+          <span aria-hidden="true">+ </span>Nouveau client
+        </Button>
+      </header>
 
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 mb-4 px-4 py-2 bg-muted rounded-lg border border-border">
+        <div role="region" aria-label="Sélection multiple" aria-live="polite" className="flex items-center gap-3 mb-4 px-4 py-2 bg-muted rounded-lg border border-border">
           <span className="text-sm font-medium text-foreground">{selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
-          <Button size="sm" variant="destructive" onClick={handleDeleteSelected}>Supprimer</Button>
-          <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setSelectedIds(new Set())}>Annuler</Button>
+          <Button size="sm" variant="destructive" onClick={handleDeleteSelected}>Supprimer la sélection</Button>
+          <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setSelectedIds(new Set())}>Annuler la sélection</Button>
         </div>
       )}
 
       <div className="bg-card rounded-lg border border-border overflow-x-auto">
         <Table>
+          <caption className="sr-only">Liste des clients : entreprise, contact, email de notification, secteur et personne ayant ajouté la fiche.</caption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8">
-                {selectedIds.size >= 2 && (
-                  <input type="checkbox" checked={displayedClients.every(c => selectedIds.has(c.id))} onChange={toggleSelectAll}
-                    className="w-4 h-4 accent-violet-600 cursor-pointer" />
-                )}
+              <TableHead scope="col" className="w-8">
+                {selectedIds.size >= 2 ? (
+                  <input
+                    type="checkbox"
+                    checked={displayedClients.every(c => selectedIds.has(c.id))}
+                    onChange={toggleSelectAll}
+                    aria-label="Tout sélectionner"
+                    className="w-4 h-4 accent-violet-600 cursor-pointer"
+                  />
+                ) : <span className="sr-only">Sélection</span>}
               </TableHead>
-              <TableHead className="w-48">Entreprise</TableHead>
-              <TableHead className="w-36">Contact</TableHead>
-              <TableHead className="w-48">Email notification</TableHead>
-              <TableHead className="w-32">Secteur</TableHead>
-              <TableHead className="w-40">Ajouté par</TableHead>
-              <TableHead className="w-44"></TableHead>
+              <TableHead scope="col" className="w-48">Entreprise</TableHead>
+              <TableHead scope="col" className="w-36">Contact</TableHead>
+              <TableHead scope="col" className="w-48">Email notification</TableHead>
+              <TableHead scope="col" className="w-32">Secteur</TableHead>
+              <TableHead scope="col" className="w-40">Ajouté par</TableHead>
+              <TableHead scope="col" className="w-44"><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -190,12 +188,17 @@ export default function Clients() {
             {displayedClients.map(c => (
               <TableRow key={c.id} className={`cursor-pointer hover:bg-muted/30 ${selectedIds.has(c.id) ? 'bg-violet-50 dark:bg-violet-950/20' : ''}`} onClick={() => navigate(`/clients/${c.id}`)}>
                 <TableCell className="pr-0" onClick={e => e.stopPropagation()}>
-                  <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
-                    className="w-4 h-4 accent-violet-600 cursor-pointer" />
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(c.id)}
+                    onChange={() => toggleSelect(c.id)}
+                    aria-label={`Sélectionner ${c.name}`}
+                    className="w-4 h-4 accent-violet-600 cursor-pointer"
+                  />
                 </TableCell>
                 <TableCell className="font-semibold text-foreground truncate max-w-[192px]">{c.name}</TableCell>
                 <TableCell className="text-muted-foreground font-medium truncate max-w-[144px]">{c.contact_name}</TableCell>
-                <TableCell className="text-muted-foreground truncate max-w-[192px]">jahandavid@gmail.com</TableCell>
+                <TableCell className="text-muted-foreground truncate max-w-[192px]">{c.notification_email || '—'}</TableCell>
                 <TableCell className="text-muted-foreground truncate max-w-[128px]">{c.sector}</TableCell>
                 <TableCell>
                   <div className="text-xs">
@@ -205,8 +208,8 @@ export default function Clients() {
                 </TableCell>
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openEdit(c)}>Éditer</Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}>Suppr.</Button>
+                    <Button size="sm" variant="outline" onClick={() => openEdit(c)} aria-label={`Modifier ${c.name}`}>Éditer</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)} aria-label={`Supprimer ${c.name}`}>Suppr.</Button>
                   </div>
                 </TableCell>
               </TableRow>

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import * as Sentry from '@sentry/react'
 
@@ -7,18 +8,33 @@ import { AppLayout } from '@/components/AppLayout'
 import { UploadProvider } from '@/contexts/UploadContext'
 import Landing from '@/pages/Landing'
 import Login from '@/pages/Login'
-import Dashboard from '@/pages/Dashboard'
-import Clients from '@/pages/Clients'
-import ClientDetail from '@/pages/ClientDetail'
-import Jobs from '@/pages/Jobs'
-import JobDetail from '@/pages/JobDetail'
-import Applications from '@/pages/Applications'
-import CompareApplications from '@/pages/CompareApplications'
-import ManagerDashboard from '@/pages/ManagerDashboard'
-import RecruiterDashboard from '@/pages/RecruiterDashboard'
-import AccountManagerDashboard from '@/pages/AccountManagerDashboard'
-import ManagerPersonalDashboard from '@/pages/ManagerPersonalDashboard'
-import SeedData from '@/pages/SeedData'
+
+// Lazy-load des pages applicatives — réduit la taille du bundle initial
+// (Recharts, Supabase queries, etc. ne sont chargés qu'à l'usage).
+const Legal = lazy(() => import('@/pages/Legal'))
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const Clients = lazy(() => import('@/pages/Clients'))
+const ClientDetail = lazy(() => import('@/pages/ClientDetail'))
+const Jobs = lazy(() => import('@/pages/Jobs'))
+const JobDetail = lazy(() => import('@/pages/JobDetail'))
+const Applications = lazy(() => import('@/pages/Applications'))
+const CompareApplications = lazy(() => import('@/pages/CompareApplications'))
+const ManagerDashboard = lazy(() => import('@/pages/ManagerDashboard'))
+const RecruiterDashboard = lazy(() => import('@/pages/RecruiterDashboard'))
+const Rgpd = lazy(() => import('@/pages/Rgpd'))
+const SeedData = lazy(() => import('@/pages/SeedData'))
+
+function PageFallback() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex h-full min-h-[40vh] items-center justify-center text-muted-foreground text-sm"
+    >
+      Chargement…
+    </div>
+  )
+}
 
 export default function App() {
   return (
@@ -28,22 +44,25 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/legal" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
+        <Route path="/privacy" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
 
         {/* Protected app (pathless layout wrapper) */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/clients/:id" element={<ClientDetail />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/:id" element={<JobDetail />} />
-          <Route path="/applications" element={<Applications />} />
-          <Route path="/compare" element={<CompareApplications />} />
-          <Route path="/manager" element={<ManagerDashboard />} />
+          <Route path="/dashboard" element={<Suspense fallback={<PageFallback />}><Dashboard /></Suspense>} />
+          <Route path="/clients" element={<Suspense fallback={<PageFallback />}><Clients /></Suspense>} />
+          <Route path="/clients/:id" element={<Suspense fallback={<PageFallback />}><ClientDetail /></Suspense>} />
+          <Route path="/jobs" element={<Suspense fallback={<PageFallback />}><Jobs /></Suspense>} />
+          <Route path="/jobs/:id" element={<Suspense fallback={<PageFallback />}><JobDetail /></Suspense>} />
+          <Route path="/applications" element={<Suspense fallback={<PageFallback />}><Applications /></Suspense>} />
+          <Route path="/compare" element={<Suspense fallback={<PageFallback />}><CompareApplications /></Suspense>} />
+          <Route path="/manager" element={<Suspense fallback={<PageFallback />}><ManagerDashboard /></Suspense>} />
 
-          <Route path="/recruiter" element={<RecruiterDashboard />} />
-          <Route path="/account-manager" element={<AccountManagerDashboard />} />
-          <Route path="/manager-personal" element={<ManagerPersonalDashboard />} />
-          <Route path="/seed" element={<SeedData />} />
+          <Route path="/recruiter" element={<Suspense fallback={<PageFallback />}><RecruiterDashboard /></Suspense>} />
+          <Route path="/rgpd" element={<Suspense fallback={<PageFallback />}><Rgpd /></Suspense>} />
+          <Route path="/account-manager" element={<Navigate to="/manager" replace />} />
+          <Route path="/manager-personal" element={<Navigate to="/manager" replace />} />
+          <Route path="/seed" element={<Suspense fallback={<PageFallback />}><SeedData /></Suspense>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

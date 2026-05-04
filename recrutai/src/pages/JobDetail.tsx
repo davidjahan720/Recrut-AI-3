@@ -34,10 +34,13 @@ function summarizeJustification(text: string | null | undefined): string {
 }
 
 function ScoreBadge({ score, threshold }: { score: number | null; threshold: number }) {
-  if (score === null) return <span className="text-muted-foreground text-sm">—</span>
+  if (score === null) return <span className="text-muted-foreground text-sm" aria-label="Score non calculé">—</span>
   const qualified = score >= threshold
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${qualified ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-700'}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${qualified ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-800'}`}
+      aria-label={`Score ${score} sur 100, ${qualified ? 'au-dessus' : 'en-dessous'} du seuil de ${threshold}`}
+    >
       {score}
     </span>
   )
@@ -133,7 +136,7 @@ export default function JobDetail() {
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
 
-  const isRecruiter = !!localStorage.getItem('recruiter_session')
+  const isRecruiter = true // refonte v12 : tout le monde peut déposer CV et comparer
 
   async function loadJob() {
     const { data, error } = await supabase.from('jobs').select('*, clients(name, contact_email)').eq('id', id!).single()
@@ -236,10 +239,10 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
 
   async function deleteCv(appId: string, path: string) {
     if (!confirm('Supprimer ce candidat et son CV ?')) return
-    await fetch('/api/delete-application', {
+    await fetch('/api/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: [appId], paths: [path] }),
+      body: JSON.stringify({ entity: 'application', ids: [appId], paths: [path] }),
     })
     setSelected(prev => { const n = new Set(prev); n.delete(appId); return n })
     loadApplications()
@@ -285,10 +288,10 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
     const ids = [...selected]
     if (!confirm(`Supprimer ${ids.length} candidat(s) et leurs CV ?`)) return
     const paths = applications.filter(a => ids.includes(a.id)).map(a => a.cv_file_path)
-    await fetch('/api/delete-application', {
+    await fetch('/api/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids, paths }),
+      body: JSON.stringify({ entity: 'application', ids, paths }),
     })
     setSelected(new Set())
     loadApplications()
@@ -312,7 +315,14 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
 
   return (
     <div className="p-4 md:p-8">
-      <button onClick={() => navigate(-1)} className="text-base font-medium text-muted-foreground hover:text-foreground mb-4">← Retour</button>
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        aria-label="Retour à la page précédente"
+        className="text-base font-medium text-muted-foreground hover:text-foreground mb-4"
+      >
+        <span aria-hidden="true">←</span> Retour
+      </button>
 
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
@@ -337,8 +347,10 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
             <Button
               onClick={() => jobStatus === 'active' && setCvUploadOpen(true)}
               className="h-12 px-6 text-base font-semibold"
+              aria-label="Déposer des CV pour cette offre"
+              disabled={jobStatus !== 'active'}
             >
-              📄 Déposer CV
+              <span aria-hidden="true">📄</span> Déposer CV
             </Button>
           )}
           <div className="flex flex-row md:flex-col flex-wrap gap-2">
@@ -444,25 +456,27 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
 
         <div className="bg-card rounded-lg border border-border overflow-x-auto lg:overflow-x-hidden">
           <Table className="lg:table-fixed lg:w-full">
+            <caption className="sr-only">Liste des candidatures pour cette offre, avec score, statut et synthèse IA.</caption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-44">
+                <TableHead scope="col" className="w-44">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={allFilteredSelected}
                       ref={el => { if (el) el.indeterminate = someFilteredSelected && !allFilteredSelected }}
                       onChange={toggleSelectAll}
+                      aria-label="Tout sélectionner"
                       className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
                     />
                     Candidat
                   </div>
                 </TableHead>
-                <TableHead className="w-14">Score</TableHead>
-                <TableHead>Justification</TableHead>
-                <TableHead className="w-24">Statut</TableHead>
-                <TableHead className="w-28">Ajouté par</TableHead>
-                <TableHead className="w-28"></TableHead>
+                <TableHead scope="col" className="w-14">Score</TableHead>
+                <TableHead scope="col">Justification</TableHead>
+                <TableHead scope="col" className="w-24">Statut</TableHead>
+                <TableHead scope="col" className="w-28">Ajouté par</TableHead>
+                <TableHead scope="col" className="w-28"><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -479,6 +493,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleSelect(a.id)}
+                          aria-label={`Sélectionner ${a.candidate_name ?? 'ce candidat'}`}
                           className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer flex-shrink-0"
                         />
                         <span className="truncate" title={a.candidate_name ?? undefined}>
@@ -494,7 +509,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                           onClick={e => { e.stopPropagation(); setPointsOpen(a) }}
                           className="text-xs font-medium text-violet-700 hover:text-violet-900 hover:underline"
                         >
-                          Voir points + et −
+                          Voir points positifs et axes d'amélioration
                         </button>
                       )}
                     </TableCell>
@@ -505,13 +520,13 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 items-stretch">
-                        <Button size="sm" variant="ghost" onClick={() => viewCv(a.cv_file_path, a.candidate_name)}>
+                        <Button size="sm" variant="ghost" onClick={() => viewCv(a.cv_file_path, a.candidate_name)} aria-label={`Ouvrir le CV de ${a.candidate_name ?? 'ce candidat'}`}>
                           CV PDF
                         </Button>
-                        <Button size="sm" variant="outline" className="text-violet-600 border-violet-300 hover:bg-violet-50" onClick={() => exportFiche(a)}>
+                        <Button size="sm" variant="outline" className="text-violet-700 border-violet-300 hover:bg-violet-50" onClick={() => exportFiche(a)} aria-label={`Exporter la fiche de ${a.candidate_name ?? 'ce candidat'}`}>
                           Fiche
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-red-700 hover:text-red-900" onClick={() => deleteCv(a.id, a.cv_file_path)}>
+                        <Button size="sm" variant="ghost" className="text-red-800 hover:text-red-900" onClick={() => deleteCv(a.id, a.cv_file_path)} aria-label={`Supprimer ${a.candidate_name ?? 'ce candidat'}`}>
                           Suppr.
                         </Button>
                       </div>
@@ -524,20 +539,20 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
         </div>
 
         {filtered.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between mt-3 px-1">
-            <p className="text-xs text-muted-foreground">
+          <nav aria-label="Pagination des candidatures" className="flex items-center justify-between mt-3 px-1">
+            <p className="text-xs text-muted-foreground" aria-live="polite">
               {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} sur {filtered.length}
             </p>
             <div className="flex items-center gap-1">
-              <Button size="sm" variant="outline" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>
-                ← Précédent
+              <Button size="sm" variant="outline" disabled={safePage === 1} onClick={() => setPage(safePage - 1)} aria-label="Page précédente">
+                <span aria-hidden="true">←</span> Précédent
               </Button>
-              <span className="text-xs px-3 font-medium">{safePage} / {totalPages}</span>
-              <Button size="sm" variant="outline" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)}>
-                Suivant →
+              <span className="text-xs px-3 font-medium" aria-current="page">Page {safePage} sur {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} aria-label="Page suivante">
+                Suivant <span aria-hidden="true">→</span>
               </Button>
             </div>
-          </div>
+          </nav>
         )}
       </div>
 
@@ -562,7 +577,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              Points + et − {pointsOpen?.candidate_name ? `— ${pointsOpen.candidate_name}` : ''}
+              Points positifs et axes d'amélioration {pointsOpen?.candidate_name ? `— ${pointsOpen.candidate_name}` : ''}
             </DialogTitle>
           </DialogHeader>
           {pointsOpen && (() => {
@@ -585,7 +600,7 @@ ${negatives.length ? `<div class="section"><h3>Points négatifs</h3><ul>${negati
                 )}
                 {negatives.length > 0 && (
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">Points négatifs</p>
+                    <p className="text-sm font-semibold text-foreground mb-2">Axes d'amélioration</p>
                     <ul className="space-y-1.5">
                       {negatives.map((p, i) => (
                         <li key={i} className="text-sm text-foreground leading-relaxed flex gap-2">

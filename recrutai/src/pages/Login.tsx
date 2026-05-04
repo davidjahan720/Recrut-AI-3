@@ -5,7 +5,7 @@ import { setRoleSession } from '@/lib/users'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -59,30 +59,33 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-blue-900 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-blue-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-sm shadow-2xl border-0">
         <CardHeader className="space-y-1 pb-4">
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow">
+            <div aria-hidden="true" className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow">
               <span className="text-white text-base font-bold">R</span>
             </div>
             <span className="font-bold text-foreground text-xl">RecrutAI</span>
           </div>
-          <CardTitle className="text-xl">Connexion</CardTitle>
+          <h1 className="font-heading text-xl leading-snug font-semibold text-foreground">Connexion</h1>
           <CardDescription className="text-base">Accès réservé à l'équipe RecrutAI</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-base font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="prenom@recrutai.fr"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="text-base h-11"
                 required
+                aria-required="true"
+                aria-invalid={!!error}
               />
             </div>
             <div className="space-y-1.5">
@@ -90,23 +93,37 @@ export default function Login() {
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="text-base h-11"
                 required
+                aria-required="true"
+                aria-invalid={!!error}
+                aria-describedby={error ? 'login-error' : undefined}
               />
             </div>
-            {error && <p className="text-sm text-red-700">{error}</p>}
+            {error && (
+              <p id="login-error" role="alert" className="text-sm text-red-800 dark:text-red-300">
+                {error}
+              </p>
+            )}
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold"
               disabled={loading}
+              aria-busy={loading}
             >
-              {loading ? 'Connexion...' : 'Accéder à l\'app'}
+              {loading ? 'Connexion en cours…' : "Accéder à l'app"}
             </Button>
           </form>
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            <a href="/legal" className="hover:underline underline-offset-2">Mentions légales</a>
+            <span aria-hidden="true"> · </span>
+            <a href="/privacy" className="hover:underline underline-offset-2">Politique de confidentialité</a>
+          </p>
         </CardContent>
       </Card>
-    </div>
+    </main>
   )
 }

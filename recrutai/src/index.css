@@ -77,6 +77,32 @@
   input, select, textarea, button { font-size: 0.9375rem; }
 }
 
+/* Skip link RGAA 12.7 — accessible au clavier */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 8px 16px;
+  z-index: 100;
+  border-radius: 0 0 var(--radius) 0;
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* RGAA 13.8 + éco-conception : respect des préférences moteur de l'OS */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @keyframes gradient-shift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

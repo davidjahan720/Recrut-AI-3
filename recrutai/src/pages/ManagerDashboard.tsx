@@ -77,24 +77,22 @@ const BIZ_STYLES = [
 
 const RECRUITERS = [
   { name: 'Sophie',  clients: ['Nexeo', 'BTP Pro', 'Inovev'],       offresActives: 0, cv: 400, qualifies: 72, taux: 18, caMensuel: 27000, targetCaMensuel: 30000 },
-  { name: 'Karim',   clients: ['Solvay', 'Altair RH'],               offresActives: 0, cv: 350, qualifies: 63, taux: 18, caMensuel: 24000, targetCaMensuel: 27000 },
   { name: 'Alix',    clients: ['Terralys', 'Vinci RH', 'Kalexia'],   offresActives: 0, cv: 450, qualifies: 81, taux: 18, caMensuel: 30000, targetCaMensuel: 33000 },
-  { name: 'Nicolas', clients: ['Elexia', 'Groupe Avena'],            offresActives: 0, cv: 200, qualifies: 36, taux: 18, caMensuel: 15000, targetCaMensuel: 18000 },
 ]
 
 const MONTHS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
-const LAURA_ACTUAL   = [50000, 58000, 62000, 55000, null, null, null, null, null, null, null, null]
-const JULIEN_ACTUAL  = [38000, 44000, 47000, 41000, null, null, null, null, null, null, null, null]
+const SOPHIE_ACTUAL = [50000, 58000, 62000, 55000, null, null, null, null, null, null, null, null]
+const ALIX_ACTUAL   = [38000, 44000, 47000, 41000, null, null, null, null, null, null, null, null]
 // Objectifs non-linéaires : démarrage progressif, creux estival juil-aoû, pic Q4, ralentissement déc
-const LAURA_TARGET   = [52000, 56000, 60000, 62000, 61000, 59000, 47000, 44000, 58000, 64000, 66000, 59000]
-const JULIEN_TARGET  = [39000, 42000, 45000, 47000, 46000, 44000, 35000, 32000, 43000, 49000, 51000, 45000]
+const SOPHIE_TARGET = [52000, 56000, 60000, 62000, 61000, 59000, 47000, 44000, 58000, 64000, 66000, 59000]
+const ALIX_TARGET   = [39000, 42000, 45000, 47000, 46000, 44000, 35000, 32000, 43000, 49000, 51000, 45000]
 
 const amChartData = MONTHS_LABELS.map((month, i) => ({
   month,
-  'Laura (réel)':       LAURA_ACTUAL[i],
-  'Laura (objectif)':   LAURA_TARGET[i],
-  'Julien (réel)':      JULIEN_ACTUAL[i],
-  'Julien (objectif)':  JULIEN_TARGET[i],
+  'Sophie (réel)':     SOPHIE_ACTUAL[i],
+  'Sophie (objectif)': SOPHIE_TARGET[i],
+  'Alix (réel)':       ALIX_ACTUAL[i],
+  'Alix (objectif)':   ALIX_TARGET[i],
 }))
 
 
@@ -135,15 +133,14 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
 }
 
 const AM_PROFILES = [
-  { name: 'Laura',  color: '#ec4899', taux: 18, tauxObjectif: 22, caMensuel: 55000, caTrimestriel: 165000, targetCaMensuel: 58000, targetCaTrimestriel: 174000, nouveaux: 2, targetNouveauxClientsMois: 3, ytdCa: 215000, ytdNouveauxClients: 8, clients: ['Nexeo', 'Solvay', 'BTP Pro'] },
-  { name: 'Julien', color: '#0ea5e9', taux: 18, tauxObjectif: 22, caMensuel: 41000, caTrimestriel: 123000, targetCaMensuel: 46000, targetCaTrimestriel: 138000, nouveaux: 1, targetNouveauxClientsMois: 2, ytdCa: 162000, ytdNouveauxClients: 5, clients: ['Inovev', 'Altair RH'] },
+  { name: 'Sophie', color: '#ec4899', taux: 18, tauxObjectif: 22, caMensuel: 55000, caTrimestriel: 165000, targetCaMensuel: 58000, targetCaTrimestriel: 174000, nouveaux: 2, targetNouveauxClientsMois: 3, ytdCa: 215000, ytdNouveauxClients: 8, clients: ['Nexeo', 'Solvay', 'BTP Pro'] },
+  { name: 'Alix',   color: '#0ea5e9', taux: 18, tauxObjectif: 22, caMensuel: 41000, caTrimestriel: 123000, targetCaMensuel: 46000, targetCaTrimestriel: 138000, nouveaux: 1, targetNouveauxClientsMois: 2, ytdCa: 162000, ytdNouveauxClients: 5, clients: ['Inovev', 'Altair RH'] },
 ]
 
 
 
 export default function ManagerDashboard() {
   const { tick: tickColor } = useChartColors()
-  const [unlocked, setUnlocked] = useState(() => localStorage.getItem(PWD_KEY) === '1')
   const [loading, setLoading] = useState(true)
   const [, setJobStats] = useState<JobStat[]>([])
   const [kpis, setKpis] = useState({ activeJobs: 0, totalCv: 0, totalQualified: 0, rate: 0 })
@@ -256,92 +253,105 @@ export default function ManagerDashboard() {
 
 
 
-  if (!unlocked) return <PasswordGate onUnlock={() => { localStorage.setItem(PWD_KEY, '1'); setUnlocked(true) }} />
+  void PasswordGate; void PWD_KEY // refonte v12 : plus de gate
+
+  const chartSummary = `Comparaison du chiffre d'affaires mensuel par chargé de recrutement : ${
+    AM_PROFILES.map(am => `${am.name} ${fmtEur(am.caMensuel)} pour un objectif de ${fmtEur(am.targetCaMensuel)}`).join(' ; ')
+  }.`
 
   return (
-    <div className="p-5 flex flex-col gap-4 overflow-auto">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground leading-tight">Vue Manager</h1>
-        <p className="text-muted-foreground text-sm">Performance recrutement & indicateurs business</p>
-      </div>
+    <section className="p-5 flex flex-col gap-4 overflow-auto" aria-labelledby="manager-heading">
+      <header>
+        <h1 id="manager-heading" className="text-xl font-semibold text-foreground leading-tight">Vue Manager</h1>
+        <p className="text-muted-foreground text-sm">Performance recrutement et indicateurs business</p>
+      </header>
 
       {/* Recrutement KPIs */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</p>
+      <section aria-labelledby="kpi-recrutement">
+        <h2 id="kpi-recrutement" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</h2>
         {loading ? (
-          <div className="grid grid-cols-6 gap-3">
+          <div className="grid grid-cols-6 gap-3" aria-busy="true" aria-label="Chargement des indicateurs recrutement">
             {[0,1,2,3].map(i => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-6 gap-3">
+          <ul className="grid grid-cols-6 gap-3 list-none p-0 m-0">
             {kpiCards.map((kpi, i) => (
-              <div key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm`}>
+              <li key={kpi.label} className={`bg-gradient-to-br ${KPI_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-semibold text-white leading-tight">{kpi.label}</p>
-                  <span className="text-xl">{KPI_STYLES[i].icon}</span>
+                  <span aria-hidden="true" className="text-xl">{KPI_STYLES[i].icon}</span>
                 </div>
                 <p className="text-3xl font-bold leading-tight">{kpi.value}</p>
-                <p className="text-xs font-medium text-white/80 mt-1">{kpi.note}</p>
-              </div>
+                <p className="text-xs font-medium text-white/90 mt-1">{kpi.note}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
 
       {/* Business KPIs */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Business</p>
+      <section aria-labelledby="kpi-business">
+        <h2 id="kpi-business" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Business</h2>
         {loading ? (
-          <div className="grid grid-cols-6 gap-3">
+          <div className="grid grid-cols-6 gap-3" aria-busy="true" aria-label="Chargement des indicateurs business">
             {[0,1,2,3,4,5].map(i => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-6 gap-3">
+          <ul className="grid grid-cols-6 gap-3 list-none p-0 m-0">
             {bizCards.map((kpi, i) => {
               const pct = kpi.target && kpi.rawValue != null
                 ? Math.min(100, Math.round((kpi.rawValue / kpi.target) * 100))
                 : null
               return (
-                <div key={kpi.label} className={`bg-gradient-to-br ${BIZ_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm flex flex-col`}>
+                <li key={kpi.label} className={`bg-gradient-to-br ${BIZ_STYLES[i].bg} rounded-xl p-4 text-white shadow-sm flex flex-col`}>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-semibold text-white leading-tight">{kpi.label}</p>
-                    <span className="text-xl">{BIZ_STYLES[i].icon}</span>
+                    <span aria-hidden="true" className="text-xl">{BIZ_STYLES[i].icon}</span>
                   </div>
                   <p className="text-3xl font-bold leading-tight">{kpi.value}</p>
-                  <p className="text-xs font-medium text-white/80 mt-1">{kpi.note}</p>
+                  <p className="text-xs font-medium text-white/90 mt-1">{kpi.note}</p>
                   {pct != null && kpi.target && (
                     <>
-                      <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden mt-2">
-                        <div className="h-full bg-white/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      <div
+                        role="progressbar"
+                        aria-label={`${kpi.label} — progression vers l'objectif`}
+                        aria-valuenow={pct}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuetext={`${pct}% de l'objectif de ${kpi.fmtTarget(kpi.target)}`}
+                        className="w-full h-1.5 bg-white/25 rounded-full overflow-hidden mt-2"
+                      >
+                        <div className="h-full bg-white rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
-                      <p className="text-xs text-white/70 mt-1">Obj. {kpi.fmtTarget(kpi.target)} — {pct}%</p>
+                      <p className="text-xs text-white/90 mt-1">Obj. {kpi.fmtTarget(kpi.target)} — {pct}%</p>
                     </>
                   )}
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
 
       {/* Tableau chargés de recrutement */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Performance par chargé de recrutement</p>
+      <section aria-labelledby="perf-table-heading">
+        <h2 id="perf-table-heading" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Performance par chargé de recrutement</h2>
         <div className="bg-card border border-border rounded-xl overflow-hidden w-fit">
           <table className="text-sm">
+            <caption className="sr-only">Performance par chargé de recrutement : nombre de CV reçus, candidats qualifiés, chiffre d'affaires mensuel et objectif.</caption>
             <thead className="bg-muted/40 sticky top-0">
               <tr>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-foreground">Chargé</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">CV reçus</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">Qualifiés</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">CA mensuel</th>
-                <th className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">Objectif</th>
+                <th scope="col" className="text-left px-4 py-2.5 text-xs font-semibold text-foreground">Chargé</th>
+                <th scope="col" className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">CV reçus</th>
+                <th scope="col" className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">Qualifiés</th>
+                <th scope="col" className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">CA mensuel</th>
+                <th scope="col" className="text-center px-4 py-2.5 text-xs font-semibold text-foreground">Objectif</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {RECRUITERS.map(r => (
                 <tr key={r.name} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.name}</td>
+                  <th scope="row" className="px-4 py-2.5 font-semibold text-foreground whitespace-nowrap text-left">{r.name}</th>
                   <td className="px-4 py-2.5 text-center font-semibold text-foreground">{r.cv}</td>
                   <td className="px-4 py-2.5 text-center">
                     <span className="font-semibold text-foreground">{r.qualifies}</span>
@@ -353,83 +363,125 @@ export default function ManagerDashboard() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* Taux de qualification AM */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Taux de qualification annuel — Account Managers</p>
-        <div className="grid grid-cols-4 gap-3">
+      <section aria-labelledby="taux-qualif-heading">
+        <h2 id="taux-qualif-heading" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Taux de qualification annuel</h2>
+        <ul className="grid grid-cols-4 gap-3 list-none p-0 m-0">
           {AM_PROFILES.map(am => (
-            <div key={am.name} className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center gap-4">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: am.color }}>
+            <li key={am.name} className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center gap-4">
+              <div aria-hidden="true" className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: am.color }}>
                 {am.name.slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">{am.name}</p>
-                  <span className="text-sm font-bold text-amber-600">{am.taux} %</span>
+                  <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{am.taux} %</span>
                 </div>
                 <div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-0.5">
                     <span>Réel {new Date().getFullYear()}</span>
-                    <span>{am.taux} %</span>
+                    <span aria-hidden="true">{am.taux} %</span>
                   </div>
-                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full" style={{ width: `${am.taux}%` }} />
+                  <div
+                    role="progressbar"
+                    aria-label={`Taux de qualification réel de ${am.name}`}
+                    aria-valuenow={am.taux}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuetext={`${am.taux}% — objectif ${am.tauxObjectif}%`}
+                    className="w-full h-2 bg-muted rounded-full overflow-hidden"
+                  >
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${am.taux}%` }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-0.5">
                     <span>Objectif {new Date().getFullYear()}</span>
-                    <span>{am.tauxObjectif} %</span>
+                    <span aria-hidden="true">{am.tauxObjectif} %</span>
                   </div>
-                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-200 rounded-full border border-amber-400 border-dashed" style={{ width: `${am.tauxObjectif}%` }} />
+                  <div
+                    role="progressbar"
+                    aria-label={`Objectif de qualification de ${am.name}`}
+                    aria-valuenow={am.tauxObjectif}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="w-full h-2 bg-muted rounded-full overflow-hidden"
+                  >
+                    <div className="h-full bg-amber-200 rounded-full border border-amber-500 border-dashed" style={{ width: `${am.tauxObjectif}%` }} />
                   </div>
                 </div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </section>
 
       {/* Performance Account Managers — CA mensuel */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Performance Account Managers — CA mensuel</p>
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={amChartData} margin={{ top: 8, right: 24, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: tickColor }} />
-              <YAxis tickFormatter={v => `${(Number(v) / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: tickColor }} />
-              <Tooltip formatter={(v: unknown) => fmtEur(Number(v))} />
-              <Legend content={(props: any) => (
-                <div className="flex flex-wrap gap-4 justify-center mt-2">
-                  {(props.payload ?? []).map((entry: any) => {
-                    const dashed = entry.payload?.strokeDasharray
-                    return (
-                      <div key={entry.dataKey} className="flex items-center gap-1.5">
-                        <svg width="28" height="10" style={{ display: 'block' }}>
-                          <line x1="0" y1="5" x2="28" y2="5"
-                            stroke={entry.color}
-                            strokeWidth={dashed ? 1.5 : 2.5}
-                            strokeDasharray={dashed ? '5 4' : undefined}
-                          />
-                        </svg>
-                        <span style={{ fontSize: 12, color: tickColor }}>{entry.value}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )} />
-              <Line type="monotone" dataKey="Laura (réel)"      stroke="#f43f5e" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
-              <Line type="monotone" dataKey="Laura (objectif)"  stroke="#f43f5e" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} />
-              <Line type="monotone" dataKey="Julien (réel)"     stroke="#38bdf8" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
-              <Line type="monotone" dataKey="Julien (objectif)" stroke="#38bdf8" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
+      <section aria-labelledby="ca-chart-heading">
+        <h2 id="ca-chart-heading" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Performance — CA mensuel</h2>
+        <figure className="bg-card border border-border rounded-xl p-4 shadow-sm m-0">
+          <div role="img" aria-label={chartSummary}>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={amChartData} margin={{ top: 8, right: 24, left: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: tickColor }} />
+                <YAxis tickFormatter={v => `${(Number(v) / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: tickColor }} />
+                <Tooltip formatter={(v: unknown) => fmtEur(Number(v))} />
+                <Legend content={(props: any) => (
+                  <div className="flex flex-wrap gap-4 justify-center mt-2">
+                    {(props.payload ?? []).map((entry: any) => {
+                      const dashed = entry.payload?.strokeDasharray
+                      return (
+                        <div key={entry.dataKey} className="flex items-center gap-1.5">
+                          <svg aria-hidden="true" width="28" height="10" style={{ display: 'block' }}>
+                            <line x1="0" y1="5" x2="28" y2="5"
+                              stroke={entry.color}
+                              strokeWidth={dashed ? 1.5 : 2.5}
+                              strokeDasharray={dashed ? '5 4' : undefined}
+                            />
+                          </svg>
+                          <span style={{ fontSize: 12, color: tickColor }}>{entry.value}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )} />
+                <Line type="monotone" dataKey="Sophie (réel)"     stroke="#e11d48" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="Sophie (objectif)" stroke="#e11d48" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} />
+                <Line type="monotone" dataKey="Alix (réel)"       stroke="#0284c7" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="Alix (objectif)"   stroke="#0284c7" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <figcaption className="sr-only">{chartSummary}</figcaption>
+          {/* Tableau de données équivalent caché visuellement — RGAA 1.7 alternative au graphique */}
+          <table className="sr-only">
+            <caption>Données du graphique : CA mensuel réel et objectif par chargé de recrutement.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Mois</th>
+                <th scope="col">Sophie réel</th>
+                <th scope="col">Sophie objectif</th>
+                <th scope="col">Alix réel</th>
+                <th scope="col">Alix objectif</th>
+              </tr>
+            </thead>
+            <tbody>
+              {amChartData.map(row => (
+                <tr key={row.month}>
+                  <th scope="row">{row.month}</th>
+                  <td>{row['Sophie (réel)'] != null ? fmtEur(row['Sophie (réel)'] as number) : '—'}</td>
+                  <td>{fmtEur(row['Sophie (objectif)'] as number)}</td>
+                  <td>{row['Alix (réel)'] != null ? fmtEur(row['Alix (réel)'] as number) : '—'}</td>
+                  <td>{fmtEur(row['Alix (objectif)'] as number)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </figure>
+      </section>
+    </section>
   )
 }

@@ -41,23 +41,28 @@ export default function ClientDetail() {
     setEditing(false)
   }
 
-  if (!client) return <div className="p-4 md:p-8 text-foreground">Chargement...</div>
+  if (!client) return <div role="status" aria-live="polite" className="p-4 md:p-8 text-foreground">Chargement…</div>
 
   return (
     <div className="p-4 md:p-8 max-w-3xl">
-      <button onClick={() => navigate(-1)} className="text-base font-medium text-foreground hover:text-primary mb-4 flex items-center gap-1">
-        ← Retour
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        aria-label="Retour à la page précédente"
+        className="text-base font-medium text-foreground hover:text-primary mb-4 flex items-center gap-1"
+      >
+        <span aria-hidden="true">←</span> Retour
       </button>
 
-      <div className="flex items-start justify-between mb-6">
+      <header className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground mb-1">{client.name}</h1>
           <p className="text-foreground text-base font-medium">{client.sector}</p>
         </div>
         {!editing && (
-          <Button variant="outline" onClick={() => setEditing(true)}>Modifier</Button>
+          <Button variant="outline" onClick={() => setEditing(true)} aria-label={`Modifier la fiche ${client.name}`}>Modifier</Button>
         )}
-      </div>
+      </header>
 
       {editing ? (
         <div className="bg-card rounded-lg border border-border p-5 mb-8 space-y-4">
@@ -93,7 +98,7 @@ export default function ClientDetail() {
           </div>
           <div>
             <p className="text-sm font-bold text-foreground uppercase tracking-wide mb-1">Email notifications</p>
-            <p className="text-base text-foreground">jahandavid@gmail.com</p>
+            <p className="text-base text-foreground">{client.notification_email || '—'}</p>
           </div>
           <div>
             <p className="text-sm font-bold text-foreground uppercase tracking-wide mb-1">Ajouté par</p>

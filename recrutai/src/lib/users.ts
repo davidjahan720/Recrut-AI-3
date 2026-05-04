@@ -1,4 +1,4 @@
-export type UserRole = 'recruiter' | 'am' | 'manager'
+export type UserRole = 'recruiter'
 
 export interface AppUser {
   role: UserRole
@@ -7,18 +7,14 @@ export interface AppUser {
 }
 
 export function setRoleSession(user: AppUser): void {
-  localStorage.removeItem('recruiter_session')
+  // Nettoyage des anciennes sessions (am/manager) si elles trainent en localStorage
   localStorage.removeItem('am_session')
   localStorage.removeItem('manager_session')
   localStorage.removeItem('manager_auth')
+  localStorage.removeItem('recruiter_session')
 
   if (user.role === 'recruiter') {
     localStorage.setItem('recruiter_session', user.name)
-  } else if (user.role === 'am') {
-    localStorage.setItem('am_session', user.name)
-  } else if (user.role === 'manager') {
-    localStorage.setItem('manager_session', user.name)
-    localStorage.setItem('manager_auth', '1')
   }
 }
 
