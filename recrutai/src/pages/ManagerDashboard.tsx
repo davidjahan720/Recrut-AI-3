@@ -132,9 +132,12 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   )
 }
 
+// RGAA 3.2 : couleurs assombries par rapport aux teintes 500 d'origine
+// (#ec4899/#0ea5e9 → #be185d/#0369a1) pour assurer un contraste 4.5:1
+// du texte blanc des avatars circulaires.
 const AM_PROFILES = [
-  { name: 'Sophie', color: '#ec4899', taux: 18, tauxObjectif: 22, caMensuel: 55000, caTrimestriel: 165000, targetCaMensuel: 58000, targetCaTrimestriel: 174000, nouveaux: 2, targetNouveauxClientsMois: 3, ytdCa: 215000, ytdNouveauxClients: 8, clients: ['Nexeo', 'Solvay', 'BTP Pro'] },
-  { name: 'Alix',   color: '#0ea5e9', taux: 18, tauxObjectif: 22, caMensuel: 41000, caTrimestriel: 123000, targetCaMensuel: 46000, targetCaTrimestriel: 138000, nouveaux: 1, targetNouveauxClientsMois: 2, ytdCa: 162000, ytdNouveauxClients: 5, clients: ['Inovev', 'Altair RH'] },
+  { name: 'Sophie', color: '#be185d', taux: 18, tauxObjectif: 22, caMensuel: 55000, caTrimestriel: 165000, targetCaMensuel: 58000, targetCaTrimestriel: 174000, nouveaux: 2, targetNouveauxClientsMois: 3, ytdCa: 215000, ytdNouveauxClients: 8, clients: ['Nexeo', 'Solvay', 'BTP Pro'] },
+  { name: 'Alix',   color: '#0369a1', taux: 18, tauxObjectif: 22, caMensuel: 41000, caTrimestriel: 123000, targetCaMensuel: 46000, targetCaTrimestriel: 138000, nouveaux: 1, targetNouveauxClientsMois: 2, ytdCa: 162000, ytdNouveauxClients: 5, clients: ['Inovev', 'Altair RH'] },
 ]
 
 
@@ -270,7 +273,7 @@ export default function ManagerDashboard() {
       <section aria-labelledby="kpi-recrutement">
         <h2 id="kpi-recrutement" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recrutement</h2>
         {loading ? (
-          <div className="grid grid-cols-6 gap-3" aria-busy="true" aria-label="Chargement des indicateurs recrutement">
+          <div role="status" className="grid grid-cols-6 gap-3" aria-busy="true" aria-label="Chargement des indicateurs recrutement">
             {[0,1,2,3].map(i => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
           </div>
         ) : (
@@ -293,7 +296,7 @@ export default function ManagerDashboard() {
       <section aria-labelledby="kpi-business">
         <h2 id="kpi-business" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Business</h2>
         {loading ? (
-          <div className="grid grid-cols-6 gap-3" aria-busy="true" aria-label="Chargement des indicateurs business">
+          <div role="status" className="grid grid-cols-6 gap-3" aria-busy="true" aria-label="Chargement des indicateurs business">
             {[0,1,2,3,4,5].map(i => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
           </div>
         ) : (

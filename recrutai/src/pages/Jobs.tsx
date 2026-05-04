@@ -349,10 +349,12 @@ export default function Jobs() {
                     </div>
                   </TableCell>
                   <TableCell>
+                    {/* RGAA 3.2 : bg-green-700 (au lieu de 600) garantit
+                        un contraste 5.7:1 du texte blanc (sous AA pour 600). */}
                     <Badge variant={j.status === 'active' ? 'default' : j.status === 'inactive' ? 'outline' : 'secondary'}
                       className={
-                        j.status === 'active' ? 'bg-green-600 hover:bg-green-600 text-white border-transparent'
-                        : j.status === 'inactive' ? 'border-amber-400 text-amber-700 bg-amber-50'
+                        j.status === 'active' ? 'bg-green-700 hover:bg-green-700 text-white border-transparent'
+                        : j.status === 'inactive' ? 'border-amber-400 text-amber-800 bg-amber-50'
                         : ''
                       }>
                       {j.status === 'active' ? 'Active' : j.status === 'inactive' ? 'En pause' : 'Clôturée'}
