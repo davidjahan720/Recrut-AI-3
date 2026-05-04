@@ -1,6 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/GoogleChrome/lighthouse-ci/main/docs/configuration.md",
-  "//": "Configuration Lighthouse CI — Web Vitals bloquants en CI (RGESN + RGAA).",
   "ci": {
     "collect": {
       "url": [
@@ -19,18 +17,13 @@
     },
     "assert": {
       "assertions": {
-        "//": "Catégories — seuils minimums",
         "categories:performance":    ["error", { "minScore": 0.85 }],
         "categories:accessibility":  ["error", { "minScore": 0.95 }],
         "categories:best-practices": ["error", { "minScore": 0.90 }],
         "categories:seo":            ["error", { "minScore": 0.90 }],
-
-        "//-": "Web Vitals (RGESN — mesure)",
         "largest-contentful-paint":  ["error", { "maxNumericValue": 2500 }],
         "cumulative-layout-shift":   ["error", { "maxNumericValue": 0.1 }],
         "total-blocking-time":       ["error", { "maxNumericValue": 300 }],
-
-        "//--": "Audits désactivés (faux positifs ou non applicables)",
         "csp-xss":                   "off",
         "is-on-https":               "off",
         "redirects-http":            "off"
