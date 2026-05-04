@@ -4,8 +4,12 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// Composant générique : l'association htmlFor est imposée par les consommateurs
+// (cf. Login.tsx, Rgpd.tsx, etc.). Règle jsx-a11y désactivée localement car le
+// linter statique ne peut pas suivre la composition.
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
+    // eslint-disable-next-line jsx-a11y/label-has-associated-control
     <label
       data-slot="label"
       className={cn(

@@ -1,0 +1,143 @@
+# Conformité — RGAA / RGPD / RGESN / sécurité.
+#
+# Bloquants en PR :
+#   - lint (ESLint + jsx-a11y)
+#   - typecheck (TypeScript strict)
+#   - tests unitaires (Vitest)
+#   - build (avec budget de bundle)
+#   - tests d'accessibilité automatisés (Playwright + axe-core)
+#   - scan secrets (gitleaks)
+#
+# Non bloquants (alerte uniquement) :
+#   - audit dépendances (npm audit)
+#
+# Cible : tout PR vers master ou refonte-app, et tout push sur ces branches.
+
+name: Conformité
+
+on:
+  pull_request:
+    branches: [master, refonte-app]
+  push:
+    branches: [master, refonte-app]
+  workflow_dispatch:
+
+# Permissions minimales par job (principe du moindre privilège).
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: recrutai
+
+jobs:
+  lint:
+    name: Lint (ESLint + a11y)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: recrutai/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: recrutai/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+
+  unit-tests:
+    name: Tests unitaires
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: recrutai/package-lock.json
+      - run: npm ci
+      - run: npm run test:unit
+
+  build-and-budget:
+    name: Build + budget bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: recrutai/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      # RGESN 4.7 : budget de bundle initial — bloquant si dépassé.
+      - name: Vérifier le budget JS initial (≤ 250 KiB gzippé)
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=$(ls dist/assets/index-*.js | head -1)
+          gz=$(gzip -c "$file" | wc -c)
+          kib=$(( gz / 1024 ))
+          echo "Bundle initial : ${kib} KiB gzippés ($file)"
+          if [ "$gz" -gt 256000 ]; then
+            echo "::error::Bundle JS initial > 250 KiB gzip (RGESN 4.7) : ${kib} KiB"
+            exit 1
+          fi
+
+  a11y:
+    name: Accessibilité (axe-core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: recrutai/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:a11y
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-a11y-report
+          path: recrutai/playwright-report
+          retention-days: 7
+
+  secrets-scan:
+    name: Scan secrets (gitleaks)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deps-audit:
+    name: Audit dépendances (non bloquant)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high --omit=dev || echo "Vulnérabilités détectées — voir log"

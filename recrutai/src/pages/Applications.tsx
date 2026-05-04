@@ -408,8 +408,9 @@ export default function Applications() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-foreground">Offre associée (optionnel)</label>
+              <label htmlFor="upload-job-select" className="text-sm font-medium text-foreground">Offre associée (optionnel)</label>
               <select
+                id="upload-job-select"
                 className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
                 value={selectedJobId}
                 onChange={e => setSelectedJobId(e.target.value)}
