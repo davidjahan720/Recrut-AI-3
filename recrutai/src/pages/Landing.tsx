@@ -135,9 +135,11 @@ export default function Landing() {
               { v: '∞',    vText: 'illimité',             l: 'CV simultanés' },
             ].map(s => (
               <li key={s.l} className="bg-white/15 border border-white/25 backdrop-blur rounded-xl p-5 animate-float">
-                <p className="text-3xl font-bold text-white" aria-label={`${s.l} : ${s.vText}`}>
-                  <span aria-hidden="true">{s.v}</span>
-                </p>
+                {/* RGAA : version accessible portée par un span sr-only ;
+                    la version visuelle est masquée aux lecteurs d'écran via
+                    aria-hidden. aria-label n'est pas autorisé sur <p>. */}
+                <span className="sr-only">{s.l} : {s.vText}</span>
+                <p className="text-3xl font-bold text-white" aria-hidden="true">{s.v}</p>
                 <p className="text-sm text-white/90 mt-1 font-medium" aria-hidden="true">{s.l}</p>
               </li>
             ))}
