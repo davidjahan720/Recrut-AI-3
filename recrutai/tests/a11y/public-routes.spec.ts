@@ -27,6 +27,8 @@ const PUBLIC_ROUTES: { path: string; label: string }[] = [
   { path: '/login', label: 'Login' },
   { path: '/legal', label: 'Mentions légales' },
   { path: '/privacy', label: 'Politique de confidentialité' },
+  { path: '/accessibilite', label: 'Déclaration d\'accessibilité' },
+  { path: '/contestation', label: 'Demande d\'examen humain' },
 ]
 
 const RGAA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']
