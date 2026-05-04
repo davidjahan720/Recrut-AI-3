@@ -20,7 +20,7 @@ import { createHash } from 'node:crypto'
 
 export const config = { maxDuration: 30 }
 
-type Action = 'export' | 'erase' | 'rectify'
+type Action = 'export' | 'erase' | 'rectify' | 'request-review'
 
 // ─── Helpers (inlinés pour éviter les soucis de bundling Vercel) ──────────
 
@@ -76,24 +76,134 @@ function logRgpdAction(
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const actor = getActor(req)
-  if (!actor) return res.status(401).json({ error: 'Authentification requise' })
-
   const action = req.body?.action as Action | undefined
-  if (action !== 'export' && action !== 'erase' && action !== 'rectify') {
-    return res.status(400).json({ error: 'action invalide (export | erase | rectify)' })
+  if (action !== 'export' && action !== 'erase' && action !== 'rectify' && action !== 'request-review') {
+    return res.status(400).json({ error: 'action invalide' })
+  }
+
+  // request-review est public (le candidat n'a pas de compte). Les autres
+  // actions exigent un acteur authentifié.
+  if (action !== 'request-review') {
+    const actor = getActor(req)
+    if (!actor) return res.status(401).json({ error: 'Authentification requise' })
+    try {
+      if (action === 'export') return await handleExport(req, res, actor)
+      if (action === 'erase') return await handleErase(req, res, actor)
+      return await handleRectify(req, res, actor)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur'
+      console.error('rgpd dispatch:', message)
+      return res.status(500).json({ error: 'Erreur serveur RGPD' })
+    }
   }
 
   try {
-    if (action === 'export') return await handleExport(req, res, actor)
-    if (action === 'erase') return await handleErase(req, res, actor)
-    return await handleRectify(req, res, actor)
+    return await handleReviewRequest(req, res)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur'
-    // RGPD : message générique côté client, détail côté serveur
-    console.error('rgpd dispatch:', message)
+    console.error('rgpd review:', message)
     return res.status(500).json({ error: 'Erreur serveur RGPD' })
   }
+}
+
+// ─── Request-review — art. 22.3 (droit à un examen humain) ───────────────
+
+async function handleReviewRequest(req: any, res: any) {
+  const { candidate_email, candidate_name, requester_email, motivation } = req.body ?? {}
+  // Le candidat peut renseigner son propre email = candidate_email = requester_email,
+  // OU un tiers (avocat, association) qui demande pour lui.
+  if (!isValidEmail(candidate_email)) {
+    return res.status(400).json({ error: 'candidate_email invalide' })
+  }
+  if (!isValidEmail(requester_email)) {
+    return res.status(400).json({ error: 'requester_email invalide' })
+  }
+  if (typeof motivation !== 'string' || motivation.trim().length < 30 || motivation.length > 4000) {
+    return res.status(400).json({ error: 'motivation requise (30 à 4000 caractères)' })
+  }
+  const cName = typeof candidate_name === 'string' ? candidate_name.trim().slice(0, 200) : null
+  const cEmail = (candidate_email as string).trim().toLowerCase()
+  const rEmail = (requester_email as string).trim().toLowerCase()
+  const motiv = motivation.trim()
+  const sourceIp = (req.headers?.['x-forwarded-for'] ?? '').toString().split(',')[0]?.trim() || null
+  const targetHash = hashEmail(cEmail)
+
+  // Notification au DPO via Resend (best effort).
+  // Le serveur retourne 200 même si l'email échoue : la trace est dans les logs.
+  const dpoEmail = (process.env.DPO_EMAIL ?? 'contact@recrutai.fr').trim()
+  const resendKey = process.env.RESEND_API_KEY?.trim()
+  let emailSent = false
+
+  if (resendKey) {
+    try {
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'RecrutAI <onboarding@resend.dev>',
+          to: dpoEmail,
+          reply_to: rEmail,
+          subject: `[RGPD art. 22.3] Demande d'examen humain — ${cName ?? cEmail}`,
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+            <h1 style="font-size:18px;color:#1f2937">Demande d'examen humain reçue</h1>
+            <p style="font-size:14px;color:#374151">Conformément à l'art. 22.3 RGPD, un candidat (ou son représentant) demande qu'un être humain réexamine la décision automatisée prise sur sa candidature.</p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
+            <table style="width:100%;border-collapse:collapse;font-size:14px">
+              <tr><td style="padding:6px 0;color:#374151;width:160px">Candidat·e</td><td style="padding:6px 0;font-weight:600">${escapeHtml(cName ?? '—')}</td></tr>
+              <tr><td style="padding:6px 0;color:#374151">Email candidat·e</td><td style="padding:6px 0">${escapeHtml(cEmail)}</td></tr>
+              <tr><td style="padding:6px 0;color:#374151">Demandeur</td><td style="padding:6px 0">${escapeHtml(rEmail)}</td></tr>
+              <tr><td style="padding:6px 0;color:#374151">Date</td><td style="padding:6px 0">${new Date().toLocaleString('fr-FR')}</td></tr>
+              <tr><td style="padding:6px 0;color:#374151">IP source</td><td style="padding:6px 0">${escapeHtml(sourceIp ?? '—')}</td></tr>
+            </table>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
+            <p style="font-size:14px;color:#1f2937;margin:0 0 8px"><strong>Motif :</strong></p>
+            <p style="font-size:14px;line-height:1.6;color:#374151;white-space:pre-wrap">${escapeHtml(motiv)}</p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
+            <p style="font-size:13px;color:#6b7280">Procédure : voir <code>docs/how-to/traiter-demande-examen-humain.md</code>. Délai légal : réponse motivée sous 1 mois (RGPD art. 12.3).</p>
+          </div>`,
+        }),
+      })
+      if (r.ok) {
+        emailSent = true
+      } else {
+        console.error(`Resend HTTP ${r.status}`)
+      }
+    } catch (err) {
+      console.error('Resend call failed:', err instanceof Error ? err.name : 'unknown')
+    }
+  } else {
+    console.error('RESEND_API_KEY non configurée — DPO non notifié par email')
+  }
+
+  // Log RGPD structuré (sans PII) pour traçabilité
+  console.log(JSON.stringify({
+    type: 'rgpd_review_request',
+    ts: new Date().toISOString(),
+    target_hash: targetHash,
+    requester_hash: hashEmail(rEmail),
+    source_ip: sourceIp,
+    motivation_chars: motiv.length,
+    email_sent: emailSent,
+  }))
+
+  // Réponse identique succès/échec côté client (ne pas révéler la config interne)
+  return res.status(200).json({
+    received: true,
+    message: 'Votre demande a bien été enregistrée. Le délégué à la protection des données vous contactera sous 1 mois (RGPD art. 12.3).',
+  })
+}
+
+// Anti-injection HTML pour les champs insérés dans l'email DPO.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // ─── Export — art. 15 + 20 ───────────────────────────────────────────────

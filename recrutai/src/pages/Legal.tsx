@@ -109,6 +109,23 @@ const PRIVACY_SECTIONS: Section[] = [
     ),
   },
   {
+    id: 'decision-automatisee',
+    title: 'Décision automatisée — droit à un examen humain (art. 22)',
+    body: (
+      <>
+        <p>RecrutAI utilise un modèle d'intelligence artificielle (Mistral AI, France) pour pré-évaluer chaque CV par rapport à une fiche de poste et lui attribuer un score de correspondance. Ce score participe à la décision de qualification (qualifié / rejeté).</p>
+        <p>Conformément à l'<strong>article 22.3 du RGPD</strong>, vous pouvez à tout moment :</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li><strong>obtenir l'intervention d'un être humain</strong> pour réexaminer la décision automatisée prise sur votre candidature ;</li>
+          <li><strong>exprimer votre point de vue</strong> et apporter des éléments contextuels (CV mal interprété, éléments absents pris en compte, etc.) ;</li>
+          <li><strong>contester la décision</strong> et demander une révision motivée.</li>
+        </ul>
+        <p>Pour faire valoir ce droit, utilisez le formulaire dédié <a href="/contestation" className="underline underline-offset-2 font-medium">demander un examen humain</a>, ou écrivez à <a href="mailto:contact@recrutai.fr" className="underline underline-offset-2">contact@recrutai.fr</a>. Notre délégué à la protection des données vous répondra sous un mois maximum.</p>
+        <p>À noter : un cabinet de recrutement utilisant RecrutAI procède toujours à une revue humaine avant de transmettre une candidature qualifiée à son client. Le score IA est une aide à la décision, pas une décision finale.</p>
+      </>
+    ),
+  },
+  {
     id: 'securite',
     title: 'Sécurité',
     body: (

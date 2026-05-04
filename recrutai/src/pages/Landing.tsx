@@ -270,6 +270,7 @@ export default function Landing() {
             <button type="button" onClick={() => navigate('/legal')} className="text-slate-300 hover:text-white transition-colors">Mentions légales</button>
             <button type="button" onClick={() => navigate('/privacy')} className="text-slate-300 hover:text-white transition-colors">Politique de confidentialité</button>
             <button type="button" onClick={() => navigate('/accessibilite')} className="text-slate-300 hover:text-white transition-colors">Accessibilité</button>
+            <button type="button" onClick={() => navigate('/contestation')} className="text-slate-300 hover:text-white transition-colors">Examen humain (RGPD art. 22)</button>
             <button type="button" onClick={() => navigate('/login')} className="text-violet-300 hover:text-violet-200 font-medium transition-colors">
               Accéder à l'app <span aria-hidden="true">→</span>
             </button>

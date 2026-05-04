@@ -2,7 +2,7 @@
 type: explanation
 title: AIPD — Analyse d'Impact relative à la Protection des Données — Scoring CV par IA
 date: 2026-05-04
-version: 1.0
+version: 1.1
 status: draft (à valider par DPO / DPD désigné)
 traitement: T01 (cf. docs/reference/registre-traitements.md)
 authors: David Jahan
@@ -175,8 +175,12 @@ Intérêt légitime (art. 6.1.f) : exécution de la mission contractuelle de rec
 **Gravité** : moyenne.
 
 **Mesures** :
-- ✅ Politique de confidentialité publique (`/privacy`) mentionne les droits.
-- ⏳ Ajouter une mention explicite « Demander un examen humain » dans les mails clients + sur la page dédiée RGPD candidat (à créer en prochaine itération).
+- ✅ Politique de confidentialité publique (`/privacy`) — section dédiée « Décision automatisée — droit à un examen humain (art. 22) » avec lien direct vers le formulaire.
+- ✅ Page publique `/contestation` permettant au candidat (ou son représentant) de soumettre une demande sans authentification.
+- ✅ Endpoint `/api/rgpd` action `request-review` qui notifie le DPO via Resend (best effort) et journalise sans PII.
+- ✅ Bandeau dédié dans l'email envoyé au client final lors d'une qualification, rappelant que le candidat peut demander un examen humain.
+- ✅ Procédure documentée : `docs/how-to/traiter-demande-examen-humain.md`.
+- ✅ Lien dans le footer Landing.
 
 ## Synthèse résiduelle
 
@@ -187,7 +191,7 @@ Intérêt légitime (art. 6.1.f) : exécution de la mission contractuelle de rec
 | R3 Fuite Mistral | Faible | Importante | UE, TLS, rotation clés | Faible |
 | R4 Logs | Très faible | Moyenne | Hash SHA-256 | Très faible |
 | R5 Conservation | Certaine si non corrigé | Importante | Cron purge à implémenter | **Important tant que non livré** — couvert par cette PR |
-| R6 Art. 22 | Élevée | Moyenne | Politique publique | **Modéré** — mention explicite à ajouter |
+| R6 Art. 22 | Élevée | Moyenne | Politique publique + page `/contestation` + bandeau email + procédure DPO | Faible |
 
 ## Plan d'action
 

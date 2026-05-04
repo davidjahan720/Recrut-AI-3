@@ -12,6 +12,7 @@ import Login from '@/pages/Login'
 // Lazy-load des pages applicatives — réduit la taille du bundle initial
 // (Recharts, Supabase queries, etc. ne sont chargés qu'à l'usage).
 const Legal = lazy(() => import('@/pages/Legal'))
+const Contestation = lazy(() => import('@/pages/Contestation'))
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const Clients = lazy(() => import('@/pages/Clients'))
 const ClientDetail = lazy(() => import('@/pages/ClientDetail'))
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/legal" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
         <Route path="/privacy" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
         <Route path="/accessibilite" element={<Suspense fallback={<PageFallback />}><Legal /></Suspense>} />
+        <Route path="/contestation" element={<Suspense fallback={<PageFallback />}><Contestation /></Suspense>} />
 
         {/* Protected app (pathless layout wrapper) */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
